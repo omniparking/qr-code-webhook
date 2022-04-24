@@ -49,9 +49,16 @@ async function sendEmail(emailInfo) {
     text: 'Your order has been confirmed for Omni Parking. The QR code is attached',
   };
   try {
-    const x = await transporter.sendMail(msg);
+    let isSuccessful = false;
+    const x = transporter.sendMail(msg).then(data => {
+      console.log('data sending email is:', data);
+      isSuccessful = true;
+    }).catch(e => {
+      console.error('error sending email is:', e);
+      isSuccessful = false;
+    });
     console.log('EMAIL TRANSPORTED =>', x);
-    return true;
+    return isSuccessful;
     // let didEmailSend = false;
     // const results = sgMail.send(msg)
     // .then(response => {
