@@ -3,6 +3,8 @@
 /*jshint esversion: 8 */
 
 const QRCode = require('qrcode');
+const crypto = require('crypto');
+const getRawBody = require('raw-body');
 // const nodemailer = require('nodemailer');
 const { Redis } = require('@upstash/redis');
 const sgMail = require('@sendgrid/mail');
@@ -49,29 +51,53 @@ async function sendEmail(emailInfo) {
 
 // handler function which handles http requests coming in
 export default async function handler(req, res) {
-  // res.status(200).json({ name: 'John Doe' })
-
   try {
     if (req.METHOD === 'POST') {
-    // Grab needed data from reqeest object
-    const { body: payload, headers } = req;
-    const { /*email: to, */ order_number, customer, line_items, created_at, total_line_items_price } = payload;
-    const { first_name, last_name } = customer;
-    const startAndEndTimes = line_items && line_items[0] && line_items[0].properties || []; // start and end times should be here    
+    try {
+      const hmac = req.get('X-Shopify-Hmac-Sha256');
+      const rawBody = await getRawBody(req);
+      const generated_hash = crypto
+        .createHmac('sha256', process.env.SHOPIFY_SECRET)
+        .update(rawBody)
+        .digest('base64');
+
+      if (generated_hash !== hmac) {
+        res.status(201).send({ message: 'Webhook verification failed '});
+        return;
+      }
+    } catch (e) {
+      res.status(201).send({ message: 'Webhook verification failed '});
+      return;
+    }
+
+        // Grab needed data from reqeest object
+        const { body: payload, headers } = req;
+        const { /*email: to, */ order_number, customer, line_items, created_at, total_line_items_price } = payload;
+        const { first_name, last_name } = customer;
+        const lineItems = line_items && line_items[1] && line_items[1].properties || []; // start and end times should be here
+            // get start time of booking
+            const start_time = lineItems.filter(item => {
+              if (item.name === 'booking-start') {
+                return item.value;
+              }
+            });
+        
+            // get end time of booking
+            const end_time = lineItems.filter(item => {
+              if (item.name === 'booking-end') {
+                return item.value;
+              }
+            });
+
     const to = 'alon.bibring@gmail.com';
     // set headers
     res.setHeader('Content-Type', 'text/html');
     // describes lifetime of our resource telling CDN to serve from cache and update in background (at most once per second)
     res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
     
-    console.log('\n\npayload:', payload, '\n\n');
-    console.log('\n\nlines_items[0].properties', startAndEndTimes, '\n\n');
-    console.log('\n\ncustomer:', customer, '\n\n')
-    console.log('\n\order_number:', order_number, '\n\n');
-    console.log('\n\nline_items', line_items, '\n\n');
-    
+    const qrCodeData = { order_number, start_time, end_time };
     // generate barcode with order information
-    const url = await generateQRCode(`{order_number: ${order_number}}`);
+    const url = await generateQRCode(`${qrCodeData}`);
     
     // generate HTML markup for email
     const html =  `
@@ -89,6 +115,8 @@ export default async function handler(req, res) {
     console.log('headers:', headers);
     console.log('created_at:', created_at);
 
+    
+
     // method to add members
     const members = await redis.smembers();
     const webhookAlreadyExists = members.find(member => member === new_webhook_id);
@@ -99,13 +127,13 @@ export default async function handler(req, res) {
       // const cc = ['alon.bibring@gmail.com']; // cc emails
       const userEmailSuccessful = sendEmail({ to, from, html, order_number });
       if (userEmailSuccessful) {
-        redis.sadd(`webhook_id_${new_webhook_id}`, new_webhook_id);
+        await redis.sadd(`webhook_id_${new_webhook_id}`, new_webhook_id);
         res.status(201).send({ message: 'Webhook Event and Email Successfully logged. '});
       } else {
         try {
           const userEmailSuccessful = sendEmail({ to, from, html, order_number });
           if (userEmailSuccessful) {
-            redis.sadd(`webhook_id_${new_webhook_id}`, new_webhook_id);
+            await redis.sadd(`webhook_id_${new_webhook_id}`, new_webhook_id);
             res.status(201).send({ message: 'Webhook Event and Email Successfully logged. '});
           } else {
             res.status(201).send({ message: 'Webhook Event logged but email failed. '});
