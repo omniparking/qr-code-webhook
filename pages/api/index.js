@@ -144,27 +144,34 @@ export default async function handler(req, res) {
     // }
 
     // method to add members
-    const members = await redis.smembers();
-    const webhookAlreadyExists = members.find(member => member === new_webhook_id);
-
+    const getPrevWebhook = await redis.get(new_webhook_id);
+        console.log('getPrevWebhook:', getPrevWebhook)
     const to = 'omniparkingwebhook@gmail.com@gmail.com';
     const from = 'omniparkingwebhook@gmail.com'; // sender
     const cc = ['alon.bibring@gmail.com']; // cc emails
     const emailData = { to, from, html, order_number };
 
     // If webhook_id does not already exist in db
-    if (!webhookAlreadyExists) {
-
+    if (!getPrevWebhook) {
+      const d = new Date();
+      const date = d.toLocaleDateString();
+      const time = d.toLocaleTimeString();
+      const dateTime = `${date} ${time}`;
       const userEmailSuccessful = sendEmail(emailData);
       if (userEmailSuccessful) {
-        await redis.sadd(`webhook_id_${new_webhook_id}`, new_webhook_id);
+        await redis.set(new_webhook_id, new_webhook_id);
         res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
       } else {
         try {
           const userEmailSuccessful = sendEmail(emailData);
           if (userEmailSuccessful) {
-            await redis.sadd(`webhook_id_${new_webhook_id}`, new_webhook_id);
-            res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
+            try {
+              await redis.set(new_webhook_id, new_webhook_id);
+              res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
+            } catch (e) {
+              res.status(201).send({ message: 'Webhook event not logged, email sent successfully.' });
+            }
+
           } else {
             res.status(201).send({ message: 'Webhook Event logged but email failed. '});
           }
