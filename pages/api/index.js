@@ -92,7 +92,7 @@ export default async function handler(req, res) {
     // set headers
     res.setHeader('Content-Type', 'text/html');
     // describes lifetime of our resource telling CDN to serve from cache and update in background (at most once per second)
-    // res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
+    res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
     
     const qrCodeData = { order_number, start_time, end_time };
 
@@ -113,29 +113,29 @@ export default async function handler(req, res) {
     console.log('headers:', headers);
     console.log('created_at:', created_at);
 
-    // if no start or end times from booking, event failed
-    if (!start_time && !end_time) {
-      res.status(201).send({ message: 'Webhook event failed. No start/end times available. '});
-      return;
-    }
+    // // if no start or end times from booking, event failed
+    // if (!start_time && !end_time) {
+    //   res.status(201).send({ message: 'Webhook event failed. No start/end times available. '});
+    //   return;
+    // }
 
     // method to add members
-    // const members = await redis.smembers();
-    // const webhookAlreadyExists = members.find(member => member === new_webhook_id);
+    const members = await redis.smembers();
+    const webhookAlreadyExists = members.find(member => member === new_webhook_id);
 
     // If webhook_id does not already exist in db
-    // if (!webhookAlreadyExists) {
+    if (!webhookAlreadyExists) {
       const from = 'omniparkingwebhook@gmail.com'; // sender
       // const cc = ['alon.bibring@gmail.com']; // cc emails
       const userEmailSuccessful = sendEmail({ to, from, html, order_number });
       if (userEmailSuccessful) {
-        // await redis.sadd(`webhook_id_${new_webhook_id}`, new_webhook_id);
+        await redis.sadd(`webhook_id_${new_webhook_id}`, new_webhook_id);
         res.status(201).send({ message: 'Webhook Event and Email Successfully logged. '});
       } else {
         try {
           const userEmailSuccessful = sendEmail({ to, from, html, order_number });
           if (userEmailSuccessful) {
-            // await redis.sadd(`webhook_id_${new_webhook_id}`, new_webhook_id);
+            await redis.sadd(`webhook_id_${new_webhook_id}`, new_webhook_id);
             res.status(201).send({ message: 'Webhook Event and Email Successfully logged. '});
           } else {
             res.status(201).send({ message: 'Webhook Event logged but email failed. '});
@@ -144,9 +144,9 @@ export default async function handler(req, res) {
           res.status(201).send({ message: 'Webhook Event logged but email failed. '});
         }
       }
-    // } else {
-    //   res.status(201).send({ message: 'Webhook Event has previously been successfully logged' }); // send 201 response to Shopify
-    // }
+    } else {
+      res.status(201).send({ message: 'Webhook Event has previously been successfully logged' }); // send 201 response to Shopify
+    }
     // } else {
     //   res.status(201).send({ message: 'Webhook Event failed. Wrong HTTP Method. Must be of type POST.' });
     // }
