@@ -49,7 +49,8 @@ async function sendEmail(emailInfo) {
     text: 'Your order has been confirmed for Omni Parking. The QR code is attached',
   };
   try {
-    await transporter.sendMail(msg);
+    const x = await transporter.sendMail(msg);
+    console.log('EMAIL TRANSPORTED =>', x);
     return true;
     // let didEmailSend = false;
     // const results = sgMail.send(msg)
@@ -158,6 +159,7 @@ export default async function handler(req, res) {
       const time = d.toLocaleTimeString();
       const dateTime = `${date} ${time}`;
       const userEmailSuccessful = sendEmail(emailData);
+      console.log('userEmailSuccessful:', userEmailSuccessful)
       if (userEmailSuccessful) {
         await redis.set(new_webhook_id, new_webhook_id);
         res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
