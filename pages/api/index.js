@@ -39,9 +39,22 @@ async function sendEmail(emailInfo) {
     text: 'Your order has been confirmed for Omni Parking. The QR code is attached',
   };
   try {
-    const results = await sgMail.send(msg);
-    console.log('email results:', results);
-    return true;
+    let didEmailSend = false;
+    const results = sgMail.send(msg)
+    .then(response => {
+      if (response[0].statusCode === 202) {
+        didEmailSend = true;
+      }
+    })
+    .catch(error => {
+      console.error('error sending email =>', error);
+      didEmailSend = false;
+    });
+    if (didEmailSend) {
+      return true;
+    } else {
+      return false;
+    }
   } catch (e) {
     console.error('error sending email =>', e);
     return false;
@@ -130,13 +143,13 @@ export default async function handler(req, res) {
       const userEmailSuccessful = sendEmail({ to, from, html, order_number });
       if (userEmailSuccessful) {
         await redis.sadd(`webhook_id_${new_webhook_id}`, new_webhook_id);
-        res.status(201).send({ message: 'Webhook Event and Email Successfully logged. '});
+        res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
       } else {
         try {
           const userEmailSuccessful = sendEmail({ to, from, html, order_number });
           if (userEmailSuccessful) {
             await redis.sadd(`webhook_id_${new_webhook_id}`, new_webhook_id);
-            res.status(201).send({ message: 'Webhook Event and Email Successfully logged. '});
+            res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
           } else {
             res.status(201).send({ message: 'Webhook Event logged but email failed. '});
           }
