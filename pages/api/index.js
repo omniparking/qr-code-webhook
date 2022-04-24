@@ -5,7 +5,7 @@
 const QRCode = require('qrcode');
 const crypto = require('crypto');
 const getRawBody = require('raw-body');
-// const nodemailer = require('nodemailer');
+const nodemailer = require('nodemailer');
 const { Redis } = require('@upstash/redis');
 const sgMail = require('@sendgrid/mail');
 
@@ -14,6 +14,16 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL,
   token: process.env.UPSTASH_REDIS_REST_TOKEN
+});
+
+const transporter = nodemailer.createTransport({
+  port: 465,
+  host: 'smtp.gmail.com',
+  auth: {
+    user: 'omniparkingwebhook@gmail.com',
+    pass: process.env.GMAIL_PASSWORD
+  },
+  secure: true
 });
 
 
@@ -39,22 +49,24 @@ async function sendEmail(emailInfo) {
     text: 'Your order has been confirmed for Omni Parking. The QR code is attached',
   };
   try {
-    let didEmailSend = false;
-    const results = sgMail.send(msg)
-    .then(response => {
-      if (response[0].statusCode === 202) {
-        didEmailSend = true;
-      }
-    })
-    .catch(error => {
-      console.error('error sending email =>', error);
-      didEmailSend = false;
-    });
-    if (didEmailSend) {
-      return true;
-    } else {
-      return false;
-    }
+    await transporter.sendMail(msg);
+    return true;
+    // let didEmailSend = false;
+    // const results = sgMail.send(msg)
+    // .then(response => {
+    //   if (response[0].statusCode === 202) {
+    //     didEmailSend = true;
+    //   }
+    // })
+    // .catch(error => {
+    //   console.error('error sending email =>', error);
+    //   didEmailSend = false;
+    // });
+    // if (didEmailSend) {
+    //   return true;
+    // } else {
+    //   return false;
+    // }
   } catch (e) {
     console.error('error sending email =>', e);
     return false;
@@ -101,7 +113,6 @@ export default async function handler(req, res) {
           });
         }
 
-    const to = 'alon.bibring@gmail.com';
     // set headers
     res.setHeader('Content-Type', 'text/html');
     // describes lifetime of our resource telling CDN to serve from cache and update in background (at most once per second)
@@ -136,17 +147,21 @@ export default async function handler(req, res) {
     const members = await redis.smembers();
     const webhookAlreadyExists = members.find(member => member === new_webhook_id);
 
+    const to = 'omniparkingwebhook@gmail.com@gmail.com';
+    const from = 'omniparkingwebhook@gmail.com'; // sender
+    const cc = ['alon.bibring@gmail.com']; // cc emails
+    const emailData = { to, from, html, order_number };
+
     // If webhook_id does not already exist in db
     if (!webhookAlreadyExists) {
-      const from = 'omniparkingwebhook@gmail.com'; // sender
-      // const cc = ['alon.bibring@gmail.com']; // cc emails
-      const userEmailSuccessful = sendEmail({ to, from, html, order_number });
+
+      const userEmailSuccessful = sendEmail(emailData);
       if (userEmailSuccessful) {
         await redis.sadd(`webhook_id_${new_webhook_id}`, new_webhook_id);
         res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
       } else {
         try {
-          const userEmailSuccessful = sendEmail({ to, from, html, order_number });
+          const userEmailSuccessful = sendEmail(emailData);
           if (userEmailSuccessful) {
             await redis.sadd(`webhook_id_${new_webhook_id}`, new_webhook_id);
             res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
