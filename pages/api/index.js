@@ -51,7 +51,7 @@ async function sendEmail(emailInfo) {
 // handler function which handles http requests coming in
 export default async function handler(req, res) {
   try {
-    if (req.METHOD === 'POST') {
+    // if (req.METHOD === 'POST') {
       try {
         const hmac = req.get('X-Shopify-Hmac-Sha256');
         const rawBody = await getRawBody(req);
@@ -147,9 +147,9 @@ export default async function handler(req, res) {
     // } else {
     //   res.status(201).send({ message: 'Webhook Event has previously been successfully logged' }); // send 201 response to Shopify
     // }
-    } else {
-      res.status(201).send({ message: 'Webhook Event failed. Wrong HTTP Method. Must be of type POST.' });
-    }
+    // } else {
+    //   res.status(201).send({ message: 'Webhook Event failed. Wrong HTTP Method. Must be of type POST.' });
+    // }
   } catch (e) {
     console.error('Error from webhook =>:', e);
     res.status(201).send({ message: 'Webhook Event failed' }); // send 201 response to Shopify
