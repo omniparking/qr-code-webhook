@@ -6,15 +6,15 @@ const QRCode = require('qrcode');
 const crypto = require('crypto');
 const getRawBody = require('raw-body');
 // const nodemailer = require('nodemailer');
-// const { Redis } = require('@upstash/redis');
+const { Redis } = require('@upstash/redis');
 const sgMail = require('@sendgrid/mail');
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// const redis = new Redis({
-//   url: process.env.UPSTASH_REDIS_REST_URL,
-//   token: process.env.UPSTASH_REDIS_REST_TOKEN
-// });
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN
+});
 
 
 // generates qr code with order id, start date, and end date
