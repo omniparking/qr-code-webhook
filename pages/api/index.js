@@ -146,9 +146,9 @@ export default async function handler(req, res) {
     // method to add members
     const getPrevWebhook = await redis.get(new_webhook_id);
         console.log('getPrevWebhook:', getPrevWebhook)
-    const to = 'omniparkingwebhook@gmail.com@gmail.com';
+    const to = 'alon.bibring@gmail.com';
     const from = 'omniparkingwebhook@gmail.com'; // sender
-    const cc = ['alon.bibring@gmail.com']; // cc emails
+    // const cc = ['alon.bibring@gmail.com']; // cc emails
     const emailData = { to, from, html, order_number };
 
     // If webhook_id does not already exist in db
