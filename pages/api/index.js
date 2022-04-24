@@ -52,22 +52,22 @@ async function sendEmail(emailInfo) {
 export default async function handler(req, res) {
   try {
     // if (req.METHOD === 'POST') {
-      try {
-        const hmac = req.get('X-Shopify-Hmac-Sha256');
-        const rawBody = await getRawBody(req);
-        const generated_hash = crypto
-          .createHmac('sha256', process.env.SHOPIFY_SECRET)
-          .update(rawBody)
-          .digest('base64');
+      // try {
+      //   const hmac = req.get('X-Shopify-Hmac-Sha256');
+      //   const rawBody = await getRawBody(req);
+      //   const generated_hash = crypto
+      //     .createHmac('sha256', process.env.SHOPIFY_SECRET)
+      //     .update(rawBody)
+      //     .digest('base64');
 
-        if (generated_hash !== hmac) {
-          res.status(201).send({ message: 'Webhook verification failed '});
-          return;
-        }
-      } catch (e) {
-        res.status(201).send({ message: 'Webhook verification failed '});
-        return;
-      }
+      //   if (generated_hash !== hmac) {
+      //     res.status(201).send({ message: 'Webhook verification failed '});
+      //     return;
+      //   }
+      // } catch (e) {
+      //   res.status(201).send({ message: 'Webhook verification failed '});
+      //   return;
+      // }
 
         // Grab needed data from reqeest object
         const { body: payload, headers } = req;
