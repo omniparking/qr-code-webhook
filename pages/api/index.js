@@ -4,16 +4,16 @@
 
 const QRCode = require('qrcode');
 // const nodemailer = require('nodemailer');
-// const { Redis } = require('@upstash/redis');
+const { Redis } = require('@upstash/redis');
 const sgMail = require('@sendgrid/mail');
 
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// const redis = new Redis({
-//   url: process.env.UPSTASH_REDIS_REST_URL,
-//   token: process.env.UPSTASH_REDIS_REST_TOKEN
-// });
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN
+});
 
 
 // generates qr code with order id, start date, and end date
@@ -90,26 +90,22 @@ export default async function handler(req, res) {
     console.log('created_at:', created_at);
 
     // method to add members
-    // redis.sadd(`webhook${}`)
-    // const members = await redis.smembers();
-    // members.forEach(member => {
-      // if (memb)
-      // check ids to see if webhook exists
-    // });
+    const members = await redis.smembers();
+    const webhookAlreadyExists = members.find(member => member === new_webhook_id);
 
     // If webhook_id does not already exist in db
-    // if (!webhookExists) {
-
-    // Establish variables for email
-    const from = 'omniparkingwebhook@gmail.com'; // sender
-    // const cc = ['alon.bibring@gmail.com']; // cc emails
-    const userEmailSuccessful = sendEmail({ to, from, html, order_number });
-    if (userEmailSuccessful) {
+    if (!webhookAlreadyExists) {
+      const from = 'omniparkingwebhook@gmail.com'; // sender
+      // const cc = ['alon.bibring@gmail.com']; // cc emails
+      const userEmailSuccessful = sendEmail({ to, from, html, order_number });
+      if (userEmailSuccessful) {
+        redis.sadd(`webhook_id_${new_webhook_id}`, new_webhook_id);
         res.status(201).send({ message: 'Webhook Event and Email Successfully logged. '});
       } else {
         try {
           const userEmailSuccessful = sendEmail({ to, from, html, order_number });
           if (userEmailSuccessful) {
+            redis.sadd(`webhook_id_${new_webhook_id}`, new_webhook_id);
             res.status(201).send({ message: 'Webhook Event and Email Successfully logged. '});
           } else {
             res.status(201).send({ message: 'Webhook Event logged but email failed. '});
@@ -118,7 +114,7 @@ export default async function handler(req, res) {
           res.status(201).send({ message: 'Webhook Event logged but email failed. '});
         }
       }
-    // }
+    }
     
       res.status(201).send({ message: 'Webhook Event successfully logged' }); // send 201 response to Shopify
     }
