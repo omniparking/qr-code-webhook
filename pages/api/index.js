@@ -60,7 +60,7 @@ export default async function handler(req, res) {
         // Grab needed data from reqeest object
         // i.e., line_items property has start/end times & req body has order_number/billing_address
       const { body: payload, headers } = req;
-      console.log('payload:', JSON.stringify(payload.price_set))
+      console.log('payload:', payload)
         const {
           billing_address, created_at, current_subtotal_price, current_total_price,
           current_total_tax, line_items, order_number, /*, email: to, */
