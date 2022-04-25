@@ -21,7 +21,6 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
     <p>${quantity}x ${name.toUpperCase()} for $${price} each</p>
     <p>Drop off: ${start}</p>
     <p>Pick up: ${end}</p>
-    <p>Units: 12/31/69 07:00 PM</p>
     <br />
     <img style="width: 200px; height: 200px; object=fit: contain;" src="${url}" alt="QR Code" />
  `;
