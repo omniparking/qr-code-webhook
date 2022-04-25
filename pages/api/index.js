@@ -37,6 +37,7 @@ const transporter = nodemailer.createTransport({
 // handler function which handles http requests coming in (webhook calls from shopify)
 export default async function handler(req, res) {
   try {
+    if (req.method === 'POST') {
       // try {
         // to check that webhook call is coming from certified shopify but not needed
       //   const hmac = req.get('X-Shopify-Hmac-Sha256');
@@ -58,11 +59,11 @@ export default async function handler(req, res) {
       // i.e., line_items property has start/end times & req body has order_number/billing_address
       const { body: payload, headers } = req;
       console.log('payload.line_items:', payload && payload.line_items)
-      const { order_number, line_items, created_at, billing_address /*, email: to, */ } = payload;
+      const { order_number, line_items, created_at, billing_address, current_subtotal_price, current_total_tax, current_total_price /*, email: to, */ } = payload;
       const lineItems = line_items && line_items[1] && line_items[1].properties || [];
       const billingItems = line_items && line_items[0];
       const { quantity, price, name } = billingItems;
-      
+
       // const { name } = billing_address;
      
       let start_time, end_time;
@@ -100,7 +101,7 @@ export default async function handler(req, res) {
 
       // generate markup for user address in email
       const billingAddress = formatBillingAddressForHTMLMarkup(billing_address);
-    const htmlMarkupData = { url, createdAt, start_time, end_time, quantity, price, name };
+    const htmlMarkupData = { url, createdAt, start_time, end_time, quantity, price, name, current_subtotal_price, current_total_tax, current_total_price };
     // generate HTML markup for email
     const html = generateHTMLMarkup(htmlMarkupData, billingAddress);
 
@@ -129,7 +130,7 @@ export default async function handler(req, res) {
             try {
               await redis.set(new_webhook_id, new_webhook_id);
               res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
-            } catch (e) {
+            } catch (e) { 
               res.status(201).send({ message: 'Webhook event not logged, email sent successfully.' });
             }
           } else {
@@ -142,6 +143,8 @@ export default async function handler(req, res) {
     } else {
       res.status(201).send({ message: 'Webhook Event failed as it has previously been successfully logged.' }); // send 201 response to Shopify
     }
+  }
+
   } catch (e) {
     console.error('Error from webhook =>:', e);
     res.status(201).send({ message: 'Webhook Event failed.' }); // send 201 response to Shopify
