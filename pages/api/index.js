@@ -60,7 +60,7 @@ async function sendEmail(emailInfo) {
     // console.log('EMAIL TRANSPORTED =>', x);
     // return isSuccessful;
 
-    const results = await transport.sendMail(msg);
+    const results = await transporter.sendMail(msg);
     console.log('results from send email:', results);
     return true;
     // let didEmailSend = false;
