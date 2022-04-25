@@ -72,7 +72,8 @@ export default async function handler(req, res) {
       const lineItems = line_items && line_items[1] && line_items[1].properties || [];
       const billingItems = line_items && line_items[1];
       const { quantity, price, name } = billingItems;
-
+      console.log('billingItems', billItems)
+      console.log('linteItems:', lineItems)
       let start_time, end_time;
 
       // get start and end times of booking
