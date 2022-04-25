@@ -61,7 +61,15 @@ async function sendEmail(emailInfo) {
   try {
     const results = await transporter.sendMail(msg);
     console.log('results from send email:', results);
-    return true;
+    if (results) {
+      if (results.accepted.indexOf(to) > -1) {
+        return true;
+      } else if (results.rejected.length > 0) {
+        return false;
+      } 
+    } else {
+      return false;
+    }
 
     // using send grid;
     // let didEmailSend = false;
