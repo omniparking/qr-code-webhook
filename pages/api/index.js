@@ -8,7 +8,7 @@ const getRawBody = require('raw-body');
 const nodemailer = require('nodemailer');
 const { Redis } = require('@upstash/redis');
 
-const { generateHTMLMarkup, formatBillingAddressForHTMLMarkup, sendEmail, generateQRCode } = require('../helpers/index.js');
+const { generateHTMLMarkup, formatBillingAddressForHTMLMarkup, sendEmail, generateQRCode } = require('../../helpers/index');
 
 // to use sendgrid for emails
 // const sgMail = require('@sendgrid/mail');
