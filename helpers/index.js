@@ -9,6 +9,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
   start = start.toLocaleDateString() + ' ' + start.toLocaleTimeString();
   let end = new Date(end_time);
   end = end.toLocaleDateString() + ' ' + end.toLocaleTimeString();
+  console.log('__dirname', __dirname)
   return `
     <b>Parking Confirmation Details:</b>
     <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
