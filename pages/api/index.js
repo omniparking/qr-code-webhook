@@ -59,7 +59,8 @@ export default async function handler(req, res) {
       
         // Grab needed data from reqeest object
         // i.e., line_items property has start/end times & req body has order_number/billing_address
-        const { body: payload, headers } = req;
+      const { body: payload, headers } = req;
+      console.log('payload:', payload)
         const {
           billing_address, created_at, current_subtotal_price, current_total_price,
           current_total_tax, line_items, order_number, /*, email: to, */
@@ -69,7 +70,7 @@ export default async function handler(req, res) {
         const { quantity, price, name } = billingItems;
         // const { name } = billing_address;
 
-        console.log('payload.line_items:', payload && payload.line_items);
+        // console.log('payload.line_items:', payload && payload.line_items);
 
         let start_time, end_time;
         // get start and end times of booking
