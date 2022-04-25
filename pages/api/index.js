@@ -97,7 +97,7 @@ function generateHTMLMarkup(url, purchaseDate, billingAddressMarkup) {
     <p style="font-weight:bold;">Billing Address:</p>
     ${billingAddressMarkup}
     <br />
-    <img style="width: 90%; height: 90%; object=fit: contain;" src="${url}" alt="QR Code" />
+    <img style="width: 120px; height: 120px; object=fit: contain;" src="${url}" alt="QR Code" />
  `;
 }
 
