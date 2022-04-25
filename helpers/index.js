@@ -1,8 +1,5 @@
 /*jshint esversion: 8 */
 
-const logo = require('../public/omni-parking-logo.png');
-
-
 /*
 * Generates HTML markup for email
 */
@@ -18,18 +15,18 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
     <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
     <p>This email is to confirm your recent order.</p>
     <p>Date ${purchaseDate}</p>
-    <p style="font-weight:bold;">Billing Address:</p>
+    <p style="font-weight: bold; margin: 0px 0px 1px 0px; padding 0px;">Billing Address:</p>
     ${billingAddressMarkup}
     <br />
-    <img style="width: 75px; height: 50px;" src="${logo}" alt="Omni Parking logo" />
     <p style="margin-left: 4px;">1x Facility Charge for $4.99 each</p>
     <p>${quantity}x ${name.toUpperCase()} for $${price} each</p>
-    <p>Drop off: ${start}</p>
-    <p>Pick up: ${end}</p>
+    <p style="margin: 2px 0px 0px 0px; padding: 0px;">Drop off: ${start}</p>
+    <p style="margin: 1px 0px 0px 0px; padding: 0px;">Pick up: ${end}</p>
     <br />
     <img style="width: 200px; height: 200px; object=fit: contain;" src="${url}" alt="QR Code" />
  `;
 }
+//     <img style="width: 75px; height: 50px;" src="" alt="Omni Parking logo" />
 
 
 /*
