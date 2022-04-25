@@ -65,9 +65,12 @@ export default async function handler(req, res) {
       // i.e., line_items property has start/end times & req body has order_number/billing_address,
       // and billing info such as price and address
       const { body: payload, headers } = req;
-      const { billing_address, created_at, subtotal_price, total_price, total_tax, line_items, order_number, /*email: to*/ } = payload;
+      const {
+        billing_address, created_at, subtotal_price, total_price,
+        total_tax, line_items, order_number, current_subtotal_price, current_total_price, current_total_tax /*email: to*/
+      } = payload;
       const lineItems = line_items && line_items[1] && line_items[1].properties || [];
-      const billingItems = line_items && line_items[0];
+      const billingItems = line_items && line_items[1];
       const { quantity, price, name } = billingItems;
 
       let start_time, end_time;
@@ -106,8 +109,13 @@ export default async function handler(req, res) {
 
       // Generate markup for user address in email
       const billingAddress = formatBillingAddressForHTMLMarkup(billing_address);
-    
-      const htmlMarkupData = { url, createdAt, start_time, end_time, quantity, price, name, subtotal_price, total_tax, total_price };
+      const subPrice = subtotal_price || current_subtotal_price;
+      const totalTax = total_tax || current_total_tax;
+      const totalPrice = total_price || current_total_price;
+      const htmlMarkupData = {
+        subtotal_price: subPrice, total_tax: totalTax, total_price: totalPrice,
+        url, createdAt, start_time, end_time, quantity, price, name,
+      };
       
       // Generate HTML markup for email
       const html = generateHTMLMarkup(htmlMarkupData, billingAddress);

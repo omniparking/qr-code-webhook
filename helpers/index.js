@@ -1,5 +1,18 @@
 /*jshint esversion: 8 */
 
+import ImageAsBase64 from './imgbase64';
+
+const omniLogo = require('../public/omni-parking-logo.png');
+
+
+/*
+*
+*/
+export function generateIconImageForEmailTemplate() {
+  const base64Img = ImageAsBase64();
+  return `<img style="width: 75px; height: 50px; margin-right: 4px;" src="data:image/png;base-64,${base64Img}" alt="Omni Parking logo" />`;
+} // END generateIconImageForEmailTemplate
+
 
 /*
 * Generates HTML markup for email
@@ -20,18 +33,18 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
     ${billingAddressMarkup}
     <br />
     <p style="margin-left: 4px;">1x Facility Charge for $4.99 each</p>
-    <p>${quantity}x ${name.toUpperCase()} for $${price} each</p>
+    <p>${generateIconImageForEmailTemplate()}<span>${quantity}x ${name.toUpperCase()} for $${price} each</span></p>
     <p style="margin: 2px 0px 0px 0px; padding: 0px;">Drop off: ${start}</p>
     <p style="margin: 1px 0px 0px 0px; padding: 0px;">Pick up: ${end}</p>
     <br />
-    <p style-="margin: 0px; padding: 0px;">Subtotal: $${subtotal_price}</p>
-    <p style-="margin: 0px; padding: 0px;">State Tax: $${total_tax}</p>
-    <p style-="margin: 0px; padding: 0px;">Total: $${total_price}</p>
+    <p style="margin: 0px; padding: 0px;">Subtotal: $${subtotal_price}</p>
+    <p style="margin: 0px; padding: 0px;">State Tax: $${total_tax}</p>
+    <p style="margin: 0px; padding: 0px;">Total: $${total_price}</p>
     <br /><br />
     <img style="width: 200px; height: 200px; object=fit: contain;" src="${url}" alt="QR Code" />
  `;
 } // END generateHTMLMarkup
-//     <img style="width: 75px; height: 50px;" src="" alt="Omni Parking logo" />
+
 
 
 /*
@@ -123,7 +136,7 @@ export async function generateQRCode(QRCode, text) {
 */
 export function generateDateTimeAsString(date, addTime = false) {
   const newDate = new Date(date);
-  if (addTime) {
+  if (!addTime) {
     return newDate.toLocaleDateString();
   } else {
     return`${newDate.toLocaleDateString()} ${newDate.toLocaleTimeString()}`;
