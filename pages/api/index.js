@@ -97,7 +97,7 @@ function generateHTMLMarkup(url, purchaseDate, billingAddressMarkup) {
     <p style="font-weight:bold;">Billing Address:</p>
     ${billingAddressMarkup}
     <br />
-    <img style="width: 90%; height: 90%; object=fit: contain;" src="${url}" alt="QR Code"/>
+    <img style="width: 90%; height: 90%; object=fit: contain;" src="${url}" alt="QR Code" />
  `;
 }
 
@@ -106,14 +106,14 @@ function formatBillingAddressForHTMLMarkup(billing_address) {
   try {
     const { name, address1, address2, city, province, zip, country } = billing_address;
     return `
-      <div>
+      <section>
         <p style="padding: 0px; margin: 0px;>${name}</p>
         <p style="padding: 0px; margin: 0px;>${address1}</p>
         ${address2 ? `<p style="padding: 0px; margin: 0px;>${address2}</p>` : ''}
         <p style="padding: 0px; margin: 0px;>${city}</p>
         <p style="padding: 0px; margin: 0px;>${province} ${zip}</p>
         <p style="padding: 0px; margin: 0px;>${country}</p>
-      </div>
+      </section>
     `;
   } catch (e) {
     console.error('error formating billing address => ', e);
