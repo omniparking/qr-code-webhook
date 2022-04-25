@@ -60,6 +60,9 @@ export default async function handler(req, res) {
       const { body: payload, headers } = req;
       const { order_number, line_items, created_at, billing_address /*, email: to, */ } = payload;
       const lineItems = line_items && line_items[1] && line_items[1].properties || [];
+      const billingItems = line_items && line_items[0];
+      const { quantity, price, name } = billingItems;
+      
       // const { name } = billing_address;
      
       let start_time, end_time;
@@ -97,9 +100,9 @@ export default async function handler(req, res) {
 
       // generate markup for user address in email
       const billingAddress = formatBillingAddressForHTMLMarkup(billing_address);
-
+    const htmlMarkupData = { url, createdAt, start_time, end_time, quantity, price, name };
     // generate HTML markup for email
-    const html = generateHTMLMarkup(url, createdAt, billingAddress);
+    const html = generateHTMLMarkup(htmlMarkupData, billingAddress);
 
     // grab unique webhook id
     const new_webhook_id = headers['x-shopify-webhook-id'] || ''; // grab webhook_id from headers

@@ -3,7 +3,12 @@
 /*
 * Generates HTML markup for email
 */
-export function generateHTMLMarkup(url, purchaseDate, billingAddressMarkup) {
+export function generateHTMLMarkup(data, billingAddressMarkup) {
+  const { createdAt: purchaseDate, url, start_time, end_time, quantity, price, name } = data;
+  let start = new Date(start_time);
+  start = start.toLocaleDateString() + start.toLocaleTimeString();
+  let end = new Date(end_time);
+  end = end.toLocaleDateString() + end.toLocaleTimeString();
   return `
     <b>Parking Confirmation Details:</b>
     <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
@@ -12,7 +17,13 @@ export function generateHTMLMarkup(url, purchaseDate, billingAddressMarkup) {
     <p style="font-weight:bold;">Billing Address:</p>
     ${billingAddressMarkup}
     <br />
-    <img style="width: 150px; height: 150px; object=fit: contain;" src="${url}" alt="QR Code" />
+    <p style="margin-left: 4px;">1x Facility Charge for $4.99 each</p>
+    <p>${quantity}x ${name.toUpperCase()} for $${price} each</p>
+    <p>Drop off: ${start}</p>
+    <p>Pick up: ${end}</p>
+    <p>Units: 12/31/69 07:00 PM</p>
+    <br />
+    <img style="width: 200px; height: 200px; object=fit: contain;" src="${url}" alt="QR Code" />
  `;
 }
 
@@ -54,7 +65,6 @@ export async function sendEmail(transporter, emailInfo) {
   };
   try {
     const results = await transporter.sendMail(msg);
-    console.log('results from send email:', results);
     if (results) {
       if (results.accepted.indexOf(to) > -1) {
         return true;
