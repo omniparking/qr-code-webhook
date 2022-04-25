@@ -107,12 +107,12 @@ function formatBillingAddressForHTMLMarkup(billing_address) {
     const { name, address1, address2, city, province, zip, country } = billing_address;
     return `
       <section>
-        <p style="padding: 0px; margin: 0px;>${name}</p>
-        <p style="padding: 0px; margin: 0px;>${address1}</p>
-        ${address2 ? `<p style="padding: 0px; margin: 0px;>${address2}</p>` : ''}
-        <p style="padding: 0px; margin: 0px;>${city}</p>
-        <p style="padding: 0px; margin: 0px;>${province} ${zip}</p>
-        <p style="padding: 0px; margin: 0px;>${country}</p>
+        <p style="padding: 0px; margin: 0px;">${name}</p>
+        <p style="padding: 0px; margin: 0px;">${address1}</p>
+        ${address2 ? `<p style="padding: 0px; margin: 0px;">${address2}</p>` : ''}
+        <p style="padding: 0px; margin: 0px;">${city}</p>
+        <p style="padding: 0px; margin: 0px;">${province} ${zip}</p>
+        <p style="padding: 0px; margin: 0px;">${country}</p>
       </section>
     `;
   } catch (e) {
