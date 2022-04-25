@@ -20,7 +20,8 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
   const start = generateDateTimeAsString(start_time, true);
   const end = generateDateTimeAsString(end_time, true);
-
+// go before quantity span 
+  // ${generateIconImageForEmailTemplate()}
   return `
     <b>Parking Confirmation Details:</b>
     <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
@@ -30,7 +31,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
     ${billingAddressMarkup}
     <br />
     <p style="margin-left: 4px;">1x Facility Charge for $4.99 each</p>
-    <p>${generateIconImageForEmailTemplate()}<span>${quantity}x ${name.toUpperCase()} for $${price} each</span></p>
+    <p><span>${quantity}x ${name.toUpperCase()} for $${price} each</span></p>
     <p style="margin: 2px 0px 0px 0px; padding: 0px;">Drop off: ${start}</p>
     <p style="margin: 1px 0px 0px 0px; padding: 0px;">Pick up: ${end}</p>
     <br />
