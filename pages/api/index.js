@@ -82,8 +82,8 @@ async function sendEmail(emailInfo) {
 
 function generateHTMLMarkup(url, purchase_date, billing_address) {
   return `
-    <b style="font-size:1.5rem;">Parking Confirmation Details:</b>
-    <p style="color:blue;font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
+    <b style="font-weight:bold;">Parking Confirmation Details:</b>
+    <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
     <p>This email is to confirm your recent order.</p>
     <p>Date ${purchase_date}</p>
     <p style="font-weight:bold;">Billing Address:</p>
@@ -99,12 +99,14 @@ function formatBillingAddressForHTMLMarkup(billing_address) {
     console.log('billing_address:', billing_address);
     const { name, address1, address2, city, province, zip, country } = billing_address;
     return `
-      <p>${name}</p>
-      <p>${address1}</p>
-      ${address2 ? `<p>${address2}</p>` : ''}
-      <p>${city}</p>
-      <p>${province} ${zip}</p>
-      <p>${country}</p>
+      <div>
+        <p style="padding: 0px; margin: 0px;>${name}</p>
+        <p style="padding: 0px; margin: 0px;>${address1}</p>
+        ${address2 ? `<p style="padding: 0px; margin: 0px;>${address2}</p>` : ''}
+        <p style="padding: 0px; margin: 0px;>${city}</p>
+        <p style="padding: 0px; margin: 0px;>${province} ${zip}</p>
+        <p style="padding: 0px; margin: 0px;>${country}</p>
+      </div>
     `;
   } catch (e) {
     console.error('error formating billing address => ', e);
@@ -163,12 +165,15 @@ export default async function handler(req, res) {
       // generate barcode with order information
       const url = await generateQRCode(JSON.stringify(qrCodeData));
 
+      // generate date in MM/DD/YYYY format for email
       let createdAt = new Date(created_at);
       createdAt = createdAt.toLocaleDateString();
+
+      // generate markup for user address in email
       const billingAddress = formatBillingAddressForHTMLMarkup(billing_address);
 
     // generate HTML markup for email
-    const html = generateHTMLMarkup(url, created_at, billingAddress);
+    const html = generateHTMLMarkup(url, createdAt, billingAddress);
 
     
     const new_webhook_id = headers['x-shopify-webhook-id'] || ''; // grab webhook_id from headers
