@@ -80,15 +80,15 @@ async function sendEmail(emailInfo) {
 }
 
 
-function generateHTMLMarkup(url, purchase_date, billing_address) {
+function generateHTMLMarkup(url, purchaseDate, billingAddressMarkup) {
   return `
-    <b style="font-weight:bold;">Parking Confirmation Details:</b>
+    <b>Parking Confirmation Details:</b>
     <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
     <p>This email is to confirm your recent order.</p>
-    <p>Date ${purchase_date}</p>
+    <p>Date ${purchaseDate}</p>
     <p style="font-weight:bold;">Billing Address:</p>
-    ${billing_address}
-    <br />< br />
+    ${billingAddressMarkup}
+    <br />
     <img style="width: 90%; height: 90%; object=fit: contain;" src="${url}" alt="QR Code"/>
  `;
 }
@@ -96,7 +96,6 @@ function generateHTMLMarkup(url, purchase_date, billing_address) {
 
 function formatBillingAddressForHTMLMarkup(billing_address) {
   try {
-    console.log('billing_address:', billing_address);
     const { name, address1, address2, city, province, zip, country } = billing_address;
     return `
       <div>
@@ -137,29 +136,27 @@ export default async function handler(req, res) {
       // }
       
       // Grab needed data from reqeest object
+      // i.e., line_items property has start/end times & req body has order_number/billing_address
       const { body: payload, headers } = req;
-      const { order_number, line_items, created_at, billing_address /*, email: to, customer, */ } = payload;
-      // const { first_name, last_name } = customer;
-      const lineItems = line_items && line_items[1] && line_items[1].properties || []; // start and end times should be here
-
+      const { order_number, line_items, created_at, billing_address /*, email: to, */ } = payload;
+      const lineItems = line_items && line_items[1] && line_items[1].properties || [];
+      // const { name } = billing_address;
+     
       let start_time, end_time;
+      // get start and end times of booking
       if (lineItems && lineItems.length) {
-        // get start time of booking
-        start_time = lineItems.filter(item => {
-          if (item.name === 'booking-start') { return item.value; }
-        });
-              
-        // get end time of booking
-        end_time = lineItems.filter(item => {
-          if (item.name === 'booking-end') { return item.value; }
+        lineItems.forEach(item => {
+          if (item.name === 'booking-start') { start_time = item.value; }
+          if (item.name === 'booking-end') { end_time = item.value; }
         });
       }
 
       // set headers
-      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Content-Type', 'text/html'); // set content-type as text/html
       // describes lifetime of our resource telling CDN to serve from cache and update in background (at most once per second)
       res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
       
+      // data required in qr code
       const qrCodeData = { order_number, start_time, end_time };
       
       // generate barcode with order information
@@ -175,7 +172,6 @@ export default async function handler(req, res) {
     // generate HTML markup for email
     const html = generateHTMLMarkup(url, createdAt, billingAddress);
 
-    
     const new_webhook_id = headers['x-shopify-webhook-id'] || ''; // grab webhook_id from headers
     console.log('new_webhook_id:', new_webhook_id);
     console.log('headers:', headers);
@@ -185,6 +181,7 @@ export default async function handler(req, res) {
     if (!start_time && !end_time) {
       // res.status(201).send({ message: 'Webhook event failed. No start/end times available. '});
       // return;
+      /* FOR TESTING ONLY */
       start_time = '2022-04-24T20:24:36-04:00';
       end_time = '2022-04-25T06:24:36-04:00';
     }
@@ -201,12 +198,8 @@ export default async function handler(req, res) {
 
     // If webhook_id does not already exist in db
     if (!getPrevWebhook) {
-      // const d = new Date();
-      // const date = d.toLocaleDateString();
-      // const time = d.toLocaleTimeString();
-      // const dateTime = `${date} ${time}`;
       const userEmailSuccessful = await sendEmail(emailData);
-      console.log('userEmailSuccessful:', userEmailSuccessful)
+      console.log('userEmailSuccessful:', userEmailSuccessful);
       if (userEmailSuccessful) {
         await redis.set(new_webhook_id, new_webhook_id);
         res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
