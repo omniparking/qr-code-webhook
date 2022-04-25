@@ -17,7 +17,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
     <p style="font-weight:bold;">Billing Address:</p>
     ${billingAddressMarkup}
     <br />
-    <img style="width: 50px; height: 25px;" src="public/omni-parking-logo.png" />
+    <img style="width: 75px; height: 50px;" src="/omni-parking-logo.png" />
     <p style="margin-left: 4px;">1x Facility Charge for $4.99 each</p>
     <p>${quantity}x ${name.toUpperCase()} for $${price} each</p>
     <p>Drop off: ${start}</p>
