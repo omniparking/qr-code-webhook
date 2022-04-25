@@ -57,31 +57,27 @@ export default async function handler(req, res) {
         // }
 
       
-        // Grab needed data from reqeest object
-        // i.e., line_items property has start/end times & req body has order_number/billing_address
+      // Grab needed data from reqeest object
+      // i.e., line_items property has start/end times & req body has order_number/billing_address
       const { body: payload, headers } = req;
-      console.log('payload:', payload)
-        const {
-          billing_address, created_at, current_subtotal_price, current_total_price,
-          current_total_tax, line_items, order_number, /*, email: to, */
-        } = payload;
-        const lineItems = line_items && line_items[1] && line_items[1].properties || [];
-        const billingItems = line_items && line_items[0];
-        const { quantity, price, name } = billingItems;
-        // const { name } = billing_address;
+      const { billing_address, created_at, subtotal_price, total_price, total_tax, line_items, order_number, /*email: to*/ } = payload;
+      const lineItems = line_items && line_items[1] && line_items[1].properties || [];
+      const billingItems = line_items && line_items[0];
+      const { quantity, price, name } = billingItems;
+      // const { name } = billing_address;
 
-        // console.log('payload.line_items:', payload && payload.line_items);
+      let start_time, end_time;
 
-        let start_time, end_time;
-        // get start and end times of booking
-        if (lineItems && lineItems.length > 0) {
-          lineItems.forEach(({ name, value }) => {
-            if (name === 'booking-start') { start_time = value; }
-            if (name === 'booking-end') { end_time = value; }
-          });
-        }
+      // get start and end times of booking
+      if (lineItems && lineItems.length > 0) {
+        lineItems.forEach(({ name, value }) => {
+          if (name === 'booking-start') { start_time = value; }
+          if (name === 'booking-end') { end_time = value; }
+        });
+      }
 
       // if no start or end times from booking, event failed
+      // FOR TESTING ONLY -  adding in fake start_time and end_time
       if (!start_time || !end_time) {
         // res.status(201).send({ message: 'Webhook event failed. No start/end times available. '});
         // return;
@@ -107,7 +103,7 @@ export default async function handler(req, res) {
       // generate markup for user address in email
       const billingAddress = formatBillingAddressForHTMLMarkup(billing_address);
     
-      const htmlMarkupData = { url, createdAt, start_time, end_time, quantity, price, name, current_subtotal_price, current_total_tax, current_total_price };
+      const htmlMarkupData = { url, createdAt, start_time, end_time, quantity, price, name, subtotal_price, total_tax, total_price };
       
       // generate HTML markup for email
       const html = generateHTMLMarkup(htmlMarkupData, billingAddress);
@@ -136,7 +132,8 @@ export default async function handler(req, res) {
         } else {
           // if the email is not successful. try sending it again
           try {
-            const userEmailSuccessful = await sendEmail(transporter, emailData); // resending email
+            // resending email
+            const userEmailSuccessful = await sendEmail(transporter, emailData);
 
             // if resent email is siccessful
             if (userEmailSuccessful) {

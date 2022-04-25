@@ -5,7 +5,7 @@
 * Generates HTML markup for email
 */
 export function generateHTMLMarkup(data, billingAddressMarkup) {
-  const { createdAt: purchaseDate, url, start_time, end_time, quantity, price, name, current_subtotal_price, current_total_tax, current_total_price } = data;
+  const { createdAt: purchaseDate, url, start_time, end_time, quantity, price, name, subtotal_price, total_tax, total_price } = data;
   let start = new Date(start_time);
   start = start.toLocaleDateString() + ' ' + start.toLocaleTimeString();
   let end = new Date(end_time);
@@ -24,9 +24,9 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
     <p style="margin: 2px 0px 0px 0px; padding: 0px;">Drop off: ${start}</p>
     <p style="margin: 1px 0px 0px 0px; padding: 0px;">Pick up: ${end}</p>
     <br />
-    <p style-="margin: 0px; padding: 0px;">Subtotal: $${current_subtotal_price}</p>
-    <p style-="margin: 0px; padding: 0px;">State Tax: $${current_total_tax}</p>
-    <p style-="margin: 0px; padding: 0px;">Total: $${current_total_price}</p>
+    <p style-="margin: 0px; padding: 0px;">Subtotal: $${subtotal_price}</p>
+    <p style-="margin: 0px; padding: 0px;">State Tax: $${total_tax}</p>
+    <p style-="margin: 0px; padding: 0px;">Total: $${total_price}</p>
     <br /><br />
     <img style="width: 200px; height: 200px; object=fit: contain;" src="${url}" alt="QR Code" />
  `;
