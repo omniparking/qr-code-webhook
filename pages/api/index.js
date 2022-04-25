@@ -69,16 +69,17 @@ export default async function handler(req, res) {
         billing_address, created_at, subtotal_price, total_price,
         total_tax, line_items, order_number, current_subtotal_price, current_total_price, current_total_tax /*email: to*/
       } = payload;
-      const lineItems = line_items && line_items[1] && line_items[1].properties || [];
+      const bookingTimes = line_items && line_items[1] && line_items[1].properties || [];
       const billingItems = line_items && line_items[1];
       const { quantity, price, name } = billingItems;
-      console.log('billingItems', billingItems)
-      console.log('lineItems:', lineItems)
+      // console.log('billingItems', billingItems)
+      console.log('line_items[0]:', line_items[0])
+      console.log('bookingTimes:', bookingTimes)
       let start_time, end_time;
 
       // get start and end times of booking
-      if (lineItems && lineItems.length > 0) {
-        lineItems.forEach(({ name, value }) => {
+      if (bookingTimes && bookingTimes.length > 0) {
+        bookingTimes.forEach(({ name, value }) => {
           if (name === 'booking-start') { start_time = value; }
           if (name === 'booking-finish') { end_time = value; }
         });

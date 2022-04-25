@@ -1,16 +1,13 @@
 /*jshint esversion: 8 */
 
-import ImageAsBase64 from './imgbase64';
-
-const omniLogo = require('../public/omni-parking-logo.png');
 
 
 /*
 *
 */
 export function generateIconImageForEmailTemplate() {
-  const base64Img = ImageAsBase64();
-  return `<img style="width: 75px; height: 50px; margin-right: 4px;" src="data:image/png;base-64,${base64Img}" alt="Omni Parking logo" />`;
+  return '';
+  // return `<img style="width: 75px; height: 50px; margin-right: 4px;" src="" alt="Omni Parking logo" />`;
 } // END generateIconImageForEmailTemplate
 
 
