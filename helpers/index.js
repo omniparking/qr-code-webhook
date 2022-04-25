@@ -1,5 +1,6 @@
 /*jshint esversion: 8 */
 
+
 /*
 * Generates HTML markup for email
 */
@@ -29,7 +30,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
     <br /><br />
     <img style="width: 200px; height: 200px; object=fit: contain;" src="${url}" alt="QR Code" />
  `;
-}
+} // END generateHTMLMarkup
 //     <img style="width: 75px; height: 50px;" src="" alt="Omni Parking logo" />
 
 
@@ -53,29 +54,34 @@ export function formatBillingAddressForHTMLMarkup(billing_address) {
     console.error('error formating billing address => ', e);
     return '';
   }
-}
+} // END formatBillingAddressForHTMLMarkup
 
 
 /*
-* returns true if email was sent and false if not
+* Sends email to user - returns true if email was sent and false if not
 */
 export async function sendEmail(transporter, emailInfo) {
+  // define variables needed for sending emails
   const { to, from, html, order_number } = emailInfo;
-  const msg = {
-    to,
-    from,
-    html,
-    subject: `Order #${order_number} confirmed`,
-    text: 'Your order has been confirmed for Omni Parking. The QR code is attached',
-  };
+  const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
+  const subject = `Order #${order_number} confirmed`;
+
   try {
-    const results = await transporter.sendMail(msg);
+    // send email (using nodemailer)
+    const results = await transporter.sendMail({ to, from, html, text, subject });
+
+    // Check results from email request -> if receiver is found in the accepted array, then email was sent succesfully
+    // However if the receiver's email is found in the rejected array, then the email was not sent successfully
     if (results) {
-      if (results.accepted.indexOf(to) > -1) {
+      if (results.accepted && results.accepted.indexOf(to) > -1) {
         return true;
-      } else if (results.rejected.length > 0) {
+      } else if (results.rejected && results.rejected.indexOf(to) > -1) {
         return false;
-      } 
+      } else if ((results.rejected && results.rejected.length > 0) || results.accepted && results.accepted.length === 0) {
+        return false;
+      } else if (results.rejected && results.rejected.length === 0) {
+        return true;
+      }
     } else {
       return false;
     }
@@ -94,7 +100,7 @@ export async function sendEmail(transporter, emailInfo) {
     console.error('error sending email =>', e);
     return false;
   }
-}
+} // END sendEmail
 
 
 /*
@@ -108,4 +114,4 @@ export async function generateQRCode(QRCode, text) {
     console.error('error generating qr code => ', e);
     return '';
   }
-}
+} // END generateQRCode

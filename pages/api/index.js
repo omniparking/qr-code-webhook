@@ -40,49 +40,53 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       // try {
         // to check that webhook call is coming from certified shopify but not needed
-      //   const hmac = req.get('X-Shopify-Hmac-Sha256');
-      //   const rawBody = await getRawBody(req);
-      //   const generated_hash = crypto
-      //     .createHmac('sha256', process.env.SHOPIFY_SECRET)
-      //     .update(rawBody)
-      //     .digest('base64');
+        //   const hmac = req.get('X-Shopify-Hmac-Sha256');
+        //   const rawBody = await getRawBody(req);
+        //   const generated_hash = crypto
+        //     .createHmac('sha256', process.env.SHOPIFY_SECRET)
+        //     .update(rawBody)
+        //     .digest('base64');
 
-      //   if (generated_hash !== hmac) {
-      //     res.status(201).send({ message: 'Webhook verification failed '});
-      //     return;
-      //   }
-      // } catch (e) {
-      //   res.status(201).send({ message: 'Webhook verification failed '});
-      //   return;
-      // }
-      // Grab needed data from reqeest object
-      // i.e., line_items property has start/end times & req body has order_number/billing_address
-      const { body: payload, headers } = req;
-      console.log('payload.line_items:', payload && payload.line_items)
-      const { order_number, line_items, created_at, billing_address, current_subtotal_price, current_total_tax, current_total_price /*, email: to, */ } = payload;
-      const lineItems = line_items && line_items[1] && line_items[1].properties || [];
-      const billingItems = line_items && line_items[0];
-      const { quantity, price, name } = billingItems;
+        //   if (generated_hash !== hmac) {
+          //     res.status(201).send({ message: 'Webhook verification failed '});
+          //     return;
+        //   }
+        // } catch (e) {
+        //   res.status(201).send({ message: 'Webhook verification failed '});
+        //   return;
+        // }
 
-      // const { name } = billing_address;
-     
-      let start_time, end_time;
-      // get start and end times of booking
-      if (lineItems && lineItems.length > 0) {
-        lineItems.forEach(({ name, value }) => {
-          if (name === 'booking-start') { start_time = value; }
-          if (name === 'booking-end') { end_time = value; }
-        });
+      
+        // Grab needed data from reqeest object
+        // i.e., line_items property has start/end times & req body has order_number/billing_address
+        const { body: payload, headers } = req;
+        const {
+          billing_address, created_at, current_subtotal_price, current_total_price,
+          current_total_tax, line_items, order_number, /*, email: to, */
+        } = payload;
+        const lineItems = line_items && line_items[1] && line_items[1].properties || [];
+        const billingItems = line_items && line_items[0];
+        const { quantity, price, name } = billingItems;
+        // const { name } = billing_address;
+
+        console.log('payload.line_items:', payload && payload.line_items);
+
+        let start_time, end_time;
+        // get start and end times of booking
+        if (lineItems && lineItems.length > 0) {
+          lineItems.forEach(({ name, value }) => {
+            if (name === 'booking-start') { start_time = value; }
+            if (name === 'booking-end') { end_time = value; }
+          });
+        }
+
+      // if no start or end times from booking, event failed
+      if (!start_time || !end_time) {
+        // res.status(201).send({ message: 'Webhook event failed. No start/end times available. '});
+        // return;
+        if (!start_time) { start_time = '2022-04-24T20:24:36-04:00'; }  /* FOR TESTING ONLY */
+        if (!end_time) { end_time = '2022-04-25T06:24:36-04:00'; }  /* FOR TESTING ONLY */
       }
-
-    // if no start or end times from booking, event failed
-    if (!start_time || !end_time) {
-      // res.status(201).send({ message: 'Webhook event failed. No start/end times available. '});
-      // return;
-      /* FOR TESTING ONLY */
-      if (!start_time) { start_time = '2022-04-24T20:24:36-04:00'; }
-      if (!end_time) { end_time = '2022-04-25T06:24:36-04:00'; }
-    }
 
       // set headers
       res.setHeader('Content-Type', 'text/html'); // set content-type as text/html
@@ -101,52 +105,72 @@ export default async function handler(req, res) {
 
       // generate markup for user address in email
       const billingAddress = formatBillingAddressForHTMLMarkup(billing_address);
-    const htmlMarkupData = { url, createdAt, start_time, end_time, quantity, price, name, current_subtotal_price, current_total_tax, current_total_price };
-    // generate HTML markup for email
-    const html = generateHTMLMarkup(htmlMarkupData, billingAddress);
+    
+      const htmlMarkupData = { url, createdAt, start_time, end_time, quantity, price, name, current_subtotal_price, current_total_tax, current_total_price };
+      
+      // generate HTML markup for email
+      const html = generateHTMLMarkup(htmlMarkupData, billingAddress);
 
-    // grab unique webhook id
-    const new_webhook_id = headers['x-shopify-webhook-id'] || ''; // grab webhook_id from headers
+      // grab unique webhook id
+      const new_webhook_id = headers['x-shopify-webhook-id'] || ''; // grab webhook_id from headers
 
-    // method to add webhook id to redis
-    const getPrevWebhook = await redis.get(new_webhook_id);
+      // method to add webhook id to redis
+      const getPrevWebhook = await redis.get(new_webhook_id);
 
-    // variables for sending email
-    const to = 'alon.bibring@gmail.com';
-    const from = 'omniparkingwebhook@gmail.com'; // sender
+      // variables for sending email
+      const to = 'alon.bibring@gmail.com'; // email recipient
+      const from = 'omniparkingwebhook@gmail.com'; // email sender
     // const cc = ['alon.bibring@gmail.com']; // cc emails
-    const emailData = { to, from, html, order_number };
+      
+      const emailData = { to, from, html, order_number };
+    
+      // If webhook_id does not already exist in db
+      if (!getPrevWebhook) {
+        const userEmailSuccessful = await sendEmail(transporter, emailData); // send email
 
-    // If webhook_id does not already exist in db
-    if (!getPrevWebhook) {
-      const userEmailSuccessful = await sendEmail(transporter, emailData);
-      if (userEmailSuccessful) {
-        await redis.set(new_webhook_id, new_webhook_id);
-        res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
-      } else {
-        try {
-          const userEmailSuccessful = await sendEmail(transporter, emailData);
-          if (userEmailSuccessful) {
-            try {
-              await redis.set(new_webhook_id, new_webhook_id);
-              res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
-            } catch (e) { 
-              res.status(201).send({ message: 'Webhook event not logged, email sent successfully.' });
+        // if email is successful, add webhook to redis and send success response
+        if (userEmailSuccessful) {
+          await redis.set(new_webhook_id, new_webhook_id);
+          res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
+        } else {
+          // if the email is not successful. try sending it again
+          try {
+            const userEmailSuccessful = await sendEmail(transporter, emailData); // resending email
+
+            // if resent email is siccessful
+            if (userEmailSuccessful) {
+              try {
+                // add webbok_id to redis and send successful response
+                await redis.set(new_webhook_id, new_webhook_id);
+                res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
+              } catch (e) { 
+                // adding webhook to redis failed, so send response indicating email sent successfully
+                //  but webhook id not stored in redis 
+                res.status(201).send({ message: 'Webhook event not logged but email sent successfully.' });
+              }
+            } else {
+              // if retry email is not successful, send response message indicating webhook event logged but email not sent
+              res.status(201).send({ message: 'Webhook Event logged but email not sent. '});
             }
-          } else {
-            res.status(201).send({ message: 'Webhook Event logged but email failed. '});
+          } catch (e) {
+            // sending email or adding data to redis db threw an error somewhere
+            // send response message indicating webhook event logged but no email sent
+            res.status(201).send({ message: 'Webhook Event logged but email not sent. '});
           }
-        } catch (e) {
-          res.status(201).send({ message: 'Webhook Event logged but email failed. '});
         }
+      } else {
+        // case wheree webhook_id is already stored, meaning an email has already been sent
+        // send response message indicating that webhook failed bc it was already successfully handled
+        res.status(201).send({ message: 'Webhook Event failed as it has previously been successfully logged.' }); // send 201 response to Shopify
       }
     } else {
-      res.status(201).send({ message: 'Webhook Event failed as it has previously been successfully logged.' }); // send 201 response to Shopify
+      // case where request method is not of type "POST"
+      res.status(201).send({ message: 'Webhook Event failed as request method is not of type "POST".' }); // send 201 response to Shopify
     }
-  }
-
   } catch (e) {
+    // case where something failed in the code above
+    // send a response message indicating webhook failed
     console.error('Error from webhook =>:', e);
-    res.status(201).send({ message: 'Webhook Event failed.' }); // send 201 response to Shopify
+    res.status(201).send({ message: 'Webhook Event failed. Error from main try/catch.' }); // send 201 response to Shopify
   }
 }
