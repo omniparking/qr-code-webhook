@@ -7,9 +7,9 @@ const crypto = require('crypto');
 const getRawBody = require('raw-body');
 const nodemailer = require('nodemailer');
 const { Redis } = require('@upstash/redis');
-const sgMail = require('@sendgrid/mail');
+// const sgMail = require('@sendgrid/mail');
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+// sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL,
@@ -49,16 +49,20 @@ async function sendEmail(emailInfo) {
     text: 'Your order has been confirmed for Omni Parking. The QR code is attached',
   };
   try {
-    let isSuccessful = false;
-    const x = transporter.sendMail(msg).then(data => {
-      console.log('data sending email is:', data);
-      isSuccessful = true;
-    }).catch(e => {
-      console.error('error sending email is:', e);
-      isSuccessful = false;
-    });
-    console.log('EMAIL TRANSPORTED =>', x);
-    return isSuccessful;
+    // let isSuccessful = false;
+    // const x = transporter.sendMail(msg).then(data => {
+    //   console.log('data sending email is:', data);
+    //   isSuccessful = true;
+    // }).catch(e => {
+    //   console.error('error sending email is:', e);
+    //   isSuccessful = false;
+    // });
+    // console.log('EMAIL TRANSPORTED =>', x);
+    // return isSuccessful;
+
+    const results = await transport.sendMail(msg);
+    console.log('results from send email:', results);
+    return true;
     // let didEmailSend = false;
     // const results = sgMail.send(msg)
     // .then(response => {
@@ -161,18 +165,18 @@ export default async function handler(req, res) {
 
     // If webhook_id does not already exist in db
     if (!getPrevWebhook) {
-      const d = new Date();
-      const date = d.toLocaleDateString();
-      const time = d.toLocaleTimeString();
-      const dateTime = `${date} ${time}`;
-      const userEmailSuccessful = sendEmail(emailData);
+      // const d = new Date();
+      // const date = d.toLocaleDateString();
+      // const time = d.toLocaleTimeString();
+      // const dateTime = `${date} ${time}`;
+      const userEmailSuccessful = await sendEmail(emailData);
       console.log('userEmailSuccessful:', userEmailSuccessful)
       if (userEmailSuccessful) {
         await redis.set(new_webhook_id, new_webhook_id);
         res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
       } else {
         try {
-          const userEmailSuccessful = sendEmail(emailData);
+          const userEmailSuccessful = await sendEmail(emailData);
           if (userEmailSuccessful) {
             try {
               await redis.set(new_webhook_id, new_webhook_id);
