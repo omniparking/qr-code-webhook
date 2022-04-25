@@ -152,19 +152,19 @@ export default async function handler(req, res) {
      
       let start_time, end_time;
       // get start and end times of booking
-      if (lineItems && lineItems.length) {
-        lineItems.forEach(item => {
-          if (item.name === 'booking-start') { start_time = item.value; }
-          if (item.name === 'booking-end') { end_time = item.value; }
+      if (lineItems && lineItems.length > 0) {
+        lineItems.forEach(({ name, value }) => {
+          if (name === 'booking-start') { start_time = value; }
+          if (name === 'booking-end') { end_time = value; }
         });
       }
 
-          // if no start or end times from booking, event failed
+    // if no start or end times from booking, event failed
     if (!start_time || !end_time) {
       // res.status(201).send({ message: 'Webhook event failed. No start/end times available. '});
       // return;
       /* FOR TESTING ONLY */
-      if (!start_item) { start_time = '2022-04-24T20:24:36-04:00'; }
+      if (!start_time) { start_time = '2022-04-24T20:24:36-04:00'; }
       if (!end_time) { end_time = '2022-04-25T06:24:36-04:00'; }
     }
 
