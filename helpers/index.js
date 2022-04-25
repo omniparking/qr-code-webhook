@@ -11,7 +11,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
   end = end.toLocaleDateString() + ' ' + end.toLocaleTimeString();
 
   const p = path.resolve(__dirname);
-  console.log('path is:', path)
+  console.log('path is:', p.resolve("public", "omni-parking-logo.png"))
   return `
     <b>Parking Confirmation Details:</b>
     <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
