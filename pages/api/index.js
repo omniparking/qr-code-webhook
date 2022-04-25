@@ -159,6 +159,15 @@ export default async function handler(req, res) {
         });
       }
 
+          // if no start or end times from booking, event failed
+    if (!start_time || !end_time) {
+      // res.status(201).send({ message: 'Webhook event failed. No start/end times available. '});
+      // return;
+      /* FOR TESTING ONLY */
+      if (!start_item) { start_time = '2022-04-24T20:24:36-04:00'; }
+      if (!end_time) { end_time = '2022-04-25T06:24:36-04:00'; }
+    }
+
       // set headers
       res.setHeader('Content-Type', 'text/html'); // set content-type as text/html
       // describes lifetime of our resource telling CDN to serve from cache and update in background (at most once per second)
@@ -185,14 +194,7 @@ export default async function handler(req, res) {
     console.log('headers:', headers);
     console.log('created_at:', created_at);
 
-    // if no start or end times from booking, event failed
-    if (!start_time && !end_time) {
-      // res.status(201).send({ message: 'Webhook event failed. No start/end times available. '});
-      // return;
-      /* FOR TESTING ONLY */
-      start_time = '2022-04-24T20:24:36-04:00';
-      end_time = '2022-04-25T06:24:36-04:00';
-    }
+
 
     // method to add webhook id to redis
     const getPrevWebhook = await redis.get(new_webhook_id);
