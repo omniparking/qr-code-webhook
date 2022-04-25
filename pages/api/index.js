@@ -1,40 +1,44 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-
 /*jshint esversion: 8 */
 
 const QRCode = require('qrcode');
-const crypto = require('crypto');
-const getRawBody = require('raw-body');
 const nodemailer = require('nodemailer');
 const { Redis } = require('@upstash/redis');
+// const crypto = require('crypto');
+// const getRawBody = require('raw-body');
 
-const { generateHTMLMarkup, formatBillingAddressForHTMLMarkup, sendEmail, generateQRCode } = require('../../helpers/index');
+const {
+  generateHTMLMarkup, formatBillingAddressForHTMLMarkup,
+  sendEmail, generateQRCode, generateDateTimeAsString
+} = require('../../helpers/index');
+
+const {
+  UPSTASH_REDIS_REST_URL: url, UPSTASH_REDIS_REST_TOKEN: token,
+  GMAIL_USER: user, GMAIL_PASSWORD: pass, SHOPIFY_SECRET, SENDGRID_API_KEY
+} = process.env;
 
 // to use sendgrid for emails
 // const sgMail = require('@sendgrid/mail');
 // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
+/*
+* Initialize redis (to store webhook ids)
+*/
+const redis = new Redis({ url, token });
 
-// initialize redis (to store webhook ids)
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN
-});
-
-
-// initialize nodemailer (to send emails)
+/*
+* Initialize nodemailer (to send emails)
+*/
 const transporter = nodemailer.createTransport({
   port: 465,
   host: 'smtp.gmail.com',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASSWORD
-  },
+  auth: { user, pass },
   secure: true
 });
 
-
-// handler function which handles http requests coming in (webhook calls from shopify)
+/*
+* Handler function which handles http requests coming in (webhook calls from shopify)
+*/
 export default async function handler(req, res) {
   try {
     if (req.method === 'POST') {
@@ -58,13 +62,13 @@ export default async function handler(req, res) {
 
       
       // Grab needed data from reqeest object
-      // i.e., line_items property has start/end times & req body has order_number/billing_address
+      // i.e., line_items property has start/end times & req body has order_number/billing_address,
+      // and billing info such as price and address
       const { body: payload, headers } = req;
       const { billing_address, created_at, subtotal_price, total_price, total_tax, line_items, order_number, /*email: to*/ } = payload;
       const lineItems = line_items && line_items[1] && line_items[1].properties || [];
       const billingItems = line_items && line_items[0];
       const { quantity, price, name } = billingItems;
-      // const { name } = billing_address;
 
       let start_time, end_time;
 
@@ -76,7 +80,7 @@ export default async function handler(req, res) {
         });
       }
 
-      // if no start or end times from booking, event failed
+      // If no start or end times from booking, event failed
       // FOR TESTING ONLY -  adding in fake start_time and end_time
       if (!start_time || !end_time) {
         // res.status(201).send({ message: 'Webhook event failed. No start/end times available. '});
@@ -85,36 +89,36 @@ export default async function handler(req, res) {
         if (!end_time) { end_time = '2022-04-25T06:24:36-04:00'; }  /* FOR TESTING ONLY */
       }
 
-      // set headers
-      res.setHeader('Content-Type', 'text/html'); // set content-type as text/html
-      // describes lifetime of our resource telling CDN to serve from cache and update in background (at most once per second)
+      // Set Headers
+      // Set Content-Type as text/html
+      res.setHeader('Content-Type', 'text/html');
+      // Describes lifetime of our resource telling CDN to serve from cache and update in background (at most once per second)
       res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
       
-      // data required in qr code
+      // Data required in qr code
       const qrCodeData = { order_number, start_time, end_time };
       
-      // generate barcode with order information
+      // Generate barcode with order information
       const url = await generateQRCode(QRCode, JSON.stringify(qrCodeData));
 
-      // generate date in MM/DD/YYYY format for email
-      let createdAt = new Date(created_at);
-      createdAt = createdAt.toLocaleDateString();
+      // Generate date in MM/DD/YYYY format for email
+      const createdAt = generateDateTimeAsString(created_at);
 
-      // generate markup for user address in email
+      // Generate markup for user address in email
       const billingAddress = formatBillingAddressForHTMLMarkup(billing_address);
     
       const htmlMarkupData = { url, createdAt, start_time, end_time, quantity, price, name, subtotal_price, total_tax, total_price };
       
-      // generate HTML markup for email
+      // Generate HTML markup for email
       const html = generateHTMLMarkup(htmlMarkupData, billingAddress);
 
-      // grab unique webhook id
+      // Grab unique webhook id
       const new_webhook_id = headers['x-shopify-webhook-id'] || ''; // grab webhook_id from headers
 
-      // method to add webhook id to redis
+      // Method to add webhook id to redis
       const getPrevWebhook = await redis.get(new_webhook_id);
 
-      // variables for sending email
+      // Variables for sending email
       const to = 'alon.bibring@gmail.com'; // email recipient
       const from = 'omniparkingwebhook@gmail.com'; // email sender
     // const cc = ['alon.bibring@gmail.com']; // cc emails
@@ -125,50 +129,50 @@ export default async function handler(req, res) {
       if (!getPrevWebhook) {
         const userEmailSuccessful = await sendEmail(transporter, emailData); // send email
 
-        // if email is successful, add webhook to redis and send success response
+        // If email is successful, add webhook to redis and send success response
         if (userEmailSuccessful) {
           await redis.set(new_webhook_id, new_webhook_id);
-          res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
+          res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged.' });
         } else {
-          // if the email is not successful. try sending it again
+          // If the email is not successful, try sending it again
           try {
-            // resending email
+            // Resending email
             const userEmailSuccessful = await sendEmail(transporter, emailData);
 
-            // if resent email is siccessful
+            // If resent email is successful
             if (userEmailSuccessful) {
               try {
-                // add webbok_id to redis and send successful response
+                // Add webbok_id to redis and send successful response
                 await redis.set(new_webhook_id, new_webhook_id);
                 res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
               } catch (e) { 
-                // adding webhook to redis failed, so send response indicating email sent successfully
-                //  but webhook id not stored in redis 
+                // Adding webhook to redis failed, so send response indicating email sent successfully
+                // but webhook id not stored in redis 
                 res.status(201).send({ message: 'Webhook event not logged but email sent successfully.' });
               }
             } else {
-              // if retry email is not successful, send response message indicating webhook event logged but email not sent
+              // If retry email is not successful, send response message indicating webhook event logged but email not sent
               res.status(201).send({ message: 'Webhook Event logged but email not sent. '});
             }
           } catch (e) {
-            // sending email or adding data to redis db threw an error somewhere
+            // Sending email or adding data to redis db threw an error somewhere
             // send response message indicating webhook event logged but no email sent
             res.status(201).send({ message: 'Webhook Event logged but email not sent. '});
           }
         }
       } else {
-        // case wheree webhook_id is already stored, meaning an email has already been sent
+        // Case wheree webhook_id is already stored, meaning an email has already been sent
         // send response message indicating that webhook failed bc it was already successfully handled
-        res.status(201).send({ message: 'Webhook Event failed as it has previously been successfully logged.' }); // send 201 response to Shopify
+        res.status(201).send({ message: 'Webhook Event failed as it has previously been successfully logged.' });
       }
     } else {
-      // case where request method is not of type "POST"
-      res.status(201).send({ message: 'Webhook Event failed as request method is not of type "POST".' }); // send 201 response to Shopify
+      // Case where request method is not of type "POST"
+      res.status(201).send({ message: 'Webhook Event failed as request method is not of type "POST".' });
     }
   } catch (e) {
-    // case where something failed in the code above
+    // Case where something failed in the code above
     // send a response message indicating webhook failed
     console.error('Error from webhook =>:', e);
-    res.status(201).send({ message: 'Webhook Event failed. Error from main try/catch.' }); // send 201 response to Shopify
+    res.status(201).send({ message: 'Webhook Event failed. Error from main try/catch.' });
   }
 }

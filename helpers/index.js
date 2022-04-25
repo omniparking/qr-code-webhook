@@ -6,10 +6,10 @@
 */
 export function generateHTMLMarkup(data, billingAddressMarkup) {
   const { createdAt: purchaseDate, url, start_time, end_time, quantity, price, name, subtotal_price, total_tax, total_price } = data;
-  let start = new Date(start_time);
-  start = start.toLocaleDateString() + ' ' + start.toLocaleTimeString();
-  let end = new Date(end_time);
-  end = end.toLocaleDateString() + ' ' + end.toLocaleTimeString();
+
+  // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
+  const start = generateDateTimeAsString(start_time, true);
+  const end = generateDateTimeAsString(end_time, true);
 
   return `
     <b>Parking Confirmation Details:</b>
@@ -61,13 +61,13 @@ export function formatBillingAddressForHTMLMarkup(billing_address) {
 * Sends email to user - returns true if email was sent and false if not
 */
 export async function sendEmail(transporter, emailInfo) {
-  // define variables needed for sending emails
+  // Define variables needed for sending emails
   const { to, from, html, order_number } = emailInfo;
   const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
   const subject = `Order #${order_number} confirmed`;
 
   try {
-    // send email (using nodemailer)
+    // Send email (using nodemailer)
     const results = await transporter.sendMail({ to, from, html, text, subject });
 
     // Check results from email request -> if receiver is found in the accepted array, then email was sent succesfully
@@ -86,7 +86,7 @@ export async function sendEmail(transporter, emailInfo) {
       return false;
     }
 
-    // using send grid;
+    // Using send grid;
     // let didEmailSend = false;
     // const results = await sgMail.send(msg);
     // if (results[0].statusCode === 202) {
@@ -104,7 +104,7 @@ export async function sendEmail(transporter, emailInfo) {
 
 
 /*
-* generates qr code with order id, start date, and end date
+* Generates qr code with order id, start date, and end date
 */
 export async function generateQRCode(QRCode, text) {
   try {
@@ -115,3 +115,17 @@ export async function generateQRCode(QRCode, text) {
     return '';
   }
 } // END generateQRCode
+
+
+/*
+* Generates date as string in format MM/DD/YYYY
+* If addTime equals true, then time is added in 12:00:00 PM format, else just date is returned
+*/
+export function generateDateTimeAsString(date, addTime = false) {
+  const newDate = new Date(date);
+  if (addTime) {
+    return newDate.toLocaleDateString();
+  } else {
+    return`${newDate.toLocaleDateString()} ${newDate.toLocaleTimeString()}`;
+  }
+} // END generateDateTimeAsString
