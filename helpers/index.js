@@ -1,5 +1,5 @@
 /*jshint esversion: 8 */
-
+const path = require('path');
 /*
 * Generates HTML markup for email
 */
@@ -10,6 +10,8 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
   let end = new Date(end_time);
   end = end.toLocaleDateString() + ' ' + end.toLocaleTimeString();
 
+  const p = path.resolve(__dirname);
+  console.log('path is:', path)
   return `
     <b>Parking Confirmation Details:</b>
     <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
@@ -18,7 +20,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
     <p style="font-weight:bold;">Billing Address:</p>
     ${billingAddressMarkup}
     <br />
-    <img style="width: 75px; height: 50px;" src="/public/omni-parking-logo.png" alt="Omni Parking logo" />
+    <img style="width: 75px; height: 50px;" src="../../public/omni-parking-logo.png" alt="Omni Parking logo" />
     <p style="margin-left: 4px;">1x Facility Charge for $4.99 each</p>
     <p>${quantity}x ${name.toUpperCase()} for $${price} each</p>
     <p>Drop off: ${start}</p>
