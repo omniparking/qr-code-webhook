@@ -72,7 +72,7 @@ export default async function handler(req, res) {
       if (lineItems && lineItems.length > 0) {
         lineItems.forEach(({ name, value }) => {
           if (name === 'booking-start') { start_time = value; }
-          if (name === 'booking-end') { end_time = value; }
+          if (name === 'booking-finish') { end_time = value; }
         });
       }
 
