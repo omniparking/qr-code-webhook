@@ -54,11 +54,10 @@ export default async function handler(req, res) {
       //   res.status(201).send({ message: 'Webhook verification failed '});
       //   return;
       // }
-      console.log('\n\nreq:', req, '\n\n')
-      console.log('\n\nres:', res, '\n\n')
       // Grab needed data from reqeest object
       // i.e., line_items property has start/end times & req body has order_number/billing_address
       const { body: payload, headers } = req;
+      console.log('payload:', payload)
       const { order_number, line_items, created_at, billing_address /*, email: to, */ } = payload;
       const lineItems = line_items && line_items[1] && line_items[1].properties || [];
       const billingItems = line_items && line_items[0];
