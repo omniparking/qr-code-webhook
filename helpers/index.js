@@ -9,7 +9,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
   start = start.toLocaleDateString() + ' ' + start.toLocaleTimeString();
   let end = new Date(end_time);
   end = end.toLocaleDateString() + ' ' + end.toLocaleTimeString();
-  console.log('__dirname', __dirname)
+
   return `
     <b>Parking Confirmation Details:</b>
     <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
@@ -18,7 +18,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
     <p style="font-weight:bold;">Billing Address:</p>
     ${billingAddressMarkup}
     <br />
-    <img style="width: 75px; height: 50px;" src="./omni-parking-logo.png" />
+    <img style="width: 75px; height: 50px;" src="${__dirname}/../public/omni-parking-logo.png" alt="Omni Parking logo" />
     <p style="margin-left: 4px;">1x Facility Charge for $4.99 each</p>
     <p>${quantity}x ${name.toUpperCase()} for $${price} each</p>
     <p>Drop off: ${start}</p>
