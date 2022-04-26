@@ -15,8 +15,8 @@ function generateIconImageForEmailTemplate(imgPath) {
 */
 export function generateHTMLMarkup(data, billingAddressMarkup) {
   const {
-    createdAt: purchaseDate, start_time, end_time, quantity, price, name,
-    subtotal_price, total_tax, total_price, imagePath, title, url // url is src for qr code
+    createdAt: purchaseDate, end_time, imagePath, price, name, quantity,
+    start_time, subtotal_price, total_price, total_tax, title, qrCodeUrl,
   } = data;
 
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
@@ -25,7 +25,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
 
   // To have image directly in email template (instead of attachment)
   // Add to last line of text:
-  // <img height="200" width="200" style="display: block; object=fit: contain;" src="${url}" alt="QR Code" title="QR Code" />
+  // <img height="200" width="200" style="display: block; object=fit: contain;" src="${qrCodeUrl}" alt="QR Code" title="QR Code" />
 
   return `
       <b>Parking Confirmation Details:</b>
@@ -35,8 +35,9 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
       <p style="font-weight: bold; margin: 0px 0px 1px 0px; padding 0px;">Billing Address:</p>
       ${billingAddressMarkup}
       <br />
+      ${generateIconImageForEmailTemplate(imagePath)}
       <p style="margin-left: 4px;">1x Facility Charge for $4.99 each</p>
-      <p>${generateIconImageForEmailTemplate(imagePath)}<span>${quantity}x ${name.toUpperCase()} for $${price} each</span></p>
+      <p style="margin: 1px 0px 0px 0px; padding: 0px;">${quantity}x ${name.toUpperCase()} for $${price} each</p>
       <p style="margin: 2px 0px 0px 0px; padding: 0px;">Drop off: ${start}</p>
       <p style="margin: 1px 0px 0px 0px; padding: 0px;">Pick up: ${end}</p>
       <br />
