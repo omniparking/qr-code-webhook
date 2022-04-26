@@ -122,7 +122,7 @@ export default async function handler(req, res) {
 
       try {
         const awsResponse = await s3.getObject({ Bucket: 'omni-airport-parking', Key: 'omni-airport-parking-logo.png' }).promise();
-        imagePath = Buffer.from(awsResponse.Body, 'binary').toString('base64');
+        imagePath = Buffer.from(awsResponse.Body).toString('base64');
         // console.log('imagePath:', imagePath);
         // console.log('awsResponse:', awsResponse);
       } catch (e) {
