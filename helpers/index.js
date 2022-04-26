@@ -18,31 +18,33 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
     createdAt: purchaseDate, url, start_time, end_time, quantity, price, name,
     subtotal_price, total_tax, total_price, title, imagePath
   } = data;
-  // console.log('imagePath:', imagePath);
+
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
   const start = generateDateTimeAsString(start_time, true);
   const end = generateDateTimeAsString(end_time, true);
-  console.log('url:', url);
-// go before quantity span 
+
+  // To have image directly in email template (instead of attachment)
+  // Add to last line of text:
+  // <br /><br />
+  // <img style="display: block; width: 200px; height: 200px; object=fit: contain;" src="${url}" alt="QR Code" title="QR Code" />
+
   return `
-    <b>Parking Confirmation Details:</b>
-    <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
-    <p>This email is to confirm your recent order.</p>
-    <p>Date ${purchaseDate}</p>
-    <p style="font-weight: bold; margin: 0px 0px 1px 0px; padding 0px;">Billing Address:</p>
-    ${billingAddressMarkup}
-    <br />
-    <p style="margin-left: 4px;">1x Facility Charge for $4.99 each</p>
-    <p>${generateIconImageForEmailTemplate(imagePath)}<span>${quantity}x ${name.toUpperCase()} for $${price} each</span></p>
-    <p style="margin: 2px 0px 0px 0px; padding: 0px;">Drop off: ${start}</p>
-    <p style="margin: 1px 0px 0px 0px; padding: 0px;">Pick up: ${end}</p>
-    <br />
-    <p style="margin: 0px; padding: 0px;">Subtotal: $${subtotal_price}</p>
-    <p style="margin: 0px; padding: 0px;">State Tax: $${total_tax}</p>
-    <p style="margin: 0px; padding: 0px;">Total: $${total_price}</p>
-    <br /><br />
-    <img style="display: block; width: 200px; height: 200px; object=fit: contain;" src="${url}" alt="QR Code" title="QR Code" />
- `;
+      <b>Parking Confirmation Details:</b>
+      <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
+      <p>This email is to confirm your recent order.</p>
+      <p>Date ${purchaseDate}</p>
+      <p style="font-weight: bold; margin: 0px 0px 1px 0px; padding 0px;">Billing Address:</p>
+      ${billingAddressMarkup}
+      <br />
+      <p style="margin-left: 4px;">1x Facility Charge for $4.99 each</p>
+      <p>${generateIconImageForEmailTemplate(imagePath)}<span>${quantity}x ${name.toUpperCase()} for $${price} each</span></p>
+      <p style="margin: 2px 0px 0px 0px; padding: 0px;">Drop off: ${start}</p>
+      <p style="margin: 1px 0px 0px 0px; padding: 0px;">Pick up: ${end}</p>
+      <br />
+      <p style="margin: 0px; padding: 0px;">Subtotal: $${subtotal_price}</p>
+      <p style="margin: 0px; padding: 0px;">State Tax: $${total_tax}</p>
+      <p style="margin: 0px; padding: 0px;">Total: $${total_price}</p>
+    `;
 } // END generateHTMLMarkup
 
 
