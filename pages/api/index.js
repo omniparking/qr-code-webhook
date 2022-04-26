@@ -4,7 +4,7 @@
 const QRCode = require('qrcode');
 const nodemailer = require('nodemailer');
 const { Redis } = require('@upstash/redis');
-const AWS = require('aws-sdk');
+const { AWS } = require('aws-sdk');
 // const crypto = require('crypto');
 // const getRawBody = require('raw-body');
 
