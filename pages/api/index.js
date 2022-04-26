@@ -27,6 +27,8 @@ const params = {
   Bucket: 'omni-airport-parking', Key: 'omni-airport-parking-logo.png'
 };
 
+let imagePath = '';
+
 s3.getObject(params, (err, data) => {
   if (err) {
     console.error('error from aws:', err);
@@ -34,6 +36,7 @@ s3.getObject(params, (err, data) => {
     // console.log('data from aws:', data);
     const base64data = Buffer.from(data.Body, 'binary').toString('base64');
     console.log('IMAGE:', base64data);
+    imagePath = base64data;
   }
 });
 
@@ -133,7 +136,7 @@ export default async function handler(req, res) {
       const totalPrice = total_price || current_total_price;
       const htmlMarkupData = {
         subtotal_price: subPrice, total_tax: totalTax, total_price: totalPrice,
-        url, createdAt, start_time, end_time, quantity, price, name, title,
+        url, createdAt, start_time, end_time, quantity, price, name, title, imagePath
       };
       
       // Generate HTML markup for email

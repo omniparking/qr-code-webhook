@@ -5,9 +5,9 @@
 /*
 *
 */
-export function generateIconImageForEmailTemplate() {
-  return '';
-  // return `<img style="width: 75px; height: 50px; margin-right: 4px;" src="" alt="Omni Parking logo" />`;
+export function generateIconImageForEmailTemplate(imgPath) {
+  // return '';
+  return `<img style="width: 75px; height: 50px; margin-right: 4px;" src="data:image/png;base64, ${imgPath}" alt="Omni Parking logo" />`;
 } // END generateIconImageForEmailTemplate
 
 
@@ -15,13 +15,15 @@ export function generateIconImageForEmailTemplate() {
 * Generates HTML markup for email
 */
 export function generateHTMLMarkup(data, billingAddressMarkup) {
-  const { createdAt: purchaseDate, url, start_time, end_time, quantity, price, name, subtotal_price, total_tax, total_price, title } = data;
+  const {
+    createdAt: purchaseDate, url, start_time, end_time, quantity, price, name,
+    subtotal_price, total_tax, total_price, title, imagePath
+  } = data;
 
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
   const start = generateDateTimeAsString(start_time, true);
   const end = generateDateTimeAsString(end_time, true);
 // go before quantity span 
-  // ${generateIconImageForEmailTemplate()}
   return `
     <b>Parking Confirmation Details:</b>
     <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
@@ -31,7 +33,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
     ${billingAddressMarkup}
     <br />
     <p style="margin-left: 4px;">1x Facility Charge for $4.99 each</p>
-    <p><span>${quantity}x ${name.toUpperCase()} for $${price} each</span></p>
+    <p>${generateIconImageForEmailTemplate(imagePath)}<span>${quantity}x ${name.toUpperCase()} for $${price} each</span></p>
     <p style="margin: 2px 0px 0px 0px; padding: 0px;">Drop off: ${start}</p>
     <p style="margin: 1px 0px 0px 0px; padding: 0px;">Pick up: ${end}</p>
     <br />
