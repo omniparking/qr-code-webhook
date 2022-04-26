@@ -117,21 +117,19 @@ export default async function handler(req, res) {
       const subPrice = subtotal_price || current_subtotal_price;
       const totalTax = total_tax || current_total_tax;
       const totalPrice = total_price || current_total_price;
-      const params = {
-        Bucket: 'omni-airport-parking',
-        Key: 'omni-airport-parking-logo.png'
-      };
+
       let imagePath = '';
 
       try {
-        const awsResponse = await s3.getObject(params).promise();
-        console.log('awsResponse:', awsResponse);
+        const awsResponse = await s3.getObject({ Bucket: 'omni-airport-parking', Key: 'omni-airport-parking-logo.png' }).promise();
+        imagePath = Buffer.from(awsResponse.Body, 'binary').toString('base64');
+        // console.log('imagePath:', imagePath);
+        // console.log('awsResponse:', awsResponse);
       } catch (e) {
         console.error('error getting image from aws => ', e);
       }
 
-      // const imagePath = Buffer.from(awsResponse.Body, 'binary').toString('base64');
-      // console.log('imagePath:', imagePath);
+
 
       const htmlMarkupData = {
         subtotal_price: subPrice, total_tax: totalTax, total_price: totalPrice,
