@@ -124,8 +124,8 @@ export default async function handler(req, res) {
 
       try {
         const awsResponse = await s3.getObject({ Bucket: 'omni-airport-parking', Key: 'omni-airport-parking-logo.png' }).promise();
-        imagePath = Buffer.from(awsResponse.Body).toString('base64');
-        const resizedImageFileBuffer = await sharp(imagePath)
+        // imagePath = Buffer.from(awsResponse.Body).toString('base64');
+        const resizedImageFileBuffer = await sharp(awsResponse.Body)
           .resize({ width: 200, height: 200, fit: 'contain' })
           .toFormat('png')
           .png({ quality: 100, compressionLevel: 6 })
