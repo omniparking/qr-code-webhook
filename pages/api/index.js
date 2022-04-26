@@ -99,7 +99,8 @@ export default async function handler(req, res) {
 
       // Set Headers
       // Set Content-Type as text/html
-      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Content-Type', 'text/html charset=UTF-8');
+      res.setHeader('X-Attachment-Id', 'filename.png')
       // Describes lifetime of our resource telling CDN to serve from cache and update in background (at most once per second)
       res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
       

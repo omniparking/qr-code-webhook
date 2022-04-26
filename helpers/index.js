@@ -6,7 +6,7 @@
 *
 */
 function generateIconImageForEmailTemplate(imgPath) {
-  return `<img style="width: 100px; height: 50px; margin-right: 2px; margin-left: 4px;" src="data:image/png;base64, ${imgPath}" alt="Omni Parking logo" />`;
+  return `<img style="display: block; width: 100px; height: 50px; margin-right: 2px; margin-left: 4px;" src="data:image/png;base64, ${imgPath}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
 } // END generateIconImageForEmailTemplate
 
 
@@ -22,6 +22,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
   const start = generateDateTimeAsString(start_time, true);
   const end = generateDateTimeAsString(end_time, true);
+  console.log('url:', url);
 // go before quantity span 
   return `
     <b>Parking Confirmation Details:</b>
@@ -40,7 +41,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
     <p style="margin: 0px; padding: 0px;">State Tax: $${total_tax}</p>
     <p style="margin: 0px; padding: 0px;">Total: $${total_price}</p>
     <br /><br />
-    <img style="width: 200px; height: 200px; object=fit: contain;" src="${url}" alt="QR Code" />
+    <img style="display: block; width: 200px; height: 200px; object=fit: contain;" src="${url}" alt="QR Code" title="QR Code" />
  `;
 } // END generateHTMLMarkup
 
