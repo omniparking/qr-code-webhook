@@ -122,8 +122,14 @@ export default async function handler(req, res) {
         Key: 'omni-airport-parking-logo.png'
       };
       let imagePath = '';
-      const awsResponse = await s3.getObject(params);
-      console.log('awsResponse:', awsResponse);
+
+      try {
+        const awsResponse = await s3.getObject(params).promise();
+        console.log('awsResponse:', awsResponse);
+      } catch (e) {
+        console.error('error getting image from aws => ', e);
+      }
+
       // const imagePath = Buffer.from(awsResponse.Body, 'binary').toString('base64');
       // console.log('imagePath:', imagePath);
 
