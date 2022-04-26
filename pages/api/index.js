@@ -4,6 +4,7 @@
 const QRCode = require('qrcode');
 const nodemailer = require('nodemailer');
 const { Redis } = require('@upstash/redis');
+const AWS = require('aws-sdk');
 // const crypto = require('crypto');
 // const getRawBody = require('raw-body');
 
@@ -16,6 +17,23 @@ const {
   UPSTASH_REDIS_REST_URL: url, UPSTASH_REDIS_REST_TOKEN: token,
   GMAIL_USER: user, GMAIL_PASSWORD: pass, SHOPIFY_SECRET, SENDGRID_API_KEY
 } = process.env;
+
+const s3 = new AWS.s3({
+  accessKeyId: process.env.AMAZ_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AMAZ_SECRET_ACCESS_KEY
+});
+
+const params = {
+  Bucket: 'omni-airport-parking', Key: 'omni-airport-parking-logo.png'
+};
+
+s3.getObject(params, (err, data) => {
+  if (err) {
+    console.error('error from aws:', err);
+  } else {
+    console.log('data from aws:', data);
+  }
+});
 
 // to use sendgrid for emails
 // const sgMail = require('@sendgrid/mail');
