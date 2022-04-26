@@ -6,9 +6,7 @@
 *
 */
 function generateIconImageForEmailTemplate(imgPath) {
-  // https://cid:omniairportparking384619@nodemailer.com/
-  return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="cid:omniairportparking384619@nodemailer.com" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
-  // return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="data:image/png;base64, ${imgPath}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
+  return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="data:image/png;base64, ${imgPath}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
 } // END generateIconImageForEmailTemplate
 
 
@@ -86,7 +84,7 @@ export async function sendEmail(transporter, emailInfo) {
   try {
     // Send email (using nodemailer)
     const results = await transporter.sendMail({ to, from, html, text, subject, attachments });
-
+    console.log('results are:', results);
     // Check results from email request -> if receiver is found in the accepted array, then email was sent succesfully
     // However if the receiver's email is found in the rejected array, then the email was not sent successfully
     if (results) {

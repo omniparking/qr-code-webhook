@@ -7,6 +7,7 @@ import QRCode from 'qrcode';
 import nodemailer from 'nodemailer';
 import { Redis } from '@upstash/redis';
 import AWS from 'aws-sdk';
+import sharp from 'sharp';
 import {
   generateHTMLMarkup, formatBillingAddressForHTMLMarkup,
   sendEmail, generateQRCode, generateDateTimeAsString
@@ -124,6 +125,13 @@ export default async function handler(req, res) {
       try {
         const awsResponse = await s3.getObject({ Bucket: 'omni-airport-parking', Key: 'omni-airport-parking-logo.png' }).promise();
         imagePath = Buffer.from(awsResponse.Body).toString('base64');
+        const resizedImageFileBuffer = await sharp(imagePath)
+          .resize({ width: 200, height: 200, fit: 'contain' })
+          .toFormat('png')
+          .png({ quality: 100, compressionLevel: 6 })
+          .toBuffer();
+        //Now we will convert resized buffer to base64
+        imagePath = resizedImageFileBuffer.toString('base64');
       } catch (e) {
         console.error('error getting image from aws => ', e);
       }
@@ -147,7 +155,7 @@ export default async function handler(req, res) {
       const from = 'omniparkingwebhook@gmail.com'; // email sender
     // const cc = ['alon.bibring@gmail.com']; // cc emails
       
-      const attachments = [{ path: qrCodeUrl }, { path: imagePath, cid: 'omniairportparking384619@nodemailer.com' }];
+      const attachments = [{ path: qrCodeUrl }];
       
       const emailData = { to, from, html, order_number, attachments };
     
