@@ -128,14 +128,10 @@ export default async function handler(req, res) {
         console.error('error getting image from aws => ', e);
       }
 
-
-
       const htmlMarkupData = {
         subtotal_price: subPrice, total_tax: totalTax, total_price: totalPrice,
         url: qrCodeUrl, createdAt, start_time, end_time, quantity, price, name, title, imagePath
       };
-
-
       
       // Generate HTML markup for email
       const html = generateHTMLMarkup(htmlMarkupData, billingAddress);
@@ -151,7 +147,7 @@ export default async function handler(req, res) {
       const from = 'omniparkingwebhook@gmail.com'; // email sender
     // const cc = ['alon.bibring@gmail.com']; // cc emails
       
-      const attachments = [{ path: qrCodeUrl }, { path: imagePath, cid: 'omniairportparking384619@nodemailer.com'}];
+      const attachments = [{ path: qrCodeUrl }, { path: imagePath, cid: 'omniairportparking384619@nodemailer.com' }];
       
       const emailData = { to, from, html, order_number, attachments };
     
@@ -168,7 +164,7 @@ export default async function handler(req, res) {
           try {
             // Resending email
             const userEmailSuccessful = await sendEmail(transporter, emailData);
-
+            console.log('userEmailSuccessful:', userEmailSuccessful);
             // If resent email is successful
             if (userEmailSuccessful) {
               try {
@@ -182,7 +178,6 @@ export default async function handler(req, res) {
                 res.status(201).send({ message: 'Webhook event not logged but email sent successfully.' });
               }
             } else {
-              console.error('error sending email =>', e);
               // If retry email is not successful, send response message indicating webhook event logged but email not sent
               res.status(201).send({ message: 'Webhook Event logged but email not sent. '});
             }
