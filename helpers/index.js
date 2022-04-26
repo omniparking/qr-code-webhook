@@ -37,7 +37,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
       ${generateIconImageForEmailTemplate(imagePath)}
       <p style="margin: 0px 0px 1px 0px;">1x Facility Charge for $4.99 each</p>
       <p style="margin: 1px 0px 0px 0px; padding: 0px;">${quantity}x ${name.toUpperCase()} for $${price} each</p>
-      <p style="margin: 4px 0px 0px 0px; padding: 0px;">Drop off: ${start}</p>
+      <p style="margin: 8px 0px 0px 0px; padding: 0px;">Drop off: ${start}</p>
       <p style="margin: 1px 0px 0px 0px; padding: 0px;">Pick up: ${end}</p>
       <br />
       <p style="margin: 0px; padding: 0px;">Subtotal: $${subtotal_price}</p>
