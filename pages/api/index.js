@@ -4,7 +4,7 @@
 const QRCode = require('qrcode');
 const nodemailer = require('nodemailer');
 const { Redis } = require('@upstash/redis');
-const { AWS } = require('aws-sdk');
+import AWS from 'aws-sdk';
 // const crypto = require('crypto');
 // const getRawBody = require('raw-body');
 
@@ -18,7 +18,7 @@ const {
   GMAIL_USER: user, GMAIL_PASSWORD: pass, SHOPIFY_SECRET, SENDGRID_API_KEY
 } = process.env;
 
-const s3 = new AWS.s3({
+const s3 = new AWS.S3({
   accessKeyId: process.env.AMAZ_ACCESS_KEY_ID,
   secretAccessKey: process.env.AMAZ_SECRET_ACCESS_KEY
 });
