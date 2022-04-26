@@ -31,7 +31,9 @@ s3.getObject(params, (err, data) => {
   if (err) {
     console.error('error from aws:', err);
   } else {
-    console.log('data from aws:', data);
+    // console.log('data from aws:', data);
+    const base64data = Buffer.from(data.Body, 'binary').toString('base64');
+    console.log('IMAGE:', base64data);
   }
 });
 
