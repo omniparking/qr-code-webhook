@@ -1,6 +1,7 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 /*jshint esversion: 8 */
 
+// Import needed packages
 // import crypto from 'crypto';
 // import getRawBody from 'raw-body';
 import QRCode from 'qrcode';
@@ -13,18 +14,20 @@ import {
   sendEmail, generateQRCode, generateDateTimeAsString
 } from '../../helpers/index';
 
+// Deconstruct needed env variables from process.env
 const {
   UPSTASH_REDIS_REST_URL: url, UPSTASH_REDIS_REST_TOKEN: token,
-  GMAIL_USER: user, GMAIL_PASSWORD: pass, SHOPIFY_SECRET, SENDGRID_API_KEY
+  GMAIL_USER: user, GMAIL_PASSWORD: pass,
+  SHOPIFY_SECRET, SENDGRID_API_KEY
 } = process.env;
 
-// initialize s3 connection - this is to get logo in email
+// Initialize s3 connection - this is to get logo in email
 const s3 = new AWS.S3({
   accessKeyId: process.env.AMAZ_ACCESS_KEY_ID,
   secretAccessKey: process.env.AMAZ_SECRET_ACCESS_KEY
 });
 
-// to use sendgrid for emails
+// To use sendgrid for emails
 // const sgMail = require('@sendgrid/mail');
 // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
@@ -50,7 +53,7 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'POST') {
       // try {
-        // to check that webhook call is coming from certified shopify but not needed
+        // To check that webhook call is coming from certified shopify but not needed
         //   const hmac = req.get('X-Shopify-Hmac-Sha256');
         //   const rawBody = await getRawBody(req);
         //   const generated_hash = crypto
@@ -81,7 +84,7 @@ export default async function handler(req, res) {
       const { quantity, price, name, title } = billingItems;
 
       let start_time, end_time;
-      // get start and end times of booking
+      // Get start and end times of booking
       if (bookingTimes && bookingTimes.length > 0) {
         bookingTimes.forEach(({ name, value }) => {
           if (name === 'booking-start') { start_time = value; }
@@ -154,11 +157,11 @@ export default async function handler(req, res) {
       const to = 'alon.bibring@gmail.com'; // email recipient
       const from = 'omniparkingwebhook@gmail.com'; // email sender
     // const cc = ['alon.bibring@gmail.com']; // cc emails
-      
+
       const attachments = [{ path: qrCodeUrl }];
-      
+
       const emailData = { to, from, html, order_number, attachments };
-    
+
       // If webhook_id does not already exist in db
       if (!getPrevWebhook) {
         const userEmailSuccessful = await sendEmail(transporter, emailData); // send email
@@ -172,7 +175,7 @@ export default async function handler(req, res) {
           try {
             // Resending email
             const userEmailSuccessful = await sendEmail(transporter, emailData);
-            console.log('userEmailSuccessful:', userEmailSuccessful);
+
             // If resent email is successful
             if (userEmailSuccessful) {
               try {
@@ -197,7 +200,8 @@ export default async function handler(req, res) {
           }
         }
       } else {
-        // Case wheree webhook_id is already stored, meaning an email has already been sent
+        console.error('Case where webhook id already exists in database!');
+        // Case where webhook_id is already stored, meaning an email has already been sent
         // send response message indicating that webhook failed bc it was already successfully handled
         res.status(201).send({ message: 'Webhook Event failed as it has previously been successfully logged.' });
       }

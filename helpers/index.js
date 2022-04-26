@@ -25,7 +25,6 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
 
   // To have image directly in email template (instead of attachment)
   // Add to last line of text:
-  // <br /><br />
   // <img height="200" width="200" style="display: block; object=fit: contain;" src="${url}" alt="QR Code" title="QR Code" />
 
   return `
@@ -44,6 +43,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
       <p style="margin: 0px; padding: 0px;">Subtotal: $${subtotal_price}</p>
       <p style="margin: 0px; padding: 0px;">State Tax: $${total_tax}</p>
       <p style="margin: 0px; padding: 0px;">Total: $${total_price}</p>
+      <br /><br />
     `;
 } // END generateHTMLMarkup
 
@@ -84,7 +84,7 @@ export async function sendEmail(transporter, emailInfo) {
   try {
     // Send email (using nodemailer)
     const results = await transporter.sendMail({ to, from, html, text, subject, attachments });
-    console.log('results are:', results);
+
     // Check results from email request -> if receiver is found in the accepted array, then email was sent succesfully
     // However if the receiver's email is found in the rejected array, then the email was not sent successfully
     if (results) {
