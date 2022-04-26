@@ -17,6 +17,6 @@ Whenever a new push is made to the 'main' branch in GitHub, vercel will redeploy
 
 ## Repo Contents
 
-Within the /pages/api folder you will find an index.js file.  This file contains the function which receives and processes incoming requests from Shopify's webhook.  
+Within the /pages/api/index.js file you will find the handler function which receives and processes incoming requests from Shopify's webhook.
 
 Within the /helpers/index.js file, you will find the helper functions being used inside the /pages/api/index.js file.  These two files together comprise the code necessary for this application to work.
