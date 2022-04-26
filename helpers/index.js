@@ -23,8 +23,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
   const start = generateDateTimeAsString(start_time, true);
   const end = generateDateTimeAsString(end_time, true);
 
-  // To have image directly in email template (instead of attachment)
-  // Add to last line of text:
+  // To have image directly in email template (instead of attachment) - add to last line of text:
   // <img height="200" width="200" style="display: block; object=fit: contain;" src="${qrCodeUrl}" alt="QR Code" title="QR Code" />
 
   return `
@@ -47,7 +46,6 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
       <br /><br />
     `;
 } // END generateHTMLMarkup
-
 
 
 /*
@@ -102,7 +100,7 @@ export async function sendEmail(transporter, emailInfo) {
       return false;
     }
 
-    // Using send grid;
+    // To use SendGrid;
     // let didEmailSend = false;
     // const results = await sgMail.send(msg);
     // if (results[0].statusCode === 202) {
@@ -139,9 +137,6 @@ export async function generateQRCode(QRCode, text) {
 */
 export function generateDateTimeAsString(date, addTime = false) {
   const newDate = new Date(date);
-  if (!addTime) {
-    return newDate.toLocaleDateString();
-  } else {
-    return`${newDate.toLocaleDateString()} ${newDate.toLocaleTimeString()}`;
-  }
+  if (!addTime) { return newDate.toLocaleDateString(); }
+  return `${newDate.toLocaleDateString()} ${newDate.toLocaleTimeString()}`;
 } // END generateDateTimeAsString

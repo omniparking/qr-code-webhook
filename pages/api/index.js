@@ -117,8 +117,6 @@ export default async function handler(req, res) {
       // Generate date in MM/DD/YYYY format for email
       const createdAt = generateDateTimeAsString(created_at);
 
-      // Generate markup for user address in email
-      const billingAddress = formatBillingAddressForHTMLMarkup(billing_address);
       const subPrice = subtotal_price || current_subtotal_price;
       const totalTax = total_tax || current_total_tax;
       const totalPrice = total_price || current_total_price;
@@ -139,13 +137,16 @@ export default async function handler(req, res) {
         console.error('error getting image from aws => ', e);
       }
 
+      // Generate markup for user's billing address to display in email
+      const billingAddressMarkup = formatBillingAddressForHTMLMarkup(billing_address);
+
       const htmlMarkupData = {
         subtotal_price: subPrice, total_tax: totalTax, total_price: totalPrice,
         qrCodeUrl, createdAt, start_time, end_time, quantity, price, name, title, imagePath
       };
       
       // Generate HTML markup for email
-      const html = generateHTMLMarkup(htmlMarkupData, billingAddress);
+      const html = generateHTMLMarkup(htmlMarkupData, billingAddressMarkup);
 
       // Grab unique webhook id
       const new_webhook_id = headers['x-shopify-webhook-id'] || ''; // grab webhook_id from headers
@@ -153,7 +154,7 @@ export default async function handler(req, res) {
       // Method to add webhook id to redis
       const getPrevWebhook = await redis.get(new_webhook_id);
 
-      // Variables for sending email
+      // Define variables for sending email
       const to = 'alon.bibring@gmail.com'; // email recipient
       const from = 'omniparkingwebhook@gmail.com'; // email sender
     // const cc = ['alon.bibring@gmail.com']; // cc emails
@@ -183,9 +184,9 @@ export default async function handler(req, res) {
                 await redis.set(new_webhook_id, new_webhook_id);
                 res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
               } catch (e) {
-                console.error('error saving wehook but email send =>', e);
                 // Adding webhook to redis failed, so send response indicating email sent successfully
-                // but webhook id not stored in redis 
+                // but webhook id not stored in redis
+                console.error('error saving wehook but email send =>', e);
                 res.status(201).send({ message: 'Webhook event not logged but email sent successfully.' });
               }
             } else {
