@@ -175,16 +175,19 @@ export default async function handler(req, res) {
                 // Add webbok_id to redis and send successful response
                 await redis.set(new_webhook_id, new_webhook_id);
                 res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
-              } catch (e) { 
+              } catch (e) {
+                console.error('error saving wehook but email send =>', e);
                 // Adding webhook to redis failed, so send response indicating email sent successfully
                 // but webhook id not stored in redis 
                 res.status(201).send({ message: 'Webhook event not logged but email sent successfully.' });
               }
             } else {
+              console.error('error sending email =>', e);
               // If retry email is not successful, send response message indicating webhook event logged but email not sent
               res.status(201).send({ message: 'Webhook Event logged but email not sent. '});
             }
           } catch (e) {
+            console.error('error sending email => ', e);
             // Sending email or adding data to redis db threw an error somewhere
             // send response message indicating webhook event logged but no email sent
             res.status(201).send({ message: 'Webhook Event logged but email not sent. '});
