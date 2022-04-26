@@ -18,7 +18,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
     createdAt: purchaseDate, url, start_time, end_time, quantity, price, name,
     subtotal_price, total_tax, total_price, title, imagePath
   } = data;
-  console.log('imagePath:', imagePath);
+  // console.log('imagePath:', imagePath);
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
   const start = generateDateTimeAsString(start_time, true);
   const end = generateDateTimeAsString(end_time, true);

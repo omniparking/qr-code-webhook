@@ -28,17 +28,6 @@ const params = {
   Key: 'omni-airport-parking-logo.png'
 };
 
-let imagePath = '';
-
-s3.getObject(params, (err, data) => {
-  if (err) {
-    // console.error('error from aws:', err);
-  } else {
-    const base64data = Buffer.from(data.Body, 'binary').toString('base64');
-    imagePath = base64data;
-  }
-});
-
 // to use sendgrid for emails
 // const sgMail = require('@sendgrid/mail');
 // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -133,10 +122,18 @@ export default async function handler(req, res) {
       const subPrice = subtotal_price || current_subtotal_price;
       const totalTax = total_tax || current_total_tax;
       const totalPrice = total_price || current_total_price;
+
+      const awsResponse = await s3.getObject(params);
+      // console.log('awsResponse:', awsResponse);
+      const imagePath = Buffer.from(awsResponse.Body, 'binary').toString('base64');
+      console.log('imagePath:', imagePath);
+
       const htmlMarkupData = {
         subtotal_price: subPrice, total_tax: totalTax, total_price: totalPrice,
         url, createdAt, start_time, end_time, quantity, price, name, title, imagePath
       };
+
+
       
       // Generate HTML markup for email
       const html = generateHTMLMarkup(htmlMarkupData, billingAddress);
