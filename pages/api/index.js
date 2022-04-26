@@ -142,7 +142,7 @@ export default async function handler(req, res) {
 
       const htmlMarkupData = {
         subtotal_price: subPrice, total_tax: totalTax, total_price: totalPrice,
-        qrCodeUrl, createdAt, start_time, end_time, quantity, price, name, title, imagePath: '_next/static/omni-parking-logo.png'
+        qrCodeUrl, createdAt, start_time, end_time, quantity, price, name, title, imagePath: '/_next/static/omni-parking-logo.png'
       };
       
       // Generate HTML markup for email
