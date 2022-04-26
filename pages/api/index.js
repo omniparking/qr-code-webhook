@@ -153,7 +153,9 @@ export default async function handler(req, res) {
       const from = 'omniparkingwebhook@gmail.com'; // email sender
     // const cc = ['alon.bibring@gmail.com']; // cc emails
       
-      const emailData = { to, from, html, order_number };
+      const attachments = [{ path: url }];
+      
+      const emailData = { to, from, html, order_number, attachments };
     
       // If webhook_id does not already exist in db
       if (!getPrevWebhook) {

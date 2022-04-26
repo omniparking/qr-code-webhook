@@ -75,13 +75,13 @@ export function formatBillingAddressForHTMLMarkup(billing_address) {
 */
 export async function sendEmail(transporter, emailInfo) {
   // Define variables needed for sending emails
-  const { to, from, html, order_number } = emailInfo;
+  const { to, from, html, order_number, attachments } = emailInfo;
   const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
   const subject = `Order #${order_number} confirmed`;
 
   try {
     // Send email (using nodemailer)
-    const results = await transporter.sendMail({ to, from, html, text, subject });
+    const results = await transporter.sendMail({ to, from, html, text, subject, attachments });
 
     // Check results from email request -> if receiver is found in the accepted array, then email was sent succesfully
     // However if the receiver's email is found in the rejected array, then the email was not sent successfully
