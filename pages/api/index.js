@@ -108,7 +108,7 @@ export default async function handler(req, res) {
       const qrCodeData = { order_number, start_time, end_time };
       
       // Generate barcode with order information
-      const url = await generateQRCode(QRCode, JSON.stringify(qrCodeData));
+      const qrCodeUrl = await generateQRCode(QRCode, JSON.stringify(qrCodeData));
 
       // Generate date in MM/DD/YYYY format for email
       const createdAt = generateDateTimeAsString(created_at);
@@ -132,7 +132,7 @@ export default async function handler(req, res) {
 
       const htmlMarkupData = {
         subtotal_price: subPrice, total_tax: totalTax, total_price: totalPrice,
-        url, createdAt, start_time, end_time, quantity, price, name, title, imagePath
+        url: qrCodeUrl, createdAt, start_time, end_time, quantity, price, name, title, imagePath
       };
 
 
@@ -151,7 +151,7 @@ export default async function handler(req, res) {
       const from = 'omniparkingwebhook@gmail.com'; // email sender
     // const cc = ['alon.bibring@gmail.com']; // cc emails
       
-      const attachments = [{ path: url }];
+      const attachments = [{ path: qrCodeUrl }, { path: imagePath, cid: 'omniairportparking384619@nodemailer.com'}];
       
       const emailData = { to, from, html, order_number, attachments };
     

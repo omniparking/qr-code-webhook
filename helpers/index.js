@@ -6,7 +6,9 @@
 *
 */
 function generateIconImageForEmailTemplate(imgPath) {
-  return `<img style="display: block; width: 100px; height: 50px; margin-right: 2px; margin-left: 4px;" src="data:image/png;base64, ${imgPath}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
+  // https://cid:omniairportparking384619@nodemailer.com/
+  return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="cid:omniairportparking384619@nodemailer.com" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
+  // return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="data:image/png;base64, ${imgPath}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
 } // END generateIconImageForEmailTemplate
 
 
@@ -15,8 +17,8 @@ function generateIconImageForEmailTemplate(imgPath) {
 */
 export function generateHTMLMarkup(data, billingAddressMarkup) {
   const {
-    createdAt: purchaseDate, url, start_time, end_time, quantity, price, name,
-    subtotal_price, total_tax, total_price, title, imagePath
+    createdAt: purchaseDate, start_time, end_time, quantity, price, name,
+    subtotal_price, total_tax, total_price, imagePath, title, url // url is src for qr code
   } = data;
 
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
@@ -26,7 +28,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
   // To have image directly in email template (instead of attachment)
   // Add to last line of text:
   // <br /><br />
-  // <img style="display: block; width: 200px; height: 200px; object=fit: contain;" src="${url}" alt="QR Code" title="QR Code" />
+  // <img height="200" width="200" style="display: block; object=fit: contain;" src="${url}" alt="QR Code" title="QR Code" />
 
   return `
       <b>Parking Confirmation Details:</b>
