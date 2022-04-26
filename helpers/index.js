@@ -15,7 +15,7 @@ export function generateIconImageForEmailTemplate() {
 * Generates HTML markup for email
 */
 export function generateHTMLMarkup(data, billingAddressMarkup) {
-  const { createdAt: purchaseDate, url, start_time, end_time, quantity, price, name, subtotal_price, total_tax, total_price } = data;
+  const { createdAt: purchaseDate, url, start_time, end_time, quantity, price, name, subtotal_price, total_tax, total_price, title } = data;
 
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
   const start = generateDateTimeAsString(start_time, true);

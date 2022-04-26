@@ -66,12 +66,12 @@ export default async function handler(req, res) {
       // and billing info such as price and address
       const { body: payload, headers } = req;
       const {
-        billing_address, created_at, subtotal_price, total_price,
-        total_tax, line_items, order_number, current_subtotal_price, current_total_price, current_total_tax /*email: to*/
+        billing_address, created_at, subtotal_price, total_price, total_tax, line_items, order_number,
+        current_subtotal_price, current_total_price, current_total_tax /* , email: to */
       } = payload;
       const bookingTimes = line_items && line_items[1] && line_items[1].properties || [];
-      const billingItems = line_items && line_items[0];
-      const { quantity, price, name } = billingItems;
+      const billingItems = line_items && line_items[1];
+      const { quantity, price, name, title } = billingItems;
 
       let start_time, end_time;
       // get start and end times of booking
@@ -113,7 +113,7 @@ export default async function handler(req, res) {
       const totalPrice = total_price || current_total_price;
       const htmlMarkupData = {
         subtotal_price: subPrice, total_tax: totalTax, total_price: totalPrice,
-        url, createdAt, start_time, end_time, quantity, price, name,
+        url, createdAt, start_time, end_time, quantity, price, name, title,
       };
       
       // Generate HTML markup for email
