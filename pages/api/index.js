@@ -1,41 +1,40 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 /*jshint esversion: 8 */
 
-const QRCode = require('qrcode');
-const nodemailer = require('nodemailer');
-const { Redis } = require('@upstash/redis');
+// import crypto from 'crypto';
+// import getRawBody from 'raw-body';
+import QRCode from 'qrcode';
+import nodemailer from 'nodemailer';
+import { Redis } from '@upstash/redis';
 import AWS from 'aws-sdk';
-// const crypto = require('crypto');
-// const getRawBody = require('raw-body');
-
-const {
+import {
   generateHTMLMarkup, formatBillingAddressForHTMLMarkup,
   sendEmail, generateQRCode, generateDateTimeAsString
-} = require('../../helpers/index');
+} from '../../helpers/index';
 
 const {
   UPSTASH_REDIS_REST_URL: url, UPSTASH_REDIS_REST_TOKEN: token,
   GMAIL_USER: user, GMAIL_PASSWORD: pass, SHOPIFY_SECRET, SENDGRID_API_KEY
 } = process.env;
 
+// initialize s3 connection - this is to get logo in email
 const s3 = new AWS.S3({
   accessKeyId: process.env.AMAZ_ACCESS_KEY_ID,
   secretAccessKey: process.env.AMAZ_SECRET_ACCESS_KEY
 });
 
 const params = {
-  Bucket: 'omni-airport-parking', Key: 'omni-airport-parking-logo.png'
+  Bucket: 'omni-airport-parking',
+  Key: 'omni-airport-parking-logo.png'
 };
 
 let imagePath = '';
 
 s3.getObject(params, (err, data) => {
   if (err) {
-    console.error('error from aws:', err);
+    // console.error('error from aws:', err);
   } else {
-    // console.log('data from aws:', data);
     const base64data = Buffer.from(data.Body, 'binary').toString('base64');
-    console.log('IMAGE:', base64data);
     imagePath = base64data;
   }
 });
