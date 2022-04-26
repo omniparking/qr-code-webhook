@@ -6,14 +6,7 @@
 *
 */
 export function generateIconImageForEmailTemplate(imgPath) {
-  // return '';
-  return `
-    <img
-      style="width: 100px; height: 50px; margin-right: 4px; margin-left: 4px;"
-      src="data:image/png;base64, ${imgPath}"
-      alt="Omni Parking logo"
-    />
-  `;
+  return `<img style="width: 100px; height: 50px; margin-right: 4px; margin-left: 4px;" src="data:image/png;base64, ${imgPath}" alt="Omni Parking logo" />`;
 } // END generateIconImageForEmailTemplate
 
 
