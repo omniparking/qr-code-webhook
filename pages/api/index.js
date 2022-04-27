@@ -37,8 +37,7 @@ const transporter = nodemailer.createTransport({
   port,
   host,
   auth: { user: user, pass: pass },
-  secure: true,
-  attachDataUrls: true
+  secure: true
 });
 
 // To use sendgrid for emails
