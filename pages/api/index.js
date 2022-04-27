@@ -2,23 +2,25 @@
 /*jshint esversion: 8 */
 
 // Import needed packages
-// import crypto from 'crypto';
-// import getRawBody from 'raw-body';
-import QRCode from 'qrcode';
-import nodemailer from 'nodemailer';
-import { Redis } from '@upstash/redis';
-import AWS from 'aws-sdk';
-import sharp from 'sharp';
+// import crypto from 'crypto'; // (encrypts/decrypts data)
+// import getRawBody from 'raw-body'; 
+// import sgMail from '@sendgrid/mail'; // sendgrid (to send emails)
+import QRCode from 'qrcode'; // (generates qr code)
+import nodemailer from 'nodemailer'; // to send emails
+import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
+import AWS from 'aws-sdk'; // to hit S3 to retrieve logo from AWS
+import sharp from 'sharp'; // shortens text for S3 binary image
 import {
   generateHTMLMarkup, formatBillingAddressForHTMLMarkup,
   sendEmail, generateQRCode, generateDateTimeAsString
-} from '../../helpers/index';
+} from '../../helpers/index'; // imports of helper functions
+
 
 // Deconstruct needed env variables from process.env
 const {
   UPSTASH_REDIS_REST_URL: url, UPSTASH_REDIS_REST_TOKEN: token,
-  GMAIL_USER: user, GMAIL_PASSWORD: pass,
-  SHOPIFY_SECRET, SENDGRID_API_KEY
+  GMAIL_USER: user, GMAIL_PASSWORD: pass, OMNI_GMAIL_USER: user1, OMNI_GMAIL_PASSWORD: pass1,
+  SMTP_HOST: host, EMAIL_PORT: port, SHOPIFY_SECRET, SENDGRID_API_KEY
 } = process.env;
 
 // Initialize s3 connection - this is to get logo in email
@@ -27,24 +29,15 @@ const s3 = new AWS.S3({
   secretAccessKey: process.env.AMAZ_SECRET_ACCESS_KEY
 });
 
-// To use sendgrid for emails
-// const sgMail = require('@sendgrid/mail');
-// sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-/*
-* Initialize redis (to store webhook ids)
-*/
+// Initialize redis (to store webhook ids)
 const redis = new Redis({ url, token });
 
-/*
-* Initialize nodemailer (to send emails)
-*/
-const transporter = nodemailer.createTransport({
-  port: 465,
-  host: 'smtp.gmail.com',
-  auth: { user, pass },
-  secure: true
-});
+// Initialize nodemailer (to send emails)
+const transporter = nodemailer.createTransport({ port, host, auth: { user: user1, pass: pass1 }, secure: true });
+
+// To use sendgrid for emails
+// sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 
 /*
 * Handler function which handles http requests coming in (webhook calls from shopify)
@@ -56,11 +49,7 @@ export default async function handler(req, res) {
         // To check that webhook call is coming from certified shopify but not needed
         //   const hmac = req.get('X-Shopify-Hmac-Sha256');
         //   const rawBody = await getRawBody(req);
-        //   const generated_hash = crypto
-        //     .createHmac('sha256', process.env.SHOPIFY_SECRET)
-        //     .update(rawBody)
-        //     .digest('base64');
-
+        //   const generated_hash = crypto.createHmac('sha256', process.env.SHOPIFY_SECRET).update(rawBody).digest('base64');
         //   if (generated_hash !== hmac) {
           //     res.status(201).send({ message: 'Webhook verification failed '});
           //     return;
@@ -71,7 +60,7 @@ export default async function handler(req, res) {
         // }
 
       
-      // Grab needed data from reqeest object
+      // Grab needed data from request object
       // i.e., line_items property has start/end times & req body has order_number/billing_address,
       // and billing info such as price and address
       const { body: payload, headers } = req;
@@ -124,14 +113,8 @@ export default async function handler(req, res) {
       let imagePath = '';
 
       try {
-        const awsResponse = await s3.getObject({ Bucket: 'omni-airport-parking', Key: 'omni-airport-parking-logo.png' }).promise();
-        // imagePath = Buffer.from(awsResponse.Body).toString('base64');
-        const resizedImageFileBuffer = await sharp(awsResponse.Body)
-          // .resize({ width: 200, height: 200, fit: 'contain' })
-          .toFormat('png')
-          .png({ quality: 100, compressionLevel: 6 })
-          .toBuffer();
-        //Now we will convert resized buffer to base64
+        const { Body } = await s3.getObject({ Bucket: 'omni-airport-parking', Key: 'omni-airport-parking-logo.png' }).promise();
+        const resizedImageFileBuffer = await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer();
         imagePath = resizedImageFileBuffer.toString('base64');
       } catch (e) {
         console.error('error getting image from aws => ', e);
@@ -148,10 +131,10 @@ export default async function handler(req, res) {
       // Generate HTML markup for email
       const html = generateHTMLMarkup(htmlMarkupData, billingAddressMarkup);
 
-      // Grab unique webhook id
-      const new_webhook_id = headers['x-shopify-webhook-id'] || ''; // grab webhook_id from headers
+      // Grab unique webhook_id
+      const new_webhook_id = headers['x-shopify-webhook-id'] || '';
 
-      // Method to add webhook id to redis
+      // Method to add webhook_id to redis
       const getPrevWebhook = await redis.get(new_webhook_id);
 
       // Define variables for sending email
@@ -180,12 +163,12 @@ export default async function handler(req, res) {
             // If resent email is successful
             if (userEmailSuccessful) {
               try {
-                // Add webbok_id to redis and send successful response
+                // Add webhook_id to redis and send successful response
                 await redis.set(new_webhook_id, new_webhook_id);
                 res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
               } catch (e) {
-                // Adding webhook to redis failed, so send response indicating email sent successfully
-                // but webhook id not stored in redis
+                // Adding webhook_id to redis failed, so send response indicating email sent successfully
+                // but webhook_id not stored in redis
                 console.error('error saving wehook but email send =>', e);
                 res.status(201).send({ message: 'Webhook event not logged but email sent successfully.' });
               }
