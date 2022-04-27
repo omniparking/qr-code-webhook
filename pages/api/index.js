@@ -10,7 +10,7 @@ import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo from AWS
 import sharp from 'sharp'; // shortens text for S3 binary image
-const { createCanvas, loadImage, Canvas } = require('canvas');
+const { createCanvas, loadImage } = require('canvas');
 const canvas = createCanvas(200, 200);
 const ctx = canvas.getContext('2d');
 import {
