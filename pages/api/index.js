@@ -6,6 +6,7 @@
 // import getRawBody from 'raw-body'; 
 // import sgMail from '@sendgrid/mail'; // sendgrid (to send emails)
 import QRCode from 'qrcode'; // (generates qr code)
+import QRLogo from 'qrcode-with-logos';
 import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo from AWS
@@ -40,6 +41,28 @@ const transporter = nodemailer.createTransport({
 
 // To use sendgrid for emails
 // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+async function getQRcodeImage(body, imgSrc) {
+  try {
+    let canvas = await QRCode.toCanvas(body);
+    const imgDim = { width: 100, height: 50 };
+    const context = canvas.getContext('2d');
+    const imageObj = new Image();
+    imageObj.src = imgSrc;
+    imageObj.onload = function () {
+      context.drawImage(imageObj,
+        canvas.width / 2 - imgDim.width / 2,
+        canvas.height / 2 - imgDim.height / 2,
+        imgDim.width,
+        imgDim.height
+      );
+      return canvas;
+    };
+  } catch (e) {
+    console.error('error getting qr code with image => ', e);
+    return '';
+  }
+}
 
 
 /*
@@ -99,12 +122,6 @@ export default async function handler(req, res) {
       res.setHeader('X-Attachment-Id', 'filename.png')
       // Describes lifetime of our resource telling CDN to serve from cache and update in background (at most once per second)
       res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
-      
-      // Data required in qr code
-      const qrCodeData = { order_number, start_time, end_time };
-      
-      // Generate barcode with order information
-      const qrCodeUrl = await generateQRCode(QRCode, JSON.stringify(qrCodeData));
 
       // Generate date in MM/DD/YYYY format for email
       const createdAt = generateDateTimeAsString(created_at);
@@ -124,6 +141,13 @@ export default async function handler(req, res) {
       } catch (e) {
         console.error('error getting image from aws => ', e);
       }
+
+      // Data required in qr code
+      const qrCodeData = { order_number, start_time, end_time };
+
+      // Generate barcode with order information
+      // const qrCodeUrl = await generateQRCode(QRCode, JSON.stringify(qrCodeData));
+      const qrCodeUrl = await getQRcodeImage(JSON.stringify(qrCodeData), imagePath);
 
       // Generate markup for user's billing address to display in email
       const billingAddressMarkup = formatBillingAddressForHTMLMarkup(billing_address);
