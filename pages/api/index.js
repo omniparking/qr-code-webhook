@@ -149,7 +149,7 @@ export default async function handler(req, res) {
       // Generate barcode with order information
       // const qrCodeUrl = await generateQRCode(QRCode, JSON.stringify(qrCodeData));
       const qrCodeUrl = await getQRcodeImage(JSON.stringify(qrCodeData), imagePath);
-
+      console.log('qrCodeUrl:', qrCodeUrl)
       // Generate markup for user's billing address to display in email
       const billingAddressMarkup = formatBillingAddressForHTMLMarkup(billing_address);
 
