@@ -20,14 +20,12 @@ import {
 const {
   UPSTASH_REDIS_REST_URL: url, UPSTASH_REDIS_REST_TOKEN: token,
   GMAIL_USER: user, GMAIL_PASSWORD: pass, OMNI_GMAIL_USER: user1, OMNI_GMAIL_PASSWORD: pass1,
-  SMTP_HOST: host, EMAIL_PORT: port, SHOPIFY_SECRET, SENDGRID_API_KEY
+  SMTP_HOST: host, EMAIL_PORT: port, AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
+  SHOPIFY_SECRET, SENDGRID_API_KEY
 } = process.env;
 
 // Initialize s3 connection - this is to get logo in email
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AMAZ_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AMAZ_SECRET_ACCESS_KEY
-});
+const s3 = new AWS.S3({ accessKeyId, secretAccessKey });
 
 // Initialize redis (to store webhook ids)
 const redis = new Redis({ url, token });
@@ -111,12 +109,14 @@ export default async function handler(req, res) {
       // Generate date in MM/DD/YYYY format for email
       const createdAt = generateDateTimeAsString(created_at);
 
+      // Get subtotal, taxes, and total price for email template
       const subPrice = subtotal_price || current_subtotal_price;
       const totalTax = total_tax || current_total_tax;
       const totalPrice = total_price || current_total_price;
 
       let imagePath = '';
 
+      // Make call to AWS S3 bucket where logo image is stored, response in binary format which is then translated to string
       try {
         const { Body } = await s3.getObject({ Bucket: 'omni-airport-parking', Key: 'omni-airport-parking-logo.png' }).promise();
         const resizedImageFileBuffer = await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer();
@@ -128,6 +128,7 @@ export default async function handler(req, res) {
       // Generate markup for user's billing address to display in email
       const billingAddressMarkup = formatBillingAddressForHTMLMarkup(billing_address);
 
+      // Define object for generating the HTML markup in generateHTMLMarkup function
       const htmlMarkupData = {
         subtotal_price: subPrice, total_tax: totalTax, total_price: totalPrice,
         qrCodeUrl, createdAt, start_time, end_time, quantity, price, name, title, imagePath,
