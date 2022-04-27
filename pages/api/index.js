@@ -10,9 +10,6 @@ import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo from AWS
 import sharp from 'sharp'; // shortens text for S3 binary image
-const { createCanvas, loadImage } = require('canvas');
-const canvas = createCanvas(200, 200);
-const ctx = canvas.getContext('2d');
 import {
   generateHTMLMarkup, formatBillingAddressForHTMLMarkup,
   sendEmail, generateQRCode, generateDateTimeAsString
@@ -45,31 +42,6 @@ const transporter = nodemailer.createTransport({
 
 // To use sendgrid for emails
 // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-async function getQRcodeImage(body, imgSrc) {
-  try {
-    const canvas = createCanvas(200, 200)
-    const ctx = canvas.getContext('2d');
-    ctx.font = '30px Impact';
-    // let canvas = await QRCode.toCanvas(new Canvas());
-    const imgDim = { width: 100, height: 50 };
-    // const context = canvas.getContext('2d');
-    const imageObj = new Image();
-    imageObj.src = imgSrc;
-    imageObj.onload = function () {
-      ctx.drawImage(imageObj,
-        canvas.width / 2 - imgDim.width / 2,
-        canvas.height / 2 - imgDim.height / 2,
-        imgDim.width,
-        imgDim.height
-      );
-      return canvas;
-    };
-  } catch (e) {
-    console.error('error getting qr code with image => ', e);
-    return '';
-  }
-}
 
 
 /*
@@ -153,9 +125,8 @@ export default async function handler(req, res) {
       const qrCodeData = { order_number, start_time, end_time };
 
       // Generate barcode with order information
-      // const qrCodeUrl = await generateQRCode(QRCode, JSON.stringify(qrCodeData));
-      const qrCodeUrl = await getQRcodeImage(JSON.stringify(qrCodeData), imagePath);
-      console.log('qrCodeUrl:', qrCodeUrl)
+      const qrCodeUrl = await generateQRCode(QRCode, JSON.stringify(qrCodeData));
+
       // Generate markup for user's billing address to display in email
       const billingAddressMarkup = formatBillingAddressForHTMLMarkup(billing_address);
 
