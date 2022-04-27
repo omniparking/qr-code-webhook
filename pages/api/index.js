@@ -6,7 +6,6 @@
 // import getRawBody from 'raw-body'; 
 // import sgMail from '@sendgrid/mail'; // sendgrid (to send emails)
 import QRCode from 'qrcode'; // (generates qr code)
-import QRLogo from 'qrcode-with-logos';
 import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo from AWS
@@ -20,8 +19,10 @@ import {
 // Deconstruct needed env variables from process.env
 const {
   UPSTASH_REDIS_REST_URL: url, UPSTASH_REDIS_REST_TOKEN: token,
-  GMAIL_USER: user, GMAIL_PASSWORD: pass, OMNI_GMAIL_USER: user1, OMNI_GMAIL_PASSWORD: pass1,
-  SMTP_HOST: host, EMAIL_PORT: port, AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
+  GMAIL_USER: user, GMAIL_PASSWORD: pass,
+  OMNI_GMAIL_USER: user1, OMNI_GMAIL_PASSWORD: pass1,
+  SMTP_HOST: host, EMAIL_PORT: port,
+  AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
   SHOPIFY_SECRET, SENDGRID_API_KEY
 } = process.env;
 
