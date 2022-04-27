@@ -46,7 +46,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
       <p style="margin: 0px; padding: 0px;">Subtotal: $${subtotal_price}</p>
       <p style="margin: 0px; padding: 0px;">Taxes and Fees: $${total_tax}</p>
       <p style="margin: 0px; padding: 0px;">Total: $${total_price}</p>
-      <br /><br />
+      <br />
     `;
 } // END generateHTMLMarkup
 

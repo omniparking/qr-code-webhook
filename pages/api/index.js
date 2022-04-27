@@ -10,6 +10,7 @@ import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo from AWS
 import sharp from 'sharp'; // shortens text for S3 binary image
+
 import {
   generateHTMLMarkup, formatBillingAddressForHTMLMarkup,
   sendEmail, generateQRCode, generateDateTimeAsString
