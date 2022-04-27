@@ -33,7 +33,13 @@ const s3 = new AWS.S3({
 const redis = new Redis({ url, token });
 
 // Initialize nodemailer (to send emails)
-const transporter = nodemailer.createTransport({ port, host, auth: { user: user1, pass: pass1 }, secure: true });
+const transporter = nodemailer.createTransport({
+  port,
+  host,
+  auth: { user: user1, pass: pass1 },
+  secure: true,
+  attachDataUrls: true
+});
 
 // To use sendgrid for emails
 // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
