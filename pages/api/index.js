@@ -145,7 +145,7 @@ export default async function handler(req, res) {
 
       // Define variables for sending email
       const to = 'alon.bibring@gmail.com'; // email recipient
-      const from = 'omniparkingwebhook@gmail.com'; // email sender
+      const from = 'omniairportparking@gmail.com'; // email sender
     // const cc = ['alon.bibring@gmail.com']; // cc emails
 
       const attachments = [{ path: qrCodeUrl }];
