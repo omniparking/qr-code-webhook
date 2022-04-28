@@ -149,7 +149,7 @@ export default async function handler(req, res) {
 
       const attachments = [{ path: qrCodeUrl }];
 
-      const emailData = { to, from, html, order_number, attachments };
+      const emailData = { to, from, html, order_number, attachments, qrCodeUrl };
 
       // If webhook_id does not already exist in db
       if (!getPrevWebhook) {

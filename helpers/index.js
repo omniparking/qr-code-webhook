@@ -79,7 +79,7 @@ export function formatBillingAddressForHTMLMarkup(billing_address) {
 */
 export async function sendEmail(transporter, emailInfo) {
   // Define variables needed for sending emails
-  const { to, from, html, order_number, attachments } = emailInfo;
+  const { to, from, html, order_number, attachments, qrCodeUrl: content } = emailInfo;
   const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
   const subject = `Order #${order_number} confirmed`;
 
@@ -102,8 +102,10 @@ export async function sendEmail(transporter, emailInfo) {
     } else {
       return false;
     }
-
+    
     // To use SendGrid;
+    // const attachment = [{ content, filename: 'qrcode.txt', type: 'plain/text', disposition: 'attachment', content_id: 'qrcode' }];
+    //   const msg = { to, from, subject, html, attachments: attachment };
     // let didEmailSend = false;
     // const results = await sgMail.send(msg);
     // if (results[0].statusCode === 202) {
@@ -113,6 +115,7 @@ export async function sendEmail(transporter, emailInfo) {
     // }
     // if (didEmailSend) { return true; }
     // return false;
+
   } catch (e) {
     console.error('error sending email =>', e);
     return false;
