@@ -37,7 +37,7 @@ const redis = new Redis({ url, token });
 const transporter = nodemailer.createTransport({
   port,
   host,
-  auth: { user: user, pass: pass },
+  auth: { user: user1, pass: pass1 },
   secure: true
 });
 
