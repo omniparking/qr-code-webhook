@@ -23,8 +23,6 @@ const {
   SMTP_HOST: host, EMAIL_PORT: port,
   AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
   /* SHOPIFY_SECRET, SENDGRID_API_KEY, */
-    /* GMAIL_USER: gmail_user, GMAIL_PASSWORD: gmail_pass, */
-    // OMNI_GMAIL_USER: user1, OMNI_GMAIL_PASSWORD: pass1,
 } = process.env;
 
 // Initialize s3 connection - using AWS S3 to store company logo
