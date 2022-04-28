@@ -19,7 +19,8 @@ import {
 // Deconstruct needed env variables from process.env
 const {
   UPSTASH_REDIS_REST_URL: url, UPSTASH_REDIS_REST_TOKEN: token,
-  GMAIL_USER: user, GMAIL_PASSWORD: pass,
+  GMAIL_USER: gmail_user, GMAIL_PASSWORD: gmail_pass,
+  OMNI_AIRPORT_GMAIL_USER: user, OMNI_AIRPORT_GMAIL_PASS: pass,
   SMTP_HOST: host, EMAIL_PORT: port,
   AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
   SHOPIFY_SECRET, SENDGRID_API_KEY,
