@@ -113,7 +113,6 @@ export default async function handler(req, res) {
       try {
         const { Body } = await s3.getObject({ Bucket: 'omni-airport-parking', Key: 'omni-airport-parking-logo.png' }).promise();
         imagePath = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
-        // imagePath = resizedImageFileBuffer.toString('base64');
       } catch (e) {
         console.error('error getting image from aws => ', e);
       }
