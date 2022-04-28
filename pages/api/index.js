@@ -2,8 +2,8 @@
 /*jshint esversion: 8 */
 
 // Import needed packages
-// import crypto from 'crypto'; // (encrypts/decrypts data)
-// import getRawBody from 'raw-body'; 
+import crypto from 'crypto'; // (encrypts/decrypts data)
+import getRawBody from 'raw-body'; 
 import QRCode from 'qrcode'; // (generates qr code)
 import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
@@ -46,30 +46,32 @@ const transporter = nodemailer.createTransport({ port, host, auth: { user, pass 
 */
 export default async function handler(req, res) {
   try {
-    if (req.method === 'POST') {
+    const { body, headers, method } = req;
+    if (method === 'POST') {
       // try {
         // To check that webhook call is coming from certified shopify but not needed
-        //   const hmac = req.get('X-Shopify-Hmac-Sha256');
-        //   const rawBody = await getRawBody(req);
-        //   const generated_hash = crypto.createHmac('sha256', process.env.SHOPIFY_SECRET).update(rawBody).digest('base64');
-        //   if (generated_hash !== hmac) {
-          //     res.status(201).send({ message: 'Webhook verification failed '});
-          //     return;
-        //   }
-        // } catch (e) {
-        //   res.status(201).send({ message: 'Webhook verification failed '});
-        //   return;
+        const hmac = headers['x-shopify-hmac-sha256'];
+        const rawBody = await getRawBody(req);
+        const generated_hash = crypto.createHmac('sha256', process.env.SHOPIFY_SECRET).update(rawBody).digest('base64');
+        console.log('hmac:', hmac)
+        console.log('generated_hash:', generated_hash);
+        // if (generated_hash !== hmac) {
+          // res.status(201).send({ message: 'Webhook verification failed '});
+          // return;
         // }
+      // } catch (e) {
+        // res.status(201).send({ message: 'Webhook verification failed '});
+        // return;
+      // }
 
       
       // Grab needed data from request object
       // i.e., line_items property has start/end times & req body has order_number/billing_address,
       // and billing info such as price and address
-      const { body: payload, headers } = req;
       const {
         billing_address, created_at, subtotal_price, total_price, total_tax, line_items, order_number,
         current_subtotal_price, current_total_price, current_total_tax /* , email: to */
-      } = payload;
+      } = body;
       const bookingTimes = line_items && line_items[1] && line_items[1].properties || [];
       const billingItems = line_items && line_items[1];
       const { quantity, price, name, title } = billingItems;
@@ -108,7 +110,6 @@ export default async function handler(req, res) {
       const totalPrice = total_price || current_total_price;
 
       let imagePath = '';
-
       // Make call to AWS S3 bucket where logo image is stored, response in binary format which is then translated to string
       try {
         const { Body } = await s3.getObject({ Bucket: 'omni-airport-parking', Key: 'omni-airport-parking-logo.png' }).promise();
