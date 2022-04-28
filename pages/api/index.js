@@ -4,7 +4,6 @@
 // Import needed packages
 // import crypto from 'crypto'; // (encrypts/decrypts data)
 // import getRawBody from 'raw-body'; 
-// import sgMail from '@sendgrid/mail'; // sendgrid (to send emails)
 import QRCode from 'qrcode'; // (generates qr code)
 import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
@@ -21,26 +20,23 @@ import {
 const {
   UPSTASH_REDIS_REST_URL: url, UPSTASH_REDIS_REST_TOKEN: token,
   GMAIL_USER: user, GMAIL_PASSWORD: pass,
-  OMNI_GMAIL_USER: user1, OMNI_GMAIL_PASSWORD: pass1,
   SMTP_HOST: host, EMAIL_PORT: port,
   AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
-  SHOPIFY_SECRET, SENDGRID_API_KEY
+  SHOPIFY_SECRET, SENDGRID_API_KEY,
+    // OMNI_GMAIL_USER: user1, OMNI_GMAIL_PASSWORD: pass1,
 } = process.env;
 
-// Initialize s3 connection - this is to get logo in email
+// Initialize s3 connection - using AWS S3 to store company logo
 const s3 = new AWS.S3({ accessKeyId, secretAccessKey });
 
 // Initialize redis (to store webhook ids)
 const redis = new Redis({ url, token });
 
 // Initialize nodemailer (to send emails)
-const transporter = nodemailer.createTransport({
-  port,
-  host,
-  auth: { user, pass },
-  secure: true
-});
+const transporter = nodemailer.createTransport({ port, host, auth: { user, pass }, secure: true });
 
+/* IF DECIDE TO SWITCH FROM NODEMAILER TO SENDGRID */
+// import sgMail from '@sendgrid/mail'; // sendgrid (to send emails)
 // To use sendgrid for emails
 // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
@@ -116,8 +112,8 @@ export default async function handler(req, res) {
       // Make call to AWS S3 bucket where logo image is stored, response in binary format which is then translated to string
       try {
         const { Body } = await s3.getObject({ Bucket: 'omni-airport-parking', Key: 'omni-airport-parking-logo.png' }).promise();
-        const resizedImageFileBuffer = await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer();
-        imagePath = resizedImageFileBuffer.toString('base64');
+        imagePath = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
+        // imagePath = resizedImageFileBuffer.toString('base64');
       } catch (e) {
         console.error('error getting image from aws => ', e);
       }
