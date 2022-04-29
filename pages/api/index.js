@@ -49,7 +49,7 @@ export default async function handler(req, res) {
     if (method === 'POST') {
       try {
         // To check that webhook call is coming from certified shopify but not needed
-        const hmac = req.get('X-Shopify-Hmac-Sha256');
+        const hmac = headers['X-Shopify-Hmac-Sha256'];
         const rawBody = await getRawBody(req);
         const generated_hash = crypto.createHmac('sha256', process.env.SHOPIFY_SECRET).update(rawBody).digest('base64');
         console.log('hmac:', hmac)
