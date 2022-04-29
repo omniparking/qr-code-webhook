@@ -3,7 +3,7 @@
 
 // Import needed packages
 import crypto from 'crypto'; // (encrypts/decrypts data)
-// import getRawBody from 'raw-body'; 
+import getRawBody from 'raw-body'; 
 import QRCode from 'qrcode'; // (generates qr code)
 import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
