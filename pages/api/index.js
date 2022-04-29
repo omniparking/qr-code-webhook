@@ -59,6 +59,7 @@ export default async function handler(req, res) {
           return;
         }
       } catch (e) {
+        console.error('error ->', e);
         res.status(201).send({ message: 'Webhook verification failed '});
         return;
       }
