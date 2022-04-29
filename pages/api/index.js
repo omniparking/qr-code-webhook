@@ -2,8 +2,8 @@
 /*jshint esversion: 8 */
 
 // Import needed packages
-import crypto from 'crypto'; // (encrypts/decrypts data)
-import getRawBody from 'raw-body'; 
+// import crypto from 'crypto'; // (encrypts/decrypts data)
+// import getRawBody from 'raw-body'; 
 import QRCode from 'qrcode'; // (generates qr code)
 import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
@@ -47,22 +47,22 @@ export default async function handler(req, res) {
   try {
     const { body, headers, method } = req;
     if (method === 'POST') {
-      try {
-        // To check that webhook call is coming from certified shopify but not needed
-        const hmac = headers['X-Shopify-Hmac-Sha256'];
-        const rawBody = await getRawBody(req);
-        const generated_hash = crypto.createHmac('sha256', process.env.SHOPIFY_SECRET).update(rawBody).digest('base64');
-        console.log('hmac:', hmac)
-        console.log('generated_hash:', generated_hash);
-        if (generated_hash !== hmac) {
-          res.status(201).send({ message: 'Webhook verification failed '});
-          return;
-        }
-      } catch (e) {
-        console.error('error ->', e);
-        res.status(201).send({ message: 'Webhook verification failed '});
-        return;
-      }
+      // try {
+      //   // To check that webhook call is coming from certified shopify but not needed
+      //   const hmac = headers['X-Shopify-Hmac-Sha256'];
+      //   const rawBody = await getRawBody(req);
+      //   const generated_hash = crypto.createHmac('sha256', process.env.SHOPIFY_SECRET).update(rawBody).digest('base64');
+      //   console.log('hmac:', hmac)
+      //   console.log('generated_hash:', generated_hash);
+      //   if (generated_hash !== hmac) {
+      //     res.status(201).send({ message: 'Webhook verification failed '});
+      //     return;
+      //   }
+      // } catch (e) {
+      //   console.error('error ->', e);
+      //   res.status(201).send({ message: 'Webhook verification failed '});
+      //   return;
+      // }
 
       
       // Grab needed data from request object
