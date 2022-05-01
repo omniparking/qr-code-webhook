@@ -108,7 +108,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
     const attachment = [{ content, filename: 'qrcode.txt', type: 'plain/text', disposition: 'attachment', content_id: 'qrcode' }];
     const msg = { to, from, subject, html, attachments: attachment };
     let didEmailSend = false;
-    const results = await sgMail.send(msg);
+    const results = await transport.send(msg);
     if (results[0].statusCode === 202) {
       didEmailSend = true;
     } else {
