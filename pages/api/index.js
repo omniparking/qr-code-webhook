@@ -3,7 +3,8 @@
 
 // Import needed packages
 // import crypto from 'crypto'; // (encrypts/decrypts data)
-// import getRawBody from 'raw-body'; 
+// import getRawBody from 'raw-body';
+import sgMail from '@sendgrid/mail';
 import QRCode from 'qrcode'; // (generates qr code)
 import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
@@ -22,7 +23,8 @@ const {
   OMNI_AIRPORT_GMAIL_USER: user, OMNI_AIRPORT_GMAIL_PASS: pass,
   SMTP_HOST: host, EMAIL_PORT: port,
   AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
-  /* SHOPIFY_SECRET, SENDGRID_API_KEY, */
+  SENDGRID_API_KEY,
+  /* SHOPIFY_SECRET, */
 } = process.env;
 
 // Initialize s3 connection - using AWS S3 to store company logo
@@ -37,7 +39,7 @@ const transporter = nodemailer.createTransport({ port, host, auth: { user, pass 
 /* IF DECIDE TO SWITCH FROM NODEMAILER TO SENDGRID */
 // import sgMail from '@sendgrid/mail'; // sendgrid (to send emails)
 // To use sendgrid for emails
-// sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+sgMail.setApiKey(SENDGRID_API_KEY);
 
 
 /*
@@ -153,8 +155,9 @@ export default async function handler(req, res) {
 
       // If webhook_id does not already exist in db
       if (!getPrevWebhook) {
-        const userEmailSuccessful = await sendEmail(transporter, emailData); // send email
-
+        // const userEmailSuccessful = await sendEmail(transporter, emailData); // send email
+        const userEmailSuccessful = await sendEmail(sgMail, emailData);
+        console.log('userEmailSuccessful;', userEmailSuccessful)
         // If email is successful, add webhook to redis and send success response
         if (userEmailSuccessful) {
           await redis.set(new_webhook_id, new_webhook_id);
