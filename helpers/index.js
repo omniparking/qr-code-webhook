@@ -47,6 +47,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
       <p style="margin: 0px; padding: 0px;">Taxes and Fees: $${total_tax}</p>
       <p style="margin: 0px; padding: 0px;">Total: $${total_price}</p>
       <br />
+      <img height="200" width="200" style="display: block; object=fit: contain;" src="${qrCodeUrl}" alt="QR Code" title="QR Code" />
     `;
 } // END generateHTMLMarkup
 
@@ -106,7 +107,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
     } else {
       // To use SendGrid;
       const attachment = [{ content, filename: 'qrcode.txt', type: 'plain/text', disposition: 'attachment', content_id: 'qrcode' }];
-      const msg = { to, from, subject, html, attachments: attachment };
+      const msg = { to, from, subject, html, text }; // attachments: attachment
       let didEmailSend = false;
       const results = await transporter.send(msg);
       if (results[0].statusCode === 202) {
