@@ -77,13 +77,14 @@ export function formatBillingAddressForHTMLMarkup(billing_address) {
 /*
 * Sends email to user - returns true if email was sent and false if not
 */
-export async function sendEmail(transporter, emailInfo) {
+export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
   // Define variables needed for sending emails
   const { to, from, html, order_number, attachments, qrCodeUrl: content } = emailInfo;
   const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
   const subject = `Order #${order_number} confirmed`;
 
   try {
+    if (!useSendGrid) {
     // Send email (using nodemailer)
     const results = await transporter.sendMail({ to, from, html, text, subject, attachments });
 
@@ -102,19 +103,23 @@ export async function sendEmail(transporter, emailInfo) {
     } else {
       return false;
     }
-    
+    } else {
     // To use SendGrid;
-    // const attachment = [{ content, filename: 'qrcode.txt', type: 'plain/text', disposition: 'attachment', content_id: 'qrcode' }];
-    // const msg = { to, from, subject, html, attachments: attachment };
-    // let didEmailSend = false;
-    // const results = await sgMail.send(msg);
-    // if (results[0].statusCode === 202) {
-    //   didEmailSend = true;
-    // } else {
-    //   didEmailSend = false;
-    // }
-    // if (didEmailSend) { return true; }
-    // return false;
+    const attachment = [{ content, filename: 'qrcode.txt', type: 'plain/text', disposition: 'attachment', content_id: 'qrcode' }];
+    const msg = { to, from, subject, html, attachments: attachment };
+    let didEmailSend = false;
+    const results = await sgMail.send(msg);
+    if (results[0].statusCode === 202) {
+      didEmailSend = true;
+    } else {
+      didEmailSend = false;
+    }
+    if (didEmailSend) { return true; }
+    return false;
+    }
+
+    
+
 
   } catch (e) {
     console.error('error sending email =>', e);

@@ -156,7 +156,7 @@ export default async function handler(req, res) {
       // If webhook_id does not already exist in db
       if (!getPrevWebhook) {
         // const userEmailSuccessful = await sendEmail(transporter, emailData); // send email
-        const userEmailSuccessful = await sendEmail(sgMail, emailData);
+        const userEmailSuccessful = await sendEmail(sgMail, emailData, true);
         console.log('userEmailSuccessful;', userEmailSuccessful)
         // If email is successful, add webhook to redis and send success response
         if (userEmailSuccessful) {
