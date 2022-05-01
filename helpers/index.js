@@ -104,25 +104,29 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
       return false;
     }
     } else {
-    // To use SendGrid;
-    const attachment = [{ content, filename: 'qrcode.txt', type: 'plain/text', disposition: 'attachment', content_id: 'qrcode' }];
-    const msg = { to, from, subject, html, attachments: attachment };
-    let didEmailSend = false;
-    const results = await transporter.send(msg);
-    if (results[0].statusCode === 202) {
-      didEmailSend = true;
-    } else {
-      didEmailSend = false;
-    }
-    if (didEmailSend) { return true; }
-    return false;
+      // To use SendGrid;
+      const attachment = [{ content, filename: 'qrcode.txt', type: 'plain/text', disposition: 'attachment', content_id: 'qrcode' }];
+      const msg = { to, from, subject, html, attachments: attachment };
+      let didEmailSend = false;
+      const results = await transporter.send(msg);
+      if (results[0].statusCode === 202) {
+        didEmailSend = true;
+      } else {
+        didEmailSend = false;
+      }
+      if (didEmailSend) { return true; }
+      return false;
     }
 
     
 
 
   } catch (e) {
-    console.error('error sending email =>', e);
+    if (useSendGrid) {
+      console.error('error sending email =>', e && e.response && e.response.body && e.response.body.errors || e);
+    } else {
+      console.error('error sending email =>', e);
+    }
     return false;
   }
 } // END sendEmail
