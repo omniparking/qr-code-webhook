@@ -108,7 +108,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
       const finalContent = content.toString('base64');
       // To use SendGrid;
       const attachment = [{ content: finalContent, filename: 'qrcode.txt', type: 'plain/text', disposition: 'attachment', content_id: 'qrcode' }];
-      const msg = { to, from: 'info@omniairportparking.com', subject, html, text, attachments: attachment }; // 
+      const msg = { to, from: 'info@omniairportparking.com', subject, html, text, /* attachments: attachment */ }; // 
       let didEmailSend = false;
       const results = await transporter.send(msg);
       if (results[0].statusCode === 202) {
