@@ -4,7 +4,7 @@
 // Import needed packages
 // import crypto from 'crypto'; // (encrypts/decrypts data)
 // import getRawBody from 'raw-body';
-import sgMail from '@sendgrid/mail';
+import sendgridMailer from '@sendgrid/mail';
 import QRCode from 'qrcode'; // (generates qr code)
 import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
@@ -14,7 +14,7 @@ import sharp from 'sharp'; // shortens text for S3 binary image
 
 import {
   generateHTMLMarkup, formatBillingAddressForHTMLMarkup,
-  sendEmail, generateQRCode, generateDateTimeAsString
+  sendEmail, generateQRCode, generateDateTimeAsString, generateQRCodeSendGrid
 } from '../../helpers/index'; // imports of helper functions
 
 
@@ -38,9 +38,9 @@ const redis = new Redis({ url, token });
 const transporter = nodemailer.createTransport({ port, host, auth: { user, pass }, secure: true });
 
 /* IF DECIDE TO SWITCH FROM NODEMAILER TO SENDGRID */
-// import sgMail from '@sendgrid/mail'; // sendgrid (to send emails)
+// import sendgridMailer from '@sendgrid/mail'; // sendgrid (to send emails)
 // To use sendgrid for emails
-sgMail.setApiKey(SENDGRID_API_KEY);
+sendgridMailer.setApiKey(SENDGRID_API_KEY);
 
 
 /*
@@ -122,11 +122,11 @@ export default async function handler(req, res) {
       }
 
       // Data required in qr code
-      const qrCodeData = { order_number, start_time, end_time };
+      const qrCodeDataStringified = JSON.stringify({ order_number, start_time, end_time });
 
       // Generate barcode with order information
-      const qrCodeUrl = await generateQRCode(QRCode, JSON.stringify(qrCodeData));
-
+      // const qrCodeUrl = await generateQRCode(QRCode, qrCodeDataStringified);
+      const qrCodeUrl = await generateQRCodeSendGrid(QRCode, qrCodeDataStringified);
       // Generate markup for user's billing address to display in email
       const billingAddressMarkup = formatBillingAddressForHTMLMarkup(billing_address);
 
@@ -147,17 +147,16 @@ export default async function handler(req, res) {
 
       // Define variables for sending email
       const to = 'alon.bibring@gmail.com'; // email recipient
-      const from = 'omniairportparking@gmail.com'; // email sender
     // const cc = ['alon.bibring@gmail.com']; // cc emails
 
       const attachments = [{ path: qrCodeUrl }];
 
-      const emailData = { to, from, html, order_number, attachments, qrCodeUrl, name };
+      const emailData = { from: 'omniairportparking@gmail.com', to,  html, order_number, attachments, qrCodeUrl, name };
 
       // If webhook_id does not already exist in db
       if (!getPrevWebhook) {
         // const userEmailSuccessful = await sendEmail(transporter, emailData); // send email
-        const userEmailSuccessful = await sendEmail(sgMail, emailData, true);
+        const userEmailSuccessful = await sendEmail(sendgridMailer, emailData, true);
         // console.log('userEmailSuccessful;', userEmailSuccessful);
         // If email is successful, add webhook to redis and send success response
         if (userEmailSuccessful) {
@@ -170,7 +169,7 @@ export default async function handler(req, res) {
             // const userEmailSuccessful = await sendEmail(transporter, emailData);
             
             // Resend email using SendGrid
-            const userEmailSuccessful = await sendEmail(sgMail, emailData, true);
+            const userEmailSuccessful = await sendEmail(sendgridMailer, emailData, true);
             // If resent email is successful
             if (userEmailSuccessful) {
               try {

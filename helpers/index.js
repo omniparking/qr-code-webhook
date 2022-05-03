@@ -4,6 +4,7 @@
 // import getConfig from 'next/config';
 
 import { Buffer } from 'buffer';
+import sharp from 'sharp';
 
 /*
 *
@@ -113,8 +114,8 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
     } else {
       // To use SendGrid;
       const content2 = Buffer.from(content).toString('base64');
-      const attachment = [{ content: content2, filename: 'qrcode.pdf', type: 'application/pdf', disposition: 'attachment', content_id: 'qrcode5426426' }];
-      const sendgridTo = { email: to, name };
+      const attachment = [{ content: content2, filename: 'qr-code.jpg', type: 'text/html', disposition: 'attachment' }];
+      const sendgridTo = { name, email: to };
       const sendgridFrom = { email: 'info@omniairportparking.com', name: 'Omni Airport Parking' };
 
       const msg = { to: sendgridTo, from: sendgridFrom, subject, html, text, attachments: attachment }; // 
@@ -128,9 +129,6 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
       if (didEmailSend) { return true; }
       return false;
     }
-
-    
-
 
   } catch (e) {
     if (useSendGrid) {
@@ -149,12 +147,33 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
 export async function generateQRCode(QRCode, text) {
   try {
     const codeUrl = await QRCode.toDataURL(text, { errorCorrectionLevel: 'L', version: 9 });
-    return codeUrl; // .replace('data:image/png;base64', '');
+
+    return codeUrl.replace('data:image/png;base64,', '');
   } catch (e) {
     console.error('error generating qr code => ', e);
     return '';
   }
 } // END generateQRCode
+
+
+/*
+* Generates qr code with order id, start date, and end date
+*/
+export async function generateQRCodeSendGrid(QRCode, text) {
+  try {
+    const codeUrl = await QRCode.toDataURL(text, { errorCorrectionLevel: 'L', version: 9 });
+    const urlBuffer = Buffer.from(codeUrl.replace('data:image/png;base64,', ''));
+    const { data, info } = await sharp(urlBuffer)
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const pixelArray = new Uint8ClampedArray(data.buffer);
+    const result = await sharp(pixelArray, { raw: { width, height, channels } }).toFile('qr-code.jpg');
+    return result;
+  } catch (e) {
+    console.error('error generating qr code => ', e);
+    return '';
+  }
+} // END generateQRCodeSendGrid
 
 
 /*
