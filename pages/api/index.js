@@ -24,7 +24,7 @@ const {
   OMNI_AIRPORT_GMAIL_USER: user, OMNI_AIRPORT_GMAIL_PASS: pass,
   SMTP_HOST: host, EMAIL_PORT: port,
   AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
-  SENDGRID_API_KEY,
+  SENDGRID_API_KEY, GO_DADDY_PASS, GO_DADDY_USER
   /* SHOPIFY_SECRET, */
 } = process.env;
 
@@ -35,7 +35,17 @@ const s3 = new AWS.S3({ accessKeyId, secretAccessKey });
 const redis = new Redis({ url, token });
 
 // Initialize nodemailer (to send emails)
-const transporter = nodemailer.createTransport({ port, host, auth: { user, pass }, secure: true });
+// const transporter = nodemailer.createTransport({ port, host, auth: { user, pass }, secure: true });
+ const transporter = nodemailer.createTransport({    
+    service: 'Godaddy',
+    host: "smtpout.secureserver.net",  
+    secureConnection: true,
+    port: 465,
+    auth: {
+        user: GO_DADDY_USER,
+        pass: GO_DADDY_PASS 
+    }
+});
 
 /* IF DECIDE TO SWITCH FROM NODEMAILER TO SENDGRID */
 // import sendgridMailer from '@sendgrid/mail'; // sendgrid (to send emails)
@@ -125,8 +135,8 @@ export default async function handler(req, res) {
       const qrCodeDataStringified = JSON.stringify({ order_number, start_time, end_time });
 
       // Generate barcode with order information
-      // const qrCodeUrl = await generateQRCode(QRCode, qrCodeDataStringified);
-      const qrCodeUrl = await generateQRCodeSendGrid(QRCode, qrCodeDataStringified);
+      const qrCodeUrl = await generateQRCode(QRCode, qrCodeDataStringified);
+      // const qrCodeUrl = await generateQRCodeSendGrid(QRCode, qrCodeDataStringified);
       // Generate markup for user's billing address to display in email
       const billingAddressMarkup = formatBillingAddressForHTMLMarkup(billing_address);
 
@@ -155,8 +165,8 @@ export default async function handler(req, res) {
 
       // If webhook_id does not already exist in db
       if (!getPrevWebhook) {
-        // const userEmailSuccessful = await sendEmail(transporter, emailData); // send email
-        const userEmailSuccessful = await sendEmail(sendgridMailer, emailData, true);
+        const userEmailSuccessful = await sendEmail(transporter, emailData); // send email
+        // const userEmailSuccessful = await sendEmail(sendgridMailer, emailData, true);
         // console.log('userEmailSuccessful;', userEmailSuccessful);
         // If email is successful, add webhook to redis and send success response
         if (userEmailSuccessful) {

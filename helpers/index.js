@@ -146,7 +146,8 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
 export async function generateQRCode(QRCode, text) {
   try {
     const codeUrl = await QRCode.toDataURL(text, { errorCorrectionLevel: 'L', version: 9 });
-    return codeUrl.replace('data:image/png;base64,', '');
+    return codeUrl;
+    // return codeUrl.replace('data:image/png;base64,', '');
   } catch (e) {
     console.error('error generating qr code => ', e);
     return '';
