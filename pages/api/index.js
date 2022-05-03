@@ -166,9 +166,11 @@ export default async function handler(req, res) {
         } else {
           // If the email is not successful, try sending it again
           try {
-            // Resending email
-            const userEmailSuccessful = await sendEmail(transporter, emailData);
-
+            // Resending email using Nodemailer
+            // const userEmailSuccessful = await sendEmail(transporter, emailData);
+            
+            // Resend email using SendGrid
+            const userEmailSuccessful = await sendEmail(sgMail, emailData, true);
             // If resent email is successful
             if (userEmailSuccessful) {
               try {
