@@ -106,7 +106,8 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
     }
     } else {
       // To use SendGrid;
-      const attachment = [{ content, filename: 'qrcode.txt', type: 'plain/text', disposition: 'attachment', content_id: 'qrcode' }];
+      content2 = Buffer(content).toString('base64');
+      const attachment = [{ content: content2, filename: 'qrcode.txt', type: 'plain/text', disposition: 'attachment', content_id: 'qrcode' }];
       const msg = { to, from: 'info@omniairportparking.com', subject, html, text, attachments: attachment }; // 
       let didEmailSend = false;
       const results = await transporter.send(msg);
@@ -139,7 +140,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
 export async function generateQRCode(QRCode, text) {
   try {
     const codeUrl = await QRCode.toDataURL(text, { errorCorrectionLevel: 'L', version: 5 });
-    return codeUrl;
+    return codeUrl.replace('data:image/png;base64', '');
   } catch (e) {
     console.error('error generating qr code => ', e);
     return '';
