@@ -161,15 +161,17 @@ export async function generateQRCode(QRCode, text) {
 */
 export async function generateQRCodeSendGrid(QRCode, text) {
   try {
-    const codeUrl = await QRCode.toDataURL(text, { errorCorrectionLevel: 'L', version: 9 });
-    const urlBuffer = Buffer.from(codeUrl.replace('data:image/png;base64,', ''));
-    const { data, info } = await sharp(urlBuffer)
-      .raw()
-      .toBuffer({ resolveWithObject: true });
-    const pixelArray = new Uint8ClampedArray(data.buffer);
-    const { width, height, channels } = info;
-    const result = await sharp(pixelArray, { raw: { width, height, channels } }).toBuffer({ resolveWithObject: true });
-    return result.toString('base64');
+    const codeUrl = await QRCode.toDataURL(text, { errorCorrectionLevel: 'L', version: 9 }).toBuffer();
+    const urlBuffer = await (await sharp(codeUrl).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
+    // const urlBuffer = Buffer.from(codeUrl);
+    // const { data, info } = await sharp(urlBuffer)
+    //   .raw()
+    //   .toBuffer({ resolveWithObject: true });
+    // const pixelArray = new Uint8ClampedArray(data.buffer);
+    // const { width, height, channels } = info;
+    // const result = await sharp(pixelArray, { raw: { width, height, channels } }).toBuffer({ resolveWithObject: true });
+    // return result.toString('base64');
+    return urlBuffer;
   } catch (e) {
     console.error('error generating qr code => ', e);
     return '';
