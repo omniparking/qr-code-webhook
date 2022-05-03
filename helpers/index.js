@@ -93,9 +93,9 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
 
   try {
     if (!useSendGrid) {
-      // Send email (using nodemailer)
+      // To send emails using nodemailer
       const results = await transporter.sendMail({ to, from, html, text, subject, attachments });
-      console.log('results from email:', results)
+
       // Check results from email request -> if receiver is found in the accepted array, then email was sent succesfully
       // However if the receiver's email is found in the rejected array, then the email was not sent successfully
       if (results) {
@@ -112,7 +112,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
         return false;
       }
     } else {
-      // To use SendGrid;
+      // To use emails using SendGrid
       const attachment = [{ content, filename: 'qr-code.png', type: 'image/png', content_id: 'logo' }];
       const sendgridTo = { name, email: to };
       const sendgridFrom = { email: 'info@omniairportparking.com', name: 'Omni Airport Parking' };
@@ -120,7 +120,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
       const msg = { to: sendgridTo, from: sendgridFrom, subject, html, text, attachments: attachment }; // 
       let didEmailSend = false;
       const results = await transporter.send(msg);
-      if (results[0].statusCode === 202) {
+      if (results && results[0] && results[0].statusCode === 202) {
         didEmailSend = true;
       } else {
         didEmailSend = false;
