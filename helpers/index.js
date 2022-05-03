@@ -109,7 +109,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
     } else {
       // To use SendGrid;
       const content2 = Buffer(content).toString('base64');
-      const attachment = [{ content: content2, type: 'image/jpeg', disposition: 'attachment', content_id: 'qrcode5426426' }];
+      const attachment = [{ content: content2, filename: 'qrcode.png', type: 'image/png', disposition: 'attachment', content_id: 'qrcode5426426' }];
       const sendgridTo = { email: to, name };
       const sendgridFrom = { email: 'info@omniairportparking.com', name: 'Omni Airport Parking' };
 
