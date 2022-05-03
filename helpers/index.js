@@ -139,7 +139,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
 */
 export async function generateQRCode(QRCode, text) {
   try {
-    const codeUrl = await QRCode.toDataURL(text, { errorCorrectionLevel: 'L', version: 2 });
+    const codeUrl = await QRCode.toDataURL(text, { errorCorrectionLevel: 'L', version: 5 });
     return codeUrl;
   } catch (e) {
     console.error('error generating qr code => ', e);
