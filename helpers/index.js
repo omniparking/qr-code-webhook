@@ -95,7 +95,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
     if (!useSendGrid) {
       // Send email (using nodemailer)
       const results = await transporter.sendMail({ to, from, html, text, subject, attachments });
-
+      console.log('results from email:', results)
       // Check results from email request -> if receiver is found in the accepted array, then email was sent succesfully
       // However if the receiver's email is found in the rejected array, then the email was not sent successfully
       if (results) {
@@ -147,7 +147,6 @@ export async function generateQRCode(QRCode, text) {
   try {
     const codeUrl = await QRCode.toDataURL(text, { errorCorrectionLevel: 'L', version: 9 });
     return codeUrl;
-    // return codeUrl.replace('data:image/png;base64,', '');
   } catch (e) {
     console.error('error generating qr code => ', e);
     return '';

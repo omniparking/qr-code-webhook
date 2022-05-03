@@ -40,7 +40,7 @@ const redis = new Redis({ url, token });
     host: 'smtpout.secureserver.net',  
     secureConnection: false,
     port: 587,
-   auth: { user: 'info@omniairportparking.com', pass: GO_DADDY_PASS },
+   auth: { user: '153210777', pass: GO_DADDY_PASS },
           tls: {
         ciphers: 'SSLv3'
       }
