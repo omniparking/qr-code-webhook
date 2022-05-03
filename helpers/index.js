@@ -167,8 +167,8 @@ export async function generateQRCodeSendGrid(QRCode, text) {
       .raw()
       .toBuffer({ resolveWithObject: true });
     const pixelArray = new Uint8ClampedArray(data.buffer);
-    const result = await sharp(pixelArray, { raw: { width, height, channels } }).toBuffer();
-    return result;
+    const result = await sharp(pixelArray, { raw: { width, height, channels } }).toBuffer({ resolveWithObject: true });
+    return result.toString('base64');
   } catch (e) {
     console.error('error generating qr code => ', e);
     return '';
