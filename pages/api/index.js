@@ -37,14 +37,13 @@ const redis = new Redis({ url, token });
 // Initialize nodemailer (to send emails)
 // const transporter = nodemailer.createTransport({ port, host, auth: { user, pass }, secure: true });
  const transporter = nodemailer.createTransport({    
-    service: 'Godaddy',
-    host: "smtpout.secureserver.net",  
-    secureConnection: true,
-    port: 465,
-    auth: {
-        user: GO_DADDY_USER,
-        pass: GO_DADDY_PASS 
-    }
+    host: 'smtpout.secureserver.net',  
+    secureConnection: false,
+    port: 587,
+   auth: { user: 'info@omniairportparking.com', pass: GO_DADDY_PASS },
+          tls: {
+        ciphers: 'SSLv3'
+      }
 });
 
 /* IF DECIDE TO SWITCH FROM NODEMAILER TO SENDGRID */

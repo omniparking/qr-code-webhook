@@ -93,24 +93,24 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
 
   try {
     if (!useSendGrid) {
-    // Send email (using nodemailer)
-    const results = await transporter.sendMail({ to, from, html, text, subject, attachments });
+      // Send email (using nodemailer)
+      const results = await transporter.sendMail({ to, from, html, text, subject, attachments });
 
-    // Check results from email request -> if receiver is found in the accepted array, then email was sent succesfully
-    // However if the receiver's email is found in the rejected array, then the email was not sent successfully
-    if (results) {
-      if (results.accepted && results.accepted.indexOf(to) > -1) {
-        return true;
-      } else if (results.rejected && results.rejected.indexOf(to) > -1) {
+      // Check results from email request -> if receiver is found in the accepted array, then email was sent succesfully
+      // However if the receiver's email is found in the rejected array, then the email was not sent successfully
+      if (results) {
+        if (results.accepted && results.accepted.indexOf(to) > -1) {
+          return true;
+        } else if (results.rejected && results.rejected.indexOf(to) > -1) {
+          return false;
+        } else if ((results.rejected && results.rejected.length > 0) || results.accepted && results.accepted.length === 0) {
+          return false;
+        } else if (results.rejected && results.rejected.length === 0) {
+          return true;
+        }
+      } else {
         return false;
-      } else if ((results.rejected && results.rejected.length > 0) || results.accepted && results.accepted.length === 0) {
-        return false;
-      } else if (results.rejected && results.rejected.length === 0) {
-        return true;
       }
-    } else {
-      return false;
-    }
     } else {
       // To use SendGrid;
       const attachment = [{ content, filename: 'qr-code.png', type: 'image/png', content_id: 'logo' }];
