@@ -35,16 +35,16 @@ const s3 = new AWS.S3({ accessKeyId, secretAccessKey });
 const redis = new Redis({ url, token });
 
 // Initialize nodemailer (to send emails)
-// const transporter = nodemailer.createTransport({ port, host, auth: { user, pass }, secure: true });
- const transporter = nodemailer.createTransport({    
-    host: 'smtpout.secureserver.net',  
-    secureConnection: false,
-    port: 587,
-   auth: { user: '153210777', pass: GO_DADDY_PASS },
-          tls: {
-        ciphers: 'SSLv3'
-      }
-});
+const transporter = nodemailer.createTransport({ port, host, auth: { user, pass }, secure: true });
+//  const transporter = nodemailer.createTransport({    
+//     host: 'smtpout.secureserver.net',  
+//     secureConnection: false,
+//     port: 587,
+//    auth: { user: '153210777', pass: GO_DADDY_PASS },
+//           tls: {
+//         ciphers: 'SSLv3'
+//       }
+// });
 
 /* IF DECIDE TO SWITCH FROM NODEMAILER TO SENDGRID */
 // import sendgridMailer from '@sendgrid/mail'; // sendgrid (to send emails)
@@ -160,7 +160,7 @@ export default async function handler(req, res) {
 
       const attachments = [{ path: qrCodeUrl }];
 
-      const emailData = { from: 'info@omniairportparking.com', to,  html, order_number, attachments, qrCodeUrl, name };
+      const emailData = { from: 'omniairportparking@gmail.com', to,  html, order_number, attachments, qrCodeUrl, name };
 
       // If webhook_id does not already exist in db
       if (!getPrevWebhook) {
