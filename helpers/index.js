@@ -47,9 +47,11 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
       <p style="margin: 0px; padding: 0px;">Taxes and Fees: $${total_tax}</p>
       <p style="margin: 0px; padding: 0px;">Total: $${total_price}</p>
       <br />
-      <img height="200" width="200" style="display: block; object=fit: contain;" src="${qrCodeUrl}" alt="QR Code" title="QR Code" />
+      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:qrcode5426426" alt="QR Code" title="QR Code" />
     `;
 } // END generateHTMLMarkup
+
+//       <img height="200" width="200" style="display: block; object=fit: contain;" src="${qrCodeUrl}" alt="QR Code" title="QR Code" />
 
 
 /*
@@ -80,7 +82,7 @@ export function formatBillingAddressForHTMLMarkup(billing_address) {
 */
 export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
   // Define variables needed for sending emails
-  const { to, from, html, order_number, attachments, qrCodeUrl: content } = emailInfo;
+  const { to, from, html, order_number, attachments, qrCodeUrl: content, name } = emailInfo;
   const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
   const subject = `Order #${order_number} confirmed`;
 
@@ -107,8 +109,11 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
     } else {
       // To use SendGrid;
       const content2 = Buffer(content).toString('base64');
-      const attachment = [{ content: content2, filename: 'qrcode.txt', type: 'plain/text', disposition: 'attachment', content_id: 'qrcode' }];
-      const msg = { to, from: 'info@omniairportparking.com', subject, html, text, attachments: attachment }; // 
+      const attachment = [{ content: content2, type: 'image/jpeg', disposition: 'attachment', content_id: 'qrcode5426426' }];
+      const sendgridTo = { email: to, name };
+      const sendgridFrom = { email: 'info@omniairportparking.com', name: 'Omni Airport Parking' };
+
+      const msg = { to: sendgridTo, from: sendgridFrom, subject, html, disposition: 'inline', text, attachments: attachment }; // 
       let didEmailSend = false;
       const results = await transporter.send(msg);
       if (results[0].statusCode === 202) {
