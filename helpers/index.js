@@ -147,7 +147,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
 export async function generateQRCode(QRCode, text) {
   try {
     const codeUrl = await QRCode.toDataURL(text, { errorCorrectionLevel: 'L', version: 9 });
-
+  
     return codeUrl.replace('data:image/png;base64,', '');
   } catch (e) {
     console.error('error generating qr code => ', e);
@@ -161,8 +161,9 @@ export async function generateQRCode(QRCode, text) {
 */
 export async function generateQRCodeSendGrid(QRCode, text) {
   try {
-    const codeUrl = await QRCode.toDataURL(text, { errorCorrectionLevel: 'L', version: 9 }).replace('data:image/jpeg;base64, ', '');
-    const buffer = Buffer.from(codeUrl).toString('base64');
+    const codeUrl = await QRCode.toDataURL(text, { errorCorrectionLevel: 'L', version: 9 })
+    const url = codeUrl.replace('data:image/jpeg;base64, ', '');
+    const buffer = Buffer.from(url).toString('base64');
     return buffer;
   } catch (e) {
     console.error('error generating qr code => ', e);
