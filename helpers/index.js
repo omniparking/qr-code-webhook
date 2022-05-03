@@ -32,6 +32,8 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
   // <img height="200" width="200" style="display: block; object=fit: contain;" src="${qrCodeUrl}" alt="QR Code" title="QR Code" />
 
   return `
+    <html>
+    <body>
       <b>Parking Confirmation Details:</b>
       <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
       <p>This email is to confirm your recent order.</p>
@@ -49,7 +51,8 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
       <p style="margin: 0px; padding: 0px;">Taxes and Fees: $${total_tax}</p>
       <p style="margin: 0px; padding: 0px;">Total: $${total_price}</p>
       <br />
-      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:qrcode5426426" alt="QR Code" title="QR Code" />
+      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:qrcode5426426" alt="QR Code" title="QR Code" />    
+    </body>
     `;
 } // END generateHTMLMarkup
 
