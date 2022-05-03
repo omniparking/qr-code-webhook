@@ -52,10 +52,11 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
       <p style="margin: 0px; padding: 0px;">Taxes and Fees: $${total_tax}</p>
       <p style="margin: 0px; padding: 0px;">Total: $${total_price}</p>
       <br />
+      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:logo" alt="QR Code" title="QR Code" />    
     </body>
     `;
 } // END generateHTMLMarkup
-//       <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:qrcode5426426" alt="QR Code" title="QR Code" />    
+//       
 //       <img height="200" width="200" style="display: block; object=fit: contain;" src="${qrCodeUrl}" alt="QR Code" title="QR Code" />
 
 
@@ -113,7 +114,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
     }
     } else {
       // To use SendGrid;
-      const attachment = [{ content, filename: 'qr-code.png', type: 'text/html', disposition: 'attachment' }];
+      const attachment = [{ content, filename: 'qr-code.png', type: 'image/jpeg', disposition: 'inline', content_id: 'logo' }];
       const sendgridTo = { name, email: to };
       const sendgridFrom = { email: 'info@omniairportparking.com', name: 'Omni Airport Parking' };
 
