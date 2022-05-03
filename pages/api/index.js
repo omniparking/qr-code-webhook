@@ -161,7 +161,7 @@ export default async function handler(req, res) {
 
       const attachments = [{ path: qrCodeUrl }];
 
-      const emailData = { from: 'omniairportparking@gmail.com', to,  html, order_number, attachments, qrCodeUrl, name };
+      const emailData = { from: 'info@omniairportparking.com', to,  html, order_number, attachments, qrCodeUrl, name };
 
       // If webhook_id does not already exist in db
       if (!getPrevWebhook) {
