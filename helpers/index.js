@@ -114,7 +114,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
     } else {
       // To use SendGrid;
       const content2 = Buffer.from(content).toString('base64');
-      const attachment = [{ content: content2, filename: 'qr-code.jpg', type: 'text/html', disposition: 'attachment' }];
+      const attachment = [{ content: content2, filename: 'qr-code.png', type: 'text/html', disposition: 'attachment' }];
       const sendgridTo = { name, email: to };
       const sendgridFrom = { email: 'info@omniairportparking.com', name: 'Omni Airport Parking' };
 
@@ -161,7 +161,7 @@ export async function generateQRCode(QRCode, text) {
 */
 export async function generateQRCodeSendGrid(QRCode, text) {
   try {
-    const codeUrl = await QRCode.toDataURL(text, { errorCorrectionLevel: 'L', version: 9 }).toBuffer();
+    const codeUrl = await QRCode.toDataURL(text, { errorCorrectionLevel: 'L', version: 9 });
     const urlBuffer = await (await sharp(codeUrl).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
     // const urlBuffer = Buffer.from(codeUrl);
     // const { data, info } = await sharp(urlBuffer)
