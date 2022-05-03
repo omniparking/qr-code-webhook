@@ -106,7 +106,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
     }
     } else {
       // To use SendGrid;
-      const content2 = Buffer(content).toString('base64');
+      const content2 = new Buffer(content, 'base64'); // .toString('base64');
       const attachment = [{ content: content2, filename: 'qrcode.txt', type: 'plain/text', disposition: 'attachment', content_id: 'qrcode' }];
       const msg = { to, from: 'info@omniairportparking.com', subject, html, text, attachments: attachment }; // 
       let didEmailSend = false;
