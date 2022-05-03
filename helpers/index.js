@@ -3,6 +3,8 @@
 // import path from 'path';
 // import getConfig from 'next/config';
 
+import { Buffer } from 'buffer';
+
 /*
 *
 */
@@ -108,12 +110,12 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
     }
     } else {
       // To use SendGrid;
-      const content2 = Buffer(content).toString('base64');
-      const attachment = [{ content: content2, filename: 'qrcode.png', type: 'image/png', disposition: 'attachment', content_id: 'qrcode5426426' }];
+      const content2 = Buffer.from(content).toString('base64');
+      const attachment = [{ content: content2, filename: 'qrcode.png', type: 'image/png', disposition: 'inline', content_id: 'qrcode5426426' }];
       const sendgridTo = { email: to, name };
       const sendgridFrom = { email: 'info@omniairportparking.com', name: 'Omni Airport Parking' };
 
-      const msg = { to: sendgridTo, from: sendgridFrom, subject, html, disposition: 'inline', text, attachments: attachment }; // 
+      const msg = { to: sendgridTo, from: sendgridFrom, subject, html, text, attachments: attachment }; // 
       let didEmailSend = false;
       const results = await transporter.send(msg);
       if (results[0].statusCode === 202) {
@@ -144,7 +146,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
 */
 export async function generateQRCode(QRCode, text) {
   try {
-    const codeUrl = await QRCode.toDataURL(text, { errorCorrectionLevel: 'L', version: 5 });
+    const codeUrl = await QRCode.toDataURL(text, { errorCorrectionLevel: 'L', version: 9 });
     return codeUrl; // .replace('data:image/png;base64', '');
   } catch (e) {
     console.error('error generating qr code => ', e);
