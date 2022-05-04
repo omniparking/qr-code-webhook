@@ -11,7 +11,7 @@ import fs from 'fs';
 function generateIconImageForEmailTemplate(imgPath) {
   // console.log('process -> ', process.cwd());
   // console.log('path.join()',);
-  fs.readdir(path.join(`${process.cwd()}/../../`), (err, files) => {
+  fs.readdir(path.join(`${process.cwd()}/../`), (err, files) => {
     if (err) {
       console.error('error reading files:', err);
     } else {
