@@ -48,11 +48,12 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
       <p style="margin: 0px; padding: 0px;">Subtotal: $${subtotal_price}</p>
       <p style="margin: 0px; padding: 0px;">Taxes and Fees: $${total_tax}</p>
       <p style="margin: 0px; padding: 0px;">Total: $${total_price}</p>
-      <br /> 
+      <br />
+      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:qrcode" alt="QR Code" title="QR Code" /> 
     </body>
     `;
 } // END generateHTMLMarkup
-//       <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:logo" alt="QR Code" title="QR Code" />   
+//         
 //       <img height="200" width="200" style="display: block; object=fit: contain;" src="${qrCodeUrl}" alt="QR Code" title="QR Code" />
 
 
@@ -111,7 +112,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
     } else {
       // To use emails using SendGrid
       // const qrCodeContent = fs.readFileSync(`${__dirname}./qrcode.png`).toString('base64');
-      const attachment = [{ content, filename: 'qrcode.png', type: 'application/png', disposition: 'attachment' }];
+      const attachment = [{ content, filename: 'qrcode.png', type: 'application/png', disposition: 'inline', content_id: 'qrcode' }];
       const sendgridTo = { name, email: to };
       const sendgridFrom = { email: 'info@omniairportparking.com', name: 'Omni Airport Parking' };
 
