@@ -146,7 +146,7 @@ export async function generateQRCode(QRCode, data) {
   try {
     let codeUrl = await QRCode.toDataURL(data, { errorCorrectionLevel: 'L', version: 9 });
     console.log('codeUrl:', codeUrl.slice(0, 50));
-    codeUrl = codeUrl.replace('data:image/png;base64, ', '');
+    // codeUrl = codeUrl.replace('data:image/png;base64, ', '');
     return codeUrl;
   } catch (e) {
     console.error('error generating qr code => ', e);
