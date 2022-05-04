@@ -145,15 +145,8 @@ export default async function handler(req, res) {
       // Generate barcode with order information
       const qrCodeUrl = await helpers.generateQRCode(QRCode, uniqueIdForQRCode);
       // const qrCodeUrl = await helpers.generateQRCodeSendGrid(QRCode, uniqueIdForQRCode);
-      const directoryPath = path.join(__dirname);
-      // passsing directoryPath and callback function
-      fs.readdir(directoryPath, (err, files) => {
-        if (err) { return console.error('Unable to scan directory: ' + err); } 
-        files.forEach((file) => { console.log('file:', file); });
-    });
 
-      res.status(201).send({ message: 'sent' });
-      return;
+
       // Code to send data to omni airport parking server
       // try {
       //   const dataForServer = {
