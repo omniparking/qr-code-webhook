@@ -1,6 +1,7 @@
 /*jshint esversion: 8 */
 
 import { Buffer } from 'buffer';
+import fs from 'fs';
 
 /*
 *
@@ -109,7 +110,8 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
       }
     } else {
       // To use emails using SendGrid
-      const attachment = [{ content, filename: 'qr-code.jpeg', type: 'application/jpeg', disposition: 'attachment' }];
+      const qrCodeContent = fs.readFileSync('./qrcode.png').toString('base64');
+      const attachment = [{ content: qrCodeContent, filename: 'qrcode.png', type: 'application/png', disposition: 'attachment' }];
       const sendgridTo = { name, email: to };
       const sendgridFrom = { email: 'info@omniairportparking.com', name: 'Omni Airport Parking' };
 
@@ -153,9 +155,9 @@ export async function generateQRCode(QRCode, data) {
 /*
 * Generates qr code with order id, start date, and end date
 */
-export async function generateQRCodeSendGrid(QRCode, data) {
+export async function generateQRCodeSendGrid(QRCode, id) {
   try {
-    let codeUrl = await QRCode.toString(data);
+    let codeUrl = await QRCode.toFile('./qrcode.png', id);
     // console.log('codeUrl:', codeUrl.slice(0, 50));
     // codeUrl = codeUrl.replace('data:image/jpeg;base64, ', '');
     // const buffer = Buffer.from(codeUrl).toString('base64');
@@ -176,3 +178,12 @@ export function generateDateTimeAsString(date, addTime = false) {
   if (!addTime) { return newDate.toLocaleDateString(); }
   return `${newDate.toLocaleDateString()} ${newDate.toLocaleTimeString()}`;
 } // END generateDateTimeAsString
+
+
+/*
+* Sends data to omni servers with reservation info and unique id
+* The unique id is what is stored in the QR code and used to look up the reservation
+*/
+export function sendDataToOmniAirportParkingServers(data) {
+
+} // END sendDataToOmniAirportParkingServers

@@ -11,16 +11,10 @@ import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo from AWS
 import sharp from 'sharp'; // shortens text for S3 binary image
 import Buffer from 'buffer';
-// import nextConfig from 'next/config';
 // import fs from 'fs';
 // const path = require('path');
-// import bwipjs from 'bwip-js';
 
-import {
-  generateHTMLMarkup, formatBillingAddressForHTMLMarkup,
-  sendEmail, generateQRCode, generateDateTimeAsString, generateQRCodeSendGrid
-} from '../../helpers/index'; // imports of helper functions
-
+import * as helpers from '../../helpers/index';
 
 // Deconstruct needed env variables from process.env
 const {
@@ -94,7 +88,7 @@ export default async function handler(req, res) {
       // and billing info such as price and address
       const {
         billing_address, created_at, subtotal_price, total_price, total_tax, line_items, order_number,
-        current_subtotal_price, current_total_price, current_total_tax /* , email: to */
+        current_subtotal_price, current_total_price, current_total_tax, id /* , email: to */
       } = body;
       const bookingTimes = line_items && line_items[1] && line_items[1].properties || [];
       const billingItems = line_items && line_items[1];
@@ -126,7 +120,7 @@ export default async function handler(req, res) {
       res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
 
       // Generate date in MM/DD/YYYY format for email
-      const createdAt = generateDateTimeAsString(created_at);
+      const createdAt = helpers.generateDateTimeAsString(created_at);
 
       // Get subtotal, taxes, and total price for email template
       const subPrice = subtotal_price || current_subtotal_price;
@@ -142,13 +136,30 @@ export default async function handler(req, res) {
         console.error('error getting image from aws => ', e);
       }
 
-      // Data required in qr code
-      const qrCodeDataStringified = JSON.stringify({ order_number, start_time, end_time });
+            // Grab unique webhook_id
+      const new_webhook_id = headers['x-shopify-webhook-id'] || '';
 
+      // Data required in qr code
+      // const qrCodeDataStringified = JSON.stringify({ order_number, start_time, end_time });
+      const uniqueIdForQRCode = `${id}${new_webhook_id}`;
       // Generate barcode with order information
       // const qrCodeUrl = await generateQRCode(QRCode, qrCodeDataStringified);
-      const qrCodeUrl = await generateQRCodeSendGrid(QRCode, qrCodeDataStringified);
-      console.log('qrCodeUrl:', qrCodeUrl)
+      const qrCodeUrl = await helpers.generateQRCodeSendGrid(QRCode, uniqueIdForQRCode);
+      console.log('qrCodeUrl:', qrCodeUrl);
+
+
+      // Code to send data to omni airport parking server
+      // try {
+      //   const dataForServer = {
+      //     facility_number: '',
+      //     key: uniqueIdForQRCode,
+      //     reservation_from: start_time,
+      //     reservation_until: end_time
+      //   };
+      //   const dataSentToServer = await helpers.sendDataToOmniAirportParkingServers(dataForServer);
+      // } catch (e) {
+      //   console.error('data not sent to omni airport parking server =>', e);
+      // }
       // let qr;
       // try {
       //   // const qrCode = await (await sharp(qrCodeUrl).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
@@ -159,7 +170,7 @@ export default async function handler(req, res) {
       // }
 
       // Generate markup for user's billing address to display in email
-      const billingAddressMarkup = formatBillingAddressForHTMLMarkup(billing_address);
+      const billingAddressMarkup = helpers.formatBillingAddressForHTMLMarkup(billing_address);
 
       // Define object for generating the HTML markup in generateHTMLMarkup function
       const htmlMarkupData = {
@@ -168,10 +179,7 @@ export default async function handler(req, res) {
       };
       
       // Generate HTML markup for email
-      const html = generateHTMLMarkup(htmlMarkupData, billingAddressMarkup);
-
-      // Grab unique webhook_id
-      const new_webhook_id = headers['x-shopify-webhook-id'] || '';
+      const html = helpers.generateHTMLMarkup(htmlMarkupData, billingAddressMarkup);
 
       // Method to add webhook_id to redis
       const getPrevWebhook = await redis.get(new_webhook_id);
@@ -196,7 +204,7 @@ export default async function handler(req, res) {
       // If webhook_id does not already exist in db
       if (!getPrevWebhook) {
         // const userEmailSuccessful = await sendEmail(transporter, emailData); // send email
-        const userEmailSuccessful = await sendEmail(sendgridMailer, emailData, true);
+        const userEmailSuccessful = await helpers.sendEmail(sendgridMailer, emailData, true);
         // console.log('userEmailSuccessful;', userEmailSuccessful);
         // If email is successful, add webhook to redis and send success response
         if (userEmailSuccessful) {
@@ -209,7 +217,7 @@ export default async function handler(req, res) {
             // const userEmailSuccessful = await sendEmail(transporter, emailData);
             
             // Resend email using SendGrid
-            const userEmailSuccessful = await sendEmail(sendgridMailer, emailData, true);
+            const userEmailSuccessful = await helpers.sendEmail(sendgridMailer, emailData, true);
             // If resent email is successful
             if (userEmailSuccessful) {
               try {
