@@ -110,8 +110,8 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
       }
     } else {
       // To use emails using SendGrid
-      const qrCodeContent = fs.readFileSync(`${__dirname}./qrcode.png`).toString('base64');
-      const attachment = [{ content: qrCodeContent, filename: 'qrcode.png', type: 'application/png', disposition: 'attachment' }];
+      // const qrCodeContent = fs.readFileSync(`${__dirname}./qrcode.png`).toString('base64');
+      const attachment = [{ content, filename: 'qrcode.png', type: 'application/png', disposition: 'attachment' }];
       const sendgridTo = { name, email: to };
       const sendgridFrom = { email: 'info@omniairportparking.com', name: 'Omni Airport Parking' };
 
