@@ -63,6 +63,7 @@ export default async function handler(req, res) {
     const { body, headers, method } = req;
     if (method === 'POST') {
       const { serverRuntimeConfig } = nextConfig();
+      console.log('nextConfig', nextConfig())
       const dirRelativeToPublicFolder = 'img';
       const dir = path.join(serverRuntimeConfig.PROJECT_ROOT, './public');
       console.log('dir:', dir)
