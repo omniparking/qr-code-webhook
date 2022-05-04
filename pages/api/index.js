@@ -154,7 +154,8 @@ export default async function handler(req, res) {
         files.forEach((file) => { console.log('file:', file); });
     });
 
-
+      res.status(201).send({ message: 'sent' });
+      return;
       // Code to send data to omni airport parking server
       // try {
       //   const dataForServer = {
@@ -184,7 +185,6 @@ export default async function handler(req, res) {
         subtotal_price: subPrice, total_tax: totalTax, total_price: totalPrice,
         qrCodeUrl, createdAt, start_time, end_time, quantity, price, name, title, imagePath,
       };
-      return res.status(201).send({ message: 'sent' });
       // Generate HTML markup for email
       const html = helpers.generateHTMLMarkup(htmlMarkupData, billingAddressMarkup);
 
