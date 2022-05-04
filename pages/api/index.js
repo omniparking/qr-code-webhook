@@ -146,16 +146,17 @@ export default async function handler(req, res) {
       const qrCodeDataStringified = JSON.stringify({ order_number, start_time, end_time });
 
       // Generate barcode with order information
-      // const qrCodeUrl = await generateQRCode(QRCode, qrCodeDataStringified);
-      const qrCodeUrl = await generateQRCodeSendGrid(QRCode, qrCodeDataStringified);
+      const qrCodeUrl = await generateQRCode(QRCode, qrCodeDataStringified);
+      // const qrCodeUrl = await generateQRCodeSendGrid(QRCode, qrCodeDataStringified);
     
-      let qr;
-      try {
-        const qrCode = await (await sharp(qrCodeUrl).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer());
-        qr = new Buffer.from(qrCode).toString('base64');
-      } catch (e) {
-        console.error('error from changing qr code to pdf => qr:', qr)
-      }
+      // let qr;
+      // try {
+      //   // const qrCode = await (await sharp(qrCodeUrl).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
+      //   // console.log('qrCode:', qrCode);
+      //   // qr = new Buffer.from(qrCode).toString('base64');
+      // } catch (e) {
+      //   console.error('error from changing qr code to pdf => qr:', qr)
+      // }
 
       // Generate markup for user's billing address to display in email
       const billingAddressMarkup = formatBillingAddressForHTMLMarkup(billing_address);
@@ -181,7 +182,16 @@ export default async function handler(req, res) {
 
       const attachments = [{ path: qrCodeUrl }];
 
-      const emailData = { from: 'omniairportparking@gmail.com', to,  html, order_number, attachments, qrCodeUrl, name, sendgridQrCode: qr };
+      const emailData = {
+        to,
+        html,
+        order_number,
+        attachments,
+        qrCodeUrl,
+        name,
+        from: 'omniairportparking@gmail.com',
+        // sendgridQrCode: qr
+      };
 
       // If webhook_id does not already exist in db
       if (!getPrevWebhook) {
