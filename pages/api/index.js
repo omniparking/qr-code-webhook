@@ -11,7 +11,7 @@ import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo from AWS
 import sharp from 'sharp'; // shortens text for S3 binary image
 import Buffer from 'buffer';
-import fs from 'fs';
+import fs, { promises } from 'fs';
 const path = require('path');
 
 import * as helpers from '../../helpers/index';
@@ -143,14 +143,12 @@ export default async function handler(req, res) {
       // const qrCodeDataStringified = JSON.stringify({ order_number, start_time, end_time });
       const uniqueIdForQRCode = `${id}${new_webhook_id}`;
       // Generate barcode with order information
-      // const qrCodeUrl = await generateQRCode(QRCode, qrCodeDataStringified);
-      const qrCodeUrl = await helpers.generateQRCodeSendGrid(QRCode, uniqueIdForQRCode);
+      const qrCodeUrl = await generateQRCode(QRCode, uniqueIdForQRCode);
+      // const qrCodeUrl = await helpers.generateQRCodeSendGrid(QRCode, uniqueIdForQRCode);
       const directoryPath = path.join(__dirname);
       // passsing directoryPath and callback function
-      fs.readdir(directoryPath, function (err, files) {
-        //handling error
+      fs.readdir(directoryPath, (err, files) => {
         if (err) { return console.error('Unable to scan directory: ' + err); } 
-        // listing all files using forEach
         files.forEach((file) => { console.log('file:', file); });
     });
 
@@ -214,7 +212,7 @@ export default async function handler(req, res) {
         const userEmailSuccessful = await helpers.sendEmail(sendgridMailer, emailData, true);
 
         // Remove qr code file
-        const unlinkedFile = await fs.unlink(`${__dirname}./qrcode.png`);
+        const unlinkedFile = await promises.unlink(`${__dirname}./qrcode.png`);
         console.log('unlinkedFile:', unlinkedFile);
 
         // console.log('userEmailSuccessful;', userEmailSuccessful);
@@ -232,7 +230,7 @@ export default async function handler(req, res) {
             const userEmailSuccessful = await helpers.sendEmail(sendgridMailer, emailData, true);
 
             // Remove qrcode png from server
-            const unlinkedFile = await fs.unlink(`${__dirname}./qrcode.png`);
+            const unlinkedFile = await promises.unlink(`${__dirname}./qrcode.png`);
             console.log('unlinkedFile:', unlinkedFile);
 
             // If resent email is successful
