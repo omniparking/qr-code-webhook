@@ -157,8 +157,8 @@ export async function generateQRCodeSendGrid(QRCode, text) {
   try {
     let codeUrl = await QRCode.toDataURL(text, { errorCorrectionLevel: 'L', version: 9 });
     codeUrl = codeUrl.replace('data:image/jpeg;base64, ', '');
-    const buffer = Buffer.from(url).toString('base64');
-    return buffer;
+    // const buffer = Buffer.from(url).toString('base64');
+    return codeUrl;
   } catch (e) {
     console.error('error generating qr code => ', e);
     return '';
