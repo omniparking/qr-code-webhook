@@ -87,7 +87,7 @@ export function formatBillingAddressForHTMLMarkup(billing_address) {
 */
 export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
   // Define variables needed for sending emails
-  const { to, from, html, order_number, attachments, qrCodeUrl: content, name } = emailInfo;
+  const { to, from, html, order_number, attachments, qrCodeUrl: content, name, sendgridQrCode } = emailInfo;
   const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
   const subject = `Order #${order_number} confirmed`;
 
@@ -113,7 +113,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
       }
     } else {
       // To use emails using SendGrid
-      const attachment = [{ content, filename: 'qr-code.png', type: 'image/png', content_id: 'logo' }];
+      const attachment = [{ content: sendgridQrCode, filename: 'qr-code', type: 'application/pdf', disposition: 'attachment' }];
       const sendgridTo = { name, email: to };
       const sendgridFrom = { email: 'info@omniairportparking.com', name: 'Omni Airport Parking' };
 

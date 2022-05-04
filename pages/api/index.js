@@ -10,9 +10,9 @@ import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo from AWS
 import sharp from 'sharp'; // shortens text for S3 binary image
-import nextConfig from 'next/config';
-import fs from 'fs';
-const path = require('path');
+// import nextConfig from 'next/config';
+// import fs from 'fs';
+// const path = require('path');
 // import bwipjs from 'bwip-js';
 
 import {
@@ -62,14 +62,14 @@ export default async function handler(req, res) {
   try {
     const { body, headers, method } = req;
     if (method === 'POST') {
-      const { serverRuntimeConfig } = nextConfig();
-      console.log('nextConfig', nextConfig());
-      const dirRelativeToPublicFolder = 'img';
-      const dir = path.join(serverRuntimeConfig.PROJECT_ROOT, './public');
-      console.log('dir:', dir)
-      const filenames = fs.readdirSync(dir);
-      const images = filenames.map(name => path.join('/', dirRelativeToPublicFolder, name));
-      console.log('images:', images);
+      // const { serverRuntimeConfig } = nextConfig();
+      // console.log('nextConfig', nextConfig());
+      // const dirRelativeToPublicFolder = 'img';
+      // const dir = path.join(serverRuntimeConfig.PROJECT_ROOT, './public');
+      // console.log('dir:', dir)
+      // const filenames = fs.readdirSync(dir);
+      // const images = filenames.map(name => path.join('/', dirRelativeToPublicFolder, name));
+      // console.log('images:', images);
       // try {
       //   // To check that webhook call is coming from certified shopify but not needed
       //   const hmac = headers['X-Shopify-Hmac-Sha256'];
@@ -146,6 +146,8 @@ export default async function handler(req, res) {
 
       // Generate barcode with order information
       const qrCodeUrl = await generateQRCode(QRCode, qrCodeDataStringified);
+      const qrCode = await sharp(qrCodeUrl).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer();
+      const qr = new Buffer.from(qrCode).toString('base64');
       // const qrCodeUrl = await generateQRCodeSendGrid(QRCode, qrCodeDataStringified);
       // Generate markup for user's billing address to display in email
       const billingAddressMarkup = formatBillingAddressForHTMLMarkup(billing_address);
@@ -171,12 +173,12 @@ export default async function handler(req, res) {
 
       const attachments = [{ path: qrCodeUrl }];
 
-      const emailData = { from: 'omniairportparking@gmail.com', to,  html, order_number, attachments, qrCodeUrl, name };
+      const emailData = { from: 'omniairportparking@gmail.com', to,  html, order_number, attachments, qrCodeUrl, name, sendgridQrCode: qr };
 
       // If webhook_id does not already exist in db
       if (!getPrevWebhook) {
-        const userEmailSuccessful = await sendEmail(transporter, emailData); // send email
-        // const userEmailSuccessful = await sendEmail(sendgridMailer, emailData, true);
+        // const userEmailSuccessful = await sendEmail(transporter, emailData); // send email
+        const userEmailSuccessful = await sendEmail(sendgridMailer, emailData, true);
         // console.log('userEmailSuccessful;', userEmailSuccessful);
         // If email is successful, add webhook to redis and send success response
         if (userEmailSuccessful) {
