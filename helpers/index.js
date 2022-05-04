@@ -156,10 +156,10 @@ export async function generateQRCode(QRCode, data) {
 export async function generateQRCodeSendGrid(QRCode, data) {
   try {
     let codeUrl = await QRCode.toString(data);
-    console.log('codeUrl:', codeUrl.slice(0, 50));
-    codeUrl = codeUrl.replace('data:image/jpeg;base64, ', '');
-    const buffer = Buffer.from(codeUrl).toString('base64');
-    return buffer;
+    // console.log('codeUrl:', codeUrl.slice(0, 50));
+    // codeUrl = codeUrl.replace('data:image/jpeg;base64, ', '');
+    // const buffer = Buffer.from(codeUrl).toString('base64');
+    return codeUrl;
   } catch (e) {
     console.error('error generating qr code => ', e);
     return '';

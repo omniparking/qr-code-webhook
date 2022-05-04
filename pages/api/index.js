@@ -148,7 +148,7 @@ export default async function handler(req, res) {
       // Generate barcode with order information
       // const qrCodeUrl = await generateQRCode(QRCode, qrCodeDataStringified);
       const qrCodeUrl = await generateQRCodeSendGrid(QRCode, qrCodeDataStringified);
-    
+      console.log('qrCodeUrl:', qrCodeUrl)
       // let qr;
       // try {
       //   // const qrCode = await (await sharp(qrCodeUrl).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
