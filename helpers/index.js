@@ -8,8 +8,15 @@ import path from 'path';
 *
 */
 function generateIconImageForEmailTemplate(imgPath) {
-  console.log('process -> ', process.cwd());
-  console.log('path.join()', path.join(`${process.cwd()}/../../`));
+  // console.log('process -> ', process.cwd());
+  // console.log('path.join()',);
+  fs.readdir(path.join(`${process.cwd()}/../../`), (err, files) => {
+    if (err) {
+      console.error('error reading files:', err);
+    } else {
+      console.log('FILES:', files)
+    }
+  })
       // imgPath = path.join('/public/omni-parking-logo.png');
   // return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="${imgPath}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
   return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="data:image/png;base64, ${imgPath}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
