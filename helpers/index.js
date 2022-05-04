@@ -1,8 +1,5 @@
 /*jshint esversion: 8 */
 
-// import path from 'path';
-// import getConfig from 'next/config';
-
 import { Buffer } from 'buffer';
 import sharp from 'sharp';
 
@@ -10,7 +7,8 @@ import sharp from 'sharp';
 *
 */
 function generateIconImageForEmailTemplate(imgPath) {
-  // imgPath = path.join(getConfig().serverRuntimeConfig.PROJECT_ROOT, '/static/omni-parking-logo.png');
+  console.log('process -> ', process.cwd());
+      // imgPath = path.join('/public/omni-parking-logo.png');
   // return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="${imgPath}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
   return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="data:image/png;base64, ${imgPath}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
 } // END generateIconImageForEmailTemplate
