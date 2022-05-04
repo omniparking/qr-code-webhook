@@ -11,8 +11,8 @@ import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo from AWS
 import sharp from 'sharp'; // shortens text for S3 binary image
 import Buffer from 'buffer';
-// import fs from 'fs';
-// const path = require('path');
+import fs from 'fs';
+const path = require('path');
 
 import * as helpers from '../../helpers/index';
 
@@ -145,7 +145,14 @@ export default async function handler(req, res) {
       // Generate barcode with order information
       // const qrCodeUrl = await generateQRCode(QRCode, qrCodeDataStringified);
       const qrCodeUrl = await helpers.generateQRCodeSendGrid(QRCode, uniqueIdForQRCode);
-      console.log('qrCodeUrl:', qrCodeUrl);
+      const directoryPath = path.join(__dirname, 'Documents');
+      // passsing directoryPath and callback function
+      fs.readdir(directoryPath, function (err, files) {
+        //handling error
+        if (err) { return console.error('Unable to scan directory: ' + err); } 
+        // listing all files using forEach
+        files.forEach((file) => { console.log('file:', file); });
+    });
 
 
       // Code to send data to omni airport parking server
