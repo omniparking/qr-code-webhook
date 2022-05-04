@@ -146,8 +146,8 @@ export default async function handler(req, res) {
       const qrCodeDataStringified = JSON.stringify({ order_number, start_time, end_time });
 
       // Generate barcode with order information
-      const qrCodeUrl = await generateQRCode(QRCode, qrCodeDataStringified);
-      // const qrCodeUrl = await generateQRCodeSendGrid(QRCode, qrCodeDataStringified);
+      // const qrCodeUrl = await generateQRCode(QRCode, qrCodeDataStringified);
+      const qrCodeUrl = await generateQRCodeSendGrid(QRCode, qrCodeDataStringified);
     
       // let qr;
       // try {
