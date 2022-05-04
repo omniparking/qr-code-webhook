@@ -5,20 +5,12 @@ import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs';
 
+
 /*
 *
 */
 function generateIconImageForEmailTemplate(imgPath) {
-  // console.log('process -> ', process.cwd());
-  // console.log('path.join()',);
-  fs.readdir(path.join(`${process.cwd()}/../`), (err, files) => {
-    if (err) {
-      console.error('error reading files:', err);
-    } else {
-      console.log('FILES:', files)
-    }
-  })
-      // imgPath = path.join('/public/omni-parking-logo.png');
+  // imgPath = path.join('/public/img/omni-parking-logo.png');
   // return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="${imgPath}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
   return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="data:image/png;base64, ${imgPath}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
 } // END generateIconImageForEmailTemplate
