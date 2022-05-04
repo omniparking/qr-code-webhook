@@ -1,10 +1,6 @@
 /*jshint esversion: 8 */
 
 import { Buffer } from 'buffer';
-import sharp from 'sharp';
-import path from 'path';
-import fs from 'fs';
-
 
 /*
 *

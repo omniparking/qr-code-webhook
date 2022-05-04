@@ -10,6 +10,7 @@ import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo from AWS
 import sharp from 'sharp'; // shortens text for S3 binary image
+import Buffer from 'buffer';
 // import nextConfig from 'next/config';
 // import fs from 'fs';
 // const path = require('path');
@@ -148,8 +149,8 @@ export default async function handler(req, res) {
       const qrCodeUrl = await generateQRCode(QRCode, qrCodeDataStringified);
       let qr;
       try {
-      const qrCode = await (await sharp(qrCodeUrl).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer());
-      qr = new Buffer.from(qrCode).toString('base64');
+        const qrCode = await (await sharp(qrCodeUrl).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer());
+        qr = new Buffer.from(qrCode).toString('base64');
       } catch (e) {
         console.error('error from changing qr code to pdf =>', e)
       }
