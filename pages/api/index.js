@@ -145,7 +145,7 @@ export default async function handler(req, res) {
       // Generate barcode with order information
       // const qrCodeUrl = await generateQRCode(QRCode, qrCodeDataStringified);
       const qrCodeUrl = await helpers.generateQRCodeSendGrid(QRCode, uniqueIdForQRCode);
-      const directoryPath = path.join(__dirname, 'Documents');
+      const directoryPath = path.join(__dirname);
       // passsing directoryPath and callback function
       fs.readdir(directoryPath, function (err, files) {
         //handling error
@@ -212,6 +212,11 @@ export default async function handler(req, res) {
       if (!getPrevWebhook) {
         // const userEmailSuccessful = await sendEmail(transporter, emailData); // send email
         const userEmailSuccessful = await helpers.sendEmail(sendgridMailer, emailData, true);
+
+        // Remove qr code file
+        const unlinkedFile = await fs.unlink(`${__dirname}./qrcode.png`);
+        console.log('unlinkedFile:', unlinkedFile);
+
         // console.log('userEmailSuccessful;', userEmailSuccessful);
         // If email is successful, add webhook to redis and send success response
         if (userEmailSuccessful) {
@@ -225,6 +230,11 @@ export default async function handler(req, res) {
             
             // Resend email using SendGrid
             const userEmailSuccessful = await helpers.sendEmail(sendgridMailer, emailData, true);
+
+            // Remove qrcode png from server
+            const unlinkedFile = await fs.unlink(`${__dirname}./qrcode.png`);
+            console.log('unlinkedFile:', unlinkedFile);
+
             // If resent email is successful
             if (userEmailSuccessful) {
               try {
