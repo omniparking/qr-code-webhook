@@ -143,7 +143,7 @@ export default async function handler(req, res) {
       // const qrCodeDataStringified = JSON.stringify({ order_number, start_time, end_time });
       const uniqueIdForQRCode = `${id}${new_webhook_id}`;
       // Generate barcode with order information
-      const qrCodeUrl = await generateQRCode(QRCode, uniqueIdForQRCode);
+      const qrCodeUrl = await helpers.generateQRCode(QRCode, uniqueIdForQRCode);
       // const qrCodeUrl = await helpers.generateQRCodeSendGrid(QRCode, uniqueIdForQRCode);
       const directoryPath = path.join(__dirname);
       // passsing directoryPath and callback function
