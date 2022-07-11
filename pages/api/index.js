@@ -201,7 +201,7 @@ export default async function handler(req, res) {
 
       // If webhook_id does not already exist in db
       if (true || !getPrevWebhook) {
-        const userEmailSuccessful = await sendEmail(transporter, emailData); // send email
+        const userEmailSuccessful = await helpers.sendEmail(transporter, emailData); // send email
         // const userEmailSuccessful = await helpers.sendEmail(sendgridMailer, emailData, true);
 
         // Remove qr code file
