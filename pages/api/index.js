@@ -205,8 +205,8 @@ export default async function handler(req, res) {
         // const userEmailSuccessful = await helpers.sendEmail(sendgridMailer, emailData, true); // send email sendgrid
 
         // Remove qr code file
-        const unlinkedFile = await promises.unlink(`${__dirname}./qrcode.png`);
-        console.log('unlinkedFile:', unlinkedFile);
+        // const unlinkedFile = await promises.unlink(`${__dirname}./qrcode.png`);
+        // console.log('unlinkedFile:', unlinkedFile);
 
         // console.log('userEmailSuccessful;', userEmailSuccessful);
         // If email is successful, add webhook to redis and send success response
