@@ -136,29 +136,30 @@ export default async function handler(req, res) {
         console.error('error getting image from aws => ', e);
       }
 
-            // Grab unique webhook_id
+      // Grab unique webhook_id
       const new_webhook_id = headers['x-shopify-webhook-id'] || '';
 
       // Data required in qr code
       // const qrCodeDataStringified = JSON.stringify({ order_number, start_time, end_time });
       const uniqueIdForQRCode = `${id}${new_webhook_id}`;
-      // Generate barcode with order information
-      const qrCodeUrl = await helpers.generateQRCode(QRCode, uniqueIdForQRCode);
-      // const qrCodeUrl = await helpers.generateQRCodeSendGrid(QRCode, uniqueIdForQRCode);
 
+      // Generate barcode with order information
+      const qrCodeUrl = await helpers.generateQRCode(QRCode, uniqueIdForQRCode); // generate qr code for nodemailer
+      // const qrCodeUrl = await helpers.generateQRCode(QRCode, uniqueIdForQRCode, true); // generate qr code for sendgrid
 
       // Code to send data to omni airport parking server
-      // try {
-      //   const dataForServer = {
-      //     facility_number: '',
-      //     key: uniqueIdForQRCode,
-      //     reservation_from: start_time,
-      //     reservation_until: end_time
-      //   };
-      //   const dataSentToServer = await helpers.sendDataToOmniAirportParkingServers(dataForServer);
-      // } catch (e) {
-      //   console.error('data not sent to omni airport parking server =>', e);
-      // }
+      try {
+        const dataForServer = {
+          facility_number: '',
+          key: uniqueIdForQRCode,
+          reservation_from: start_time,
+          reservation_until: end_time
+        };
+        const dataSentToServer = await helpers.sendDataToOmniAirportParkingServers(dataForServer);
+      } catch (e) {
+        console.error('data not sent to omni airport parking server =>', e);
+      }
+
       // let qr;
       // try {
       //   // const qrCode = await (await sharp(qrCodeUrl).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
@@ -176,6 +177,7 @@ export default async function handler(req, res) {
         subtotal_price: subPrice, total_tax: totalTax, total_price: totalPrice,
         qrCodeUrl, createdAt, start_time, end_time, quantity, price, name, title, imagePath,
       };
+
       // Generate HTML markup for email
       const html = helpers.generateHTMLMarkup(htmlMarkupData, billingAddressMarkup);
 
@@ -186,16 +188,16 @@ export default async function handler(req, res) {
       const to = 'alon.bibring@gmail.com'; // email recipient
     // const cc = ['alon.bibring@gmail.com']; // cc emails
 
-      const attachments = [{ path: qrCodeUrl }];
+      const attachments = [{ path: qrCodeUrl, filename: 'attachment-1.png', cid: 'unique@omniparking.com' }];
 
       const emailData = {
-        to,
-        html,
-        order_number,
-        attachments,
-        qrCodeUrl,
-        name,
         from: 'omniairportparking@gmail.com',
+        attachments,
+        html,
+        name,
+        order_number,
+        to,
+        qrCodeUrl,
         // sendgridQrCode: qr
       };
 
@@ -205,10 +207,11 @@ export default async function handler(req, res) {
         // const userEmailSuccessful = await helpers.sendEmail(sendgridMailer, emailData, true); // send email sendgrid
 
         // Remove qr code file
-        // const unlinkedFile = await promises.unlink(`${__dirname}./qrcode.png`);
-        // console.log('unlinkedFile:', unlinkedFile);
+        try {
+          // const unlinkedFile = await promises.unlink(`${__dirname}./qrcode.png`);
+          // console.log('unlinkedFile:', unlinkedFile);
+        } catch (e) { /* fail silently */ }
 
-        // console.log('userEmailSuccessful;', userEmailSuccessful);
         // If email is successful, add webhook to redis and send success response
         if (userEmailSuccessful) {
           await redis.set(new_webhook_id, new_webhook_id);
@@ -217,14 +220,16 @@ export default async function handler(req, res) {
           // If the email is not successful, try sending it again
           try {
             // Resending email using Nodemailer
-            // const userEmailSuccessful = await sendEmail(transporter, emailData);
+            const userEmailSuccessful = await helpers.sendEmail(transporter, emailData);
             
             // Resend email using SendGrid
-            const userEmailSuccessful = await helpers.sendEmail(sendgridMailer, emailData, true);
+            // const userEmailSuccessful = await helpers.sendEmail(sendgridMailer, emailData, true);
 
             // Remove qrcode png from server
-            const unlinkedFile = await promises.unlink(`${__dirname}./qrcode.png`);
-            console.log('unlinkedFile:', unlinkedFile);
+            try {
+              // const unlinkedFile = await promises.unlink(`${__dirname}./qrcode.png`);
+              // console.log('unlinkedFile:', unlinkedFile);
+            } catch (e) { /* fail silently */ }
 
             // If resent email is successful
             if (userEmailSuccessful) {

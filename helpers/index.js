@@ -49,7 +49,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
       <p style="margin: 0px; padding: 0px;">Taxes and Fees: $${total_tax}</p>
       <p style="margin: 0px; padding: 0px;">Total: $${total_price}</p>
       <br />
-      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:qrcode" alt="QR Code" title="QR Code" /> 
+      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique@omniparking.com" alt="QR Code" title="QR Code" /> 
     </body>
     `;
 } // END generateHTMLMarkup
@@ -127,7 +127,6 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
       if (didEmailSend) { return true; }
       return false;
     }
-
   } catch (e) {
     if (useSendGrid) {
       console.error('error sending email =>', e && e.response && e.response.body && e.response.body.errors || e);
@@ -140,12 +139,16 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
 
 
 /*
-* Generates qr code with order id, start date, and end date
+* Generates qr code with order id, start date, and end date for sendgrid or nodemailer 
 */
-export async function generateQRCode(QRCode, data) {
+export async function generateQRCode(QRCode, data, forSendgrid = false) {
   try {
-    let codeUrl = await QRCode.toDataURL(data, { errorCorrectionLevel: 'L', version: 9 });
-    console.log('codeUrl:', codeUrl.slice(0, 50));
+    let codeUrl = '';
+    if (forSendgrid) {
+      codeUrl = await QRCode.toFile(`${__dirname}./qrcode.png`, data);
+    } else {
+      codeUrl = await QRCode.toDataURL(data, { errorCorrectionLevel: 'L', version: 9 });
+    }
     // codeUrl = codeUrl.replace('data:image/png;base64, ', '');
     return codeUrl;
   } catch (e) {
@@ -153,23 +156,6 @@ export async function generateQRCode(QRCode, data) {
     return '';
   }
 } // END generateQRCode
-
-
-/*
-* Generates qr code with order id, start date, and end date
-*/
-export async function generateQRCodeSendGrid(QRCode, id) {
-  try {
-    let codeUrl = await QRCode.toFile(`${__dirname}./qrcode.png`, id);
-    // console.log('codeUrl:', codeUrl.slice(0, 50));
-    // codeUrl = codeUrl.replace('data:image/jpeg;base64, ', '');
-    // const buffer = Buffer.from(codeUrl).toString('base64');
-    return codeUrl;
-  } catch (e) {
-    console.error('error generating qr code => ', e);
-    return '';
-  }
-} // END generateQRCodeSendGrid
 
 
 /*
