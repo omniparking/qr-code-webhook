@@ -4,10 +4,19 @@ import fs from 'fs';
 /*
 *
 */
+export function encode(data) {
+  const str = data.reduce((a, b) => { return a + String.fromCharCode(b); },'');
+  return btoa(str).replace(/.{76}(?=.)/g, '$&\n');
+} // END encode
+
+
+/*
+*
+*/
 function generateIconImageForEmailTemplate(imgPath) {
-  // imgPath = path.join('/public/img/omni-parking-logo.png');
+  const src = encode(imgPath);
   // return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="${imgPath}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
-  return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="data:image/png;base64, ${imgPath}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
+  return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="data:image/png;base64, ${src}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
 } // END generateIconImageForEmailTemplate
 
 
