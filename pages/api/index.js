@@ -10,6 +10,7 @@ import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo from AWS
 import sharp from 'sharp'; // shortens text for S3 binary image
+import Buffer from 'buffer';
 
 import * as helpers from '../../helpers/index';
 
@@ -112,8 +113,9 @@ export default async function handler(req, res) {
       try {
         const { Body } = await s3.getObject({ Bucket: 'omni-airport-parking', Key: 'omni-airport-parking-logo.png' }).promise();
         // console.log('Body:', Body)
-        // imagePath = Body.toString('base64');
-        imagePath = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
+        imagePath = Body.toString('base64');
+        imagePath = Buffer.from(`data:image/png;base64, ${imagePath}`, 'base64');
+        // imagePath = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
         console.log('imagePath:', imagePath.slice(0, 150))
       } catch (e) {
         console.error('error getting image from aws => ', e);
