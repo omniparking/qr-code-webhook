@@ -6,7 +6,7 @@ import fs from 'fs';
 */
 export function encode(data) {
   const str = data.reduce((a, b) => { return a + String.fromCharCode(b); },'');
-  return btoa(str).replace(/.{76}(?=.)/g, '$&\n');
+  return Buffer.from(str).toString('base64').replace(/.{76}(?=.)/g, '$&\n');
 } // END encode
 
 
