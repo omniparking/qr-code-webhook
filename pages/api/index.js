@@ -111,10 +111,10 @@ export default async function handler(req, res) {
       // Make call to AWS S3 bucket where logo image is stored, response in binary format which is then translated to string
       try {
         const { Body } = await s3.getObject({ Bucket: 'omni-airport-parking', Key: 'omni-airport-parking-logo.png' }).promise();
-        console.log('Body:', Body)
+        // console.log('Body:', Body)
         imagePath = Body.toString('base64');
         // imagePath = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
-        console.log('imagePath:', imagePath)
+        console.log('imagePath:', imagePath.slice(0, 150))
       } catch (e) {
         console.error('error getting image from aws => ', e);
       }
