@@ -10,9 +10,6 @@ import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo from AWS
 import sharp from 'sharp'; // shortens text for S3 binary image
-import Buffer from 'buffer';
-import fs, { promises } from 'fs';
-const path = require('path');
 
 import * as helpers from '../../helpers/index';
 
@@ -33,19 +30,9 @@ const s3 = new AWS.S3({ accessKeyId, secretAccessKey });
 const redis = new Redis({ url, token });
 
 // Initialize nodemailer (to send emails)
-const transporter = nodemailer.createTransport({ port, host, auth: { user, pass }, secure: true });
-//  const transporter = nodemailer.createTransport({    
-//     host: 'smtpout.secureserver.net',  
-//     secureConnection: false,
-//     port: 587,
-//    auth: { user: '153210777', pass: GO_DADDY_PASS },
-//           tls: {
-//         ciphers: 'SSLv3'
-//       }
-// });
+const transporter = nodemailer.createTransport({ auth: { user, pass }, host, port, secure: true });
+//  const transporter = nodemailer.createTransport({ host: 'smtpout.secureserver.net', secureConnection: false, port: 587, auth: { user: '153210777', pass: GO_DADDY_PASS }, tls: { ciphers: 'SSLv3' } });
 
-/* IF DECIDE TO SWITCH FROM NODEMAILER TO SENDGRID */
-// import sendgridMailer from '@sendgrid/mail'; // sendgrid (to send emails)
 // To use sendgrid for emails
 sendgridMailer.setApiKey(SENDGRID_API_KEY);
 
@@ -57,14 +44,7 @@ export default async function handler(req, res) {
   try {
     const { body, headers, method } = req;
     if (method === 'POST') {
-      // const { serverRuntimeConfig } = nextConfig();
-      // console.log('nextConfig', nextConfig());
-      // const dirRelativeToPublicFolder = 'img';
-      // const dir = path.join(serverRuntimeConfig.PROJECT_ROOT, './public');
-      // console.log('dir:', dir)
-      // const filenames = fs.readdirSync(dir);
-      // const images = filenames.map(name => path.join('/', dirRelativeToPublicFolder, name));
-      // console.log('images:', images);
+
       // try {
       //   // To check that webhook call is coming from certified shopify but not needed
       //   const hmac = headers['X-Shopify-Hmac-Sha256'];
@@ -131,7 +111,9 @@ export default async function handler(req, res) {
       // Make call to AWS S3 bucket where logo image is stored, response in binary format which is then translated to string
       try {
         const { Body } = await s3.getObject({ Bucket: 'omni-airport-parking', Key: 'omni-airport-parking-logo.png' }).promise();
-        imagePath = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
+        console.log('Body:', Body)
+        // imagePath = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
+        console.log('imagePath:', imagePath)
       } catch (e) {
         console.error('error getting image from aws => ', e);
       }

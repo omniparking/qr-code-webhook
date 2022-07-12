@@ -1,6 +1,4 @@
 /*jshint esversion: 8 */
-
-import { Buffer } from 'buffer';
 import fs from 'fs';
 
 /*
