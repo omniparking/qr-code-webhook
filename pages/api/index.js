@@ -188,7 +188,7 @@ export default async function handler(req, res) {
 
       // If webhook_id does not already exist in db
       if (true || !getPrevWebhook) {
-        const userEmailSuccessful = await helpers.sendEmail(transporter, emailData); // send email nodemailer
+        // const userEmailSuccessful = await helpers.sendEmail(transporter, emailData); // send email nodemailer - PUT BACK IN FOR EMAILS
         // const userEmailSuccessful = await helpers.sendEmail(sendgridMailer, emailData, true); // send email sendgrid
 
         // Remove qr code file
@@ -205,7 +205,7 @@ export default async function handler(req, res) {
           // If the email is not successful, try sending it again
           try {
             // Resending email using Nodemailer
-            const userEmailSuccessful = await helpers.sendEmail(transporter, emailData);
+            // const userEmailSuccessful = await helpers.sendEmail(transporter, emailData); - PUT BACK IN
             
             // Resend email using SendGrid
             // const userEmailSuccessful = await helpers.sendEmail(sendgridMailer, emailData, true);
