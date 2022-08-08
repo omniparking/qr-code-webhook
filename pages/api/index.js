@@ -126,7 +126,7 @@ export default async function handler(req, res) {
 
       // Data required in qr code
       // const qrCodeDataStringified = JSON.stringify({ order_number, start_time, end_time });
-      const uniqueIdForQRCode = `${id}${new_webhook_id}`;
+      const uniqueIdForQRCode = `1755164${order_number}`;
 
       // Generate barcode with order information
       const qrCodeUrl = await helpers.generateQRCode(QRCode, uniqueIdForQRCode); // generate qr code for nodemailer
@@ -187,8 +187,8 @@ export default async function handler(req, res) {
       };
 
       // If webhook_id does not already exist in db
-      if (true || !getPrevWebhook) {
-        // const userEmailSuccessful = await helpers.sendEmail(transporter, emailData); // send email nodemailer - PUT BACK IN FOR EMAILS
+      if (/*true || */!getPrevWebhook) {
+        const userEmailSuccessful = await helpers.sendEmail(transporter, emailData); // send email nodemailer - PUT BACK IN FOR EMAILS
         // const userEmailSuccessful = await helpers.sendEmail(sendgridMailer, emailData, true); // send email sendgrid
 
         // Remove qr code file
@@ -205,16 +205,10 @@ export default async function handler(req, res) {
           // If the email is not successful, try sending it again
           try {
             // Resending email using Nodemailer
-            // const userEmailSuccessful = await helpers.sendEmail(transporter, emailData); - PUT BACK IN
+            const userEmailSuccessful = await helpers.sendEmail(transporter, emailData); // PUT BACK IN FOR EMAILS
             
             // Resend email using SendGrid
             // const userEmailSuccessful = await helpers.sendEmail(sendgridMailer, emailData, true);
-
-            // Remove qrcode png from server
-            try {
-              // const unlinkedFile = await promises.unlink(`${__dirname}./qrcode.png`);
-              // console.log('unlinkedFile:', unlinkedFile);
-            } catch (e) { /* fail silently */ }
 
             // If resent email is successful
             if (userEmailSuccessful) {
@@ -223,8 +217,7 @@ export default async function handler(req, res) {
                 await redis.set(new_webhook_id, new_webhook_id);
                 res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
               } catch (e) {
-                // Adding webhook_id to redis failed, so send response indicating email sent successfully
-                // but webhook_id not stored in redis
+                // Adding webhook_id to redis failed, so send response indicating email sent successfully but webhook_id not stored in redis
                 console.error('error saving wehook but email send =>', e);
                 res.status(201).send({ message: 'Webhook event not logged but email sent successfully.' });
               }
@@ -234,15 +227,13 @@ export default async function handler(req, res) {
             }
           } catch (e) {
             console.error('error sending email => ', e);
-            // Sending email or adding data to redis db threw an error somewhere
-            // send response message indicating webhook event logged but no email sent
+            // Sending email or adding data to redis db threw an error somewhere send response message indicating webhook event logged but no email sent
             res.status(201).send({ message: 'Webhook Event logged but email not sent. '});
           }
         }
       } else {
         console.error('Case where webhook id already exists in database!');
-        // Case where webhook_id is already stored, meaning an email has already been sent
-        // send response message indicating that webhook failed bc it was already successfully handled
+        // Case where webhook_id is already stored, meaning an email has already been sent send response message indicating that webhook failed bc it was already successfully handled
         res.status(201).send({ message: 'Webhook Event failed as it has previously been successfully logged.' });
       }
     } else {
@@ -250,8 +241,7 @@ export default async function handler(req, res) {
       res.status(201).send({ message: 'Webhook Event failed as request method is not of type "POST".' });
     }
   } catch (e) {
-    // Case where something failed in the code above
-    // send a response message indicating webhook failed
+    // Case where something failed in the code above send a response message indicating webhook failed
     console.error('Error from webhook =>:', e);
     res.status(201).send({ message: 'Webhook Event failed. Error from main try/catch.' });
   }
