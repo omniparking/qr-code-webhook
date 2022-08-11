@@ -90,7 +90,7 @@ export function formatBillingAddressForHTMLMarkup(billing_address) {
 /*
 * Sends email to user - returns true if email was sent and false if not
 */
-export async function (transporter, emailInfo, useSendGrid = false) {
+export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
   // Define variables needed for sending emails
   const { to, from, html, order_number, attachments, qrCodeUrl: content, name, /*sendgridQrCode*/ } = emailInfo;
   const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
