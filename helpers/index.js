@@ -215,7 +215,7 @@ export async function sendDataToServer(data) {
   const body = JSON.stringify(data);
   console.log('credentials:', credentials)
   try {
-    const serverResp = await fetch(`http://${process.env.SERVER_IP_ADDRESS}`, {
+    const serverResp = await fetch(`https://${process.env.SERVER_IP_ADDRESS}`, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${credentials}`,
