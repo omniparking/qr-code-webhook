@@ -1,6 +1,7 @@
 /*jshint esversion: 8 */
 import fs from 'fs';
 import path from 'path';
+import { Blob } from 'buffer';
 
 /*
 *
