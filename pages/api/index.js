@@ -317,7 +317,7 @@ export default async function handler(req, res) {
       // Code to send data to omni airport parking server
       try {
         const dataForServer = { end_time, first_name, last_name, order_number, start_time };
-        await helpers.generateFileForServer(dataForServer);
+        await helpers.generateFileForServer(s3, dataForServer);
         const fileForServer = fs.readFile(`${FILE_FOR_SERVER}`, async (err, data) => {
           if (err) {
             console.error('error readingFile:', err);

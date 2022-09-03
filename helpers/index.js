@@ -180,15 +180,33 @@ export function generateDateTimeAsString(date, addTime = false) {
 /*
 *
 */
-export function generateFileForServer(data) {
+export function generateFileForServer(s3, data) {
   const { end_time, first_name, last_name, order_number, start_time } = data;
   const filename = process.env.FILE_FOR_SERVER;
   const resNum = `ShopQ\\${order_number}`;
   const dataForFile = `250000;1755164;13.07.2022;63;"USD"\n0;5;${resNum};${start_time};${end_time};0;0;0;0;0;0;;;"${first_name}";"${last_name}";"";"${order_number}";"";${start_time};1;0;${end_time};0;"";"";"";"";"";""`;
-  fs.writeFile(`${filename}`, dataForFile, (err) => {
-    if (err) { throw err; }
-    console.log('The file has been saved!');
+  // fs.writeFile(`${filename}`, dataForFile, (err) => {
+  //   if (err) { throw err; }
+  //   console.log('The file has been saved!');
+  // });
+
+
+  // create a `File` object
+  const file = new File([dataForFile], filename, { type: 'text/plain' });
+  
+  s3.upload({ Bucket: 'omni-airport-parking', Key: filename, Body: file }, (err, data) => {
+    if (err) {
+      console.error('error sending to s3:', err)
+    } else {
+      console.log('data from sending file to s3:', data)
+    }
   });
+// create a `Blob` object
+// will be converted to a `File` object when passed to `FormData`
+// const blob = new Blob([dataForFile], { type: 'text/plain' });    
+// const fd = new FormData();
+// fd.append("file", blob, filename);
+  
 } // END generateFileForServer
 
 
