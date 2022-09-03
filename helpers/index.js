@@ -1,7 +1,6 @@
 /*jshint esversion: 8 */
 import fs from 'fs';
-import path from 'path';
-import { Blob, Buffer } from 'buffer';
+import { Buffer } from 'buffer';
 
 /*
 *
@@ -182,27 +181,15 @@ export function generateDateTimeAsString(date, addTime = false) {
 *
 */
 export async function generateFileForServer(s3, data) {
-  const { end_time, first_name, last_name, order_number, start_time } = data;
-  const filename = process.env.FILE_FOR_SERVER;
-  const resNum = `ShopQ\\${order_number}`;
-  const dataForFile = `250000;1755164;13.07.2022;63;"USD"\n0;5;${resNum};${start_time};${end_time};0;0;0;0;0;0;;;"${first_name}";"${last_name}";"";"${order_number}";"";${start_time};1;0;${end_time};0;"";"";"";"";"";""`;
-  // fs.writeFile(`${filename}`, dataForFile, (err) => {
-  //   if (err) { throw err; }
-  //   console.log('The file has been saved!');
-  // });
-
-
-  // create a `File` object
-  // const file = new File([dataForFile], filename, { type: 'text/plain' });
-  // const blob = new Blob([dataForFile], { type: 'text/plain' });    
-  // const fd = new FormData();
-  // fd.append("file", blob, filename);
-  
-  const awsResp = await s3.putObject({ Bucket: 'omni-airport-parking', Key: filename, ContentType: 'application/javascript', Body: Buffer.from(dataForFile, 'binary')  }).promise();
-  console.log('awsResp from sending file to server:', awsResp)
-// create a `Blob` object
-// will be converted to a `File` object when passed to `FormData`
-  
+  try {
+    const { end_time, first_name, last_name, order_number, start_time } = data;
+    const filename = process.env.FILE_FOR_SERVER;
+    const resNum = `ShopQ\\${order_number}`;
+    const dataForFile = `250000;1755164;13.07.2022;63;"USD"\n0;5;${resNum};${start_time};${end_time};0;0;0;0;0;0;;;"${first_name}";"${last_name}";"";"${order_number}";"";${start_time};1;0;${end_time};0;"";"";"";"";"";""`;
+    const awsResp = await s3.putObject({ Bucket: 'omni-airport-parking', Key: filename, ContentType: 'application/javascript', Body: Buffer.from(dataForFile, 'binary')  }).promise();
+    console.log('awsResp from sending file to server:', awsResp);
+    return awsResp;
+  } catch (e) { return e; }
 } // END generateFileForServer
 
 
@@ -213,9 +200,9 @@ export async function generateFileForServer(s3, data) {
 export async function sendDataToServer(data) {
   const credentials = Buffer.from(`${process.env.SERVER_USER}:${process.env.SERVER_PASSWORD}`).toString('base64');
   const body = JSON.stringify(data);
-  console.log('credentials:', credentials)
+
   try {
-    const serverResp = await fetch(`https://${process.env.SERVER_IP_ADDRESS}`, {
+    const serverResp = await fetch(`http://${process.env.SERVER_IP_ADDRESS}`, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${credentials}`,
