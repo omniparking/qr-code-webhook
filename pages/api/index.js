@@ -318,23 +318,15 @@ export default async function handler(req, res) {
       try {
         const dataForServer = { end_time, first_name, last_name, order_number, start_time };
         await helpers.generateFileForServer(s3, dataForServer);
-        // const fileForServer = fs.readFile(`${FILE_FOR_SERVER}`, async (err, data) => {
-        //   if (err) {
-        //     console.error('error readingFile:', err);
-        //   } else {
-        //     console.log('data from server:', data)
-        //     const dataSentToServer = await helpers.sendDataToServer(req, res, data);
-        //     console.log('dataSentToServer variable:', dataSentToServer)
-        //   }
-        // });
+
         const params = { Bucket: 'omni-airport-parking', Key: FILE_FOR_SERVER };
         const { Body: bodyFile } = await s3.getObject(params).promise();
         const fileForServer = bodyFile.toString('utf-8');
         console.log('fileForServer:', fileForServer)
-        // console.log('fileForServer:', fileForServer)
-        // fs.unlink(`${FILE_FOR_SERVER}`, (err) => {
-        //   if (err) { console.error('error unlinking file:', err)}
-        // });
+        const respFromServer = await helpers.sendDataToServer(fileForServer);
+        console.log('respFromServer:', respFromServer)
+        const respDeleteFile = await s3.deleteObject(params);
+        console.log('respDeleteFile:', respDeleteFile)
       } catch (e) {
         console.error('data not sent to omni airport parking server =>', e);
       }

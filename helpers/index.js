@@ -210,10 +210,10 @@ export async function generateFileForServer(s3, data) {
 * Sends data to omni servers with reservation info and unique id
 * The unique id is what is stored in the QR code and used to look up the reservation
 */
-export async function sendDataToServer(req, res, data) {
+export async function sendDataToServer(data) {
   const credentials = Buffer.from(`${process.env.SERVER_USER}:${process.env.SERVER_PASSWORD}`).toString('base64');
   const body = JSON.stringify(data);
-
+  console.log('credentials:', credentials)
   try {
     const serverResp = await fetch(process.env.SERVER_IP_ADDRESS, {
       method: 'POST',
