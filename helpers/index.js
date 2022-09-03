@@ -180,7 +180,7 @@ export function generateDateTimeAsString(date, addTime = false) {
 /*
 *
 */
-export function generateFileForServer(s3, data) {
+export async function generateFileForServer(s3, data) {
   const { end_time, first_name, last_name, order_number, start_time } = data;
   const filename = process.env.FILE_FOR_SERVER;
   const resNum = `ShopQ\\${order_number}`;
@@ -192,20 +192,15 @@ export function generateFileForServer(s3, data) {
 
 
   // create a `File` object
-  const file = new File([dataForFile], filename, { type: 'text/plain' });
+  // const file = new File([dataForFile], filename, { type: 'text/plain' });
+  const blob = new Blob([dataForFile], { type: 'text/plain' });    
+  const fd = new FormData();
+  fd.append("file", blob, filename);
   
-  s3.upload({ Bucket: 'omni-airport-parking', Key: filename, Body: file }, (err, data) => {
-    if (err) {
-      console.error('error sending to s3:', err)
-    } else {
-      console.log('data from sending file to s3:', data)
-    }
-  });
+  const awsResp = await s3.upload({ Bucket: 'omni-airport-parking', Key: filename, Body: fd }).promise();
+  console.log('awsResp from sending file to server:', awsResp)
 // create a `Blob` object
 // will be converted to a `File` object when passed to `FormData`
-// const blob = new Blob([dataForFile], { type: 'text/plain' });    
-// const fd = new FormData();
-// fd.append("file", blob, filename);
   
 } // END generateFileForServer
 
