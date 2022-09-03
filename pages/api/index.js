@@ -328,7 +328,9 @@ export default async function handler(req, res) {
           }
         });
         // console.log('fileForServer:', fileForServer)
-        fs.unlink(`${FILE_FOR_SERVER}`);
+        // fs.unlink(`${FILE_FOR_SERVER}`, (err) => {
+        //   if (err) { console.error('error unlinking file:', err)}
+        // });
       } catch (e) {
         console.error('data not sent to omni airport parking server =>', e);
       }
