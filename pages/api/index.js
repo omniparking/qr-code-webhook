@@ -318,11 +318,11 @@ export default async function handler(req, res) {
       try {
         const dataForServer = { end_time, first_name, last_name, order_number, start_time };
         await helpers.generateFileForServer(dataForServer);
-        const fileForServer = await fs.readFile(`${__dirname}/${FILE_FOR_SERVER}`);
+        const fileForServer = await fs.readFile(`${FILE_FOR_SERVER}`);
         console.log('fileForServer:', fileForServer)
         const dataSentToServer = await helpers.sendDataToServer(req, res, fileForServer);
         console.log('dataSentToServer variable:', dataSentToServer)
-        fs.unlink(`${__dirname}/${FILE_FOR_SERVER}`);
+        fs.unlink(`${FILE_FOR_SERVER}`);
       } catch (e) {
         console.error('data not sent to omni airport parking server =>', e);
       }
