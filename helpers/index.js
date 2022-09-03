@@ -213,7 +213,7 @@ export async function generateFileForServer(s3, data) {
 export async function sendDataToServer(req, res, data) {
   const credentials = Buffer.from(`${process.env.SERVER_USER}:${process.env.SERVER_PASSWORD}`).toString('base64');
   const body = JSON.stringify(data);
-  const readStream = fs.createReadStream(`${process.env.FILE_FOR_SERVER}`);
+
   try {
     const serverResp = await fetch(process.env.SERVER_IP_ADDRESS, {
       method: 'POST',
@@ -221,7 +221,7 @@ export async function sendDataToServer(req, res, data) {
         Authorization: `Basic ${credentials}`,
         'Content-Type': 'application/json',
       },
-      body: readStream
+      body
     });
     console.log('response from server:', serverResp)
     return serverResp;
