@@ -1,5 +1,6 @@
 /*jshint esversion: 8 */
 import fs from 'fs';
+import path from 'path';
 
 /*
 *
@@ -177,9 +178,41 @@ export function generateDateTimeAsString(date, addTime = false) {
 
 
 /*
+*
+*/
+export function generateFileForServer(data) {
+  const { end_time, first_name, last_name, order_number, start_time } = data;
+  const filename = process.env.FILE_FOR_SERVER;
+  const resNum = `ShopQ\\${order_number}`;
+  const dataForFile = `250000;1755164;13.07.2022;63;"USD"\n0;5;${resNum};${start_time};${end_time};0;0;0;0;0;0;;;"${first_name}";"${last_name}";"";"${order_number}";"";${start_time};1;0;${end_time};0;"";"";"";"";"";""`;
+  fs.writeFile(`${__dirname}/${filename}`, dataForFile, (err) => {
+    if (err) { throw err; }
+    console.log('The file has been saved!');
+  });
+} // END generateFileForServer
+
+
+/*
 * Sends data to omni servers with reservation info and unique id
 * The unique id is what is stored in the QR code and used to look up the reservation
 */
-export function sendDataToOmniAirportParkingServers(data) {
-
-} // END sendDataToOmniAirportParkingServers
+export async function sendDataToServer(req, res, data) {
+  const credentials = Buffer.from(`${process.env.SERVER_USER}:${process.env.SERVER_PASSWORD}`).toString('base64');
+  const body = JSON.stringify(data);
+  const readStream = fs.createReadStream(`${__dirname}/${process.env.FILE_FOR_SERVER}`);
+  try {
+    const serverResp = await fetch(process.env.SERVER_IP_ADDRESS, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        'Content-Type': 'application/json',
+      },
+      body: readStream
+    });
+    console.log('response from server:', serverResp)
+    return serverResp;
+  } catch (e) {
+    console.error('error from server:', e)
+    return e;
+  }
+} // END sendDataToServer

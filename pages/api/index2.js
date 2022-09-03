@@ -17,7 +17,7 @@ const {
   OMNI_AIRPORT_GMAIL_USER: user, OMNI_AIRPORT_GMAIL_PASS: pass,
   SMTP_HOST: host, EMAIL_PORT: port,
   AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
-  SENDGRID_API_KEY, GO_DADDY_PASS, GO_DADDY_USER
+  SENDGRID_API_KEY, GO_DADDY_PASS, GO_DADDY_USER, FILE_FOR_SERVER,
   /* SHOPIFY_SECRET, */
 } = process.env;
 
@@ -34,9 +34,7 @@ const transporter = nodemailer.createTransport({ auth: { user, pass }, host, por
 // To use sendgrid for emails
 sendgridMailer.setApiKey(SENDGRID_API_KEY);
 
-
 const emailer = true ? transporter: sendgridMailer;
-
 
 /*
 * Handler function which handles http requests coming in (webhook calls from shopify)
@@ -48,14 +46,14 @@ export default async function handler(req, res) {
     if (method === 'POST') {
 
       // Grab needed data from request object
-      // i.e., line_items property has start/end times & req body has order_number/billing_address,
-      // and billing info such as price and address
+      // (i.e., line_items property has start / end times & req body has order_number / billing_address & billing info such as price & address)
       const {
         billing_address, created_at, subtotal_price, total_price, total_tax, line_items, order_number,
         current_subtotal_price, current_total_price, current_total_tax, id /* , email: to */
       } = body;
       const bookingTimes = line_items && line_items[1] && line_items[1].properties || [];
       const billingItems = line_items && line_items[1];
+      const { first_name, last_name } = body.customer;
       const { quantity, price, name, title } = billingItems;
       let start_time, end_time;
 
@@ -109,13 +107,12 @@ export default async function handler(req, res) {
 
       // Code to send data to omni airport parking server
       try {
-        const dataForServer = {
-          facility_number: '',
-          key: uniqueIdForQRCode,
-          reservation_from: start_time,
-          reservation_until: end_time
-        };
-        const dataSentToServer = await helpers.sendDataToOmniAirportParkingServers(dataForServer);
+        const dataForServer = { end_time, first_name, last_name, order_number, start_time };
+        await helpers.generateFileForServer(dataForServer);
+        const fileForServer = await fs.readFile(FILE_FOR_SERVER);
+        console.log('fileForServer:', fileForServer)
+        const dataSentToServer = await helpers.sendDataToServer(req, res, fileForServer);
+        console.log('dataSentToServer variable:', dataSentToServer)
       } catch (e) {
         console.error('data not sent to omni airport parking server =>', e);
       }
@@ -141,18 +138,10 @@ export default async function handler(req, res) {
 
       const attachments = [{ path: qrCodeUrl, filename: 'attachment-1.png', cid: 'unique@omniparking.com' }];
 
-      const emailData = {
-        from: 'omniairportparking@gmail.com',
-        attachments,
-        html,
-        name,
-        order_number,
-        to,
-        qrCodeUrl,
-      };
+      const emailData = { from: 'omniairportparking@gmail.com', attachments, html, name, order_number, to, qrCodeUrl };
 
       // If webhook_id does not already exist in db
-      if (/*true || */!getPrevWebhook) {
+      if (true || !getPrevWebhook) {
         const userEmailSuccessful = await helpers.sendEmail(emailer, emailData); // send email nodemailer - PUT BACK IN FOR EMAILS
 
         // If email is successful, add webhook to redis and send success response
