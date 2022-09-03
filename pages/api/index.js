@@ -44,10 +44,10 @@ const METHOD = 'POST';
 * Handler function which handles http requests coming in (webhook calls from shopify)
 */
 export default async function handler(req, res) {
-    try {
+  try {
     const { body, headers, method } = req;
-    res.status(201).send({ message: 'Webhook turned off. '});
-      return;
+    res.status(201).send({ message: 'Webhook turned off. ' });
+    return;
 
     if (method === METHOD) {
       // Grab needed data from request object
