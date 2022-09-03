@@ -1,7 +1,7 @@
 /*jshint esversion: 8 */
 import fs from 'fs';
 import path from 'path';
-import { Blob } from 'buffer';
+import { Blob, Buffer } from 'buffer';
 
 /*
 *
@@ -194,11 +194,11 @@ export async function generateFileForServer(s3, data) {
 
   // create a `File` object
   // const file = new File([dataForFile], filename, { type: 'text/plain' });
-  const blob = new Blob([dataForFile], { type: 'text/plain' });    
-  const fd = new FormData();
-  fd.append("file", blob, filename);
+  // const blob = new Blob([dataForFile], { type: 'text/plain' });    
+  // const fd = new FormData();
+  // fd.append("file", blob, filename);
   
-  const awsResp = await s3.upload({ Bucket: 'omni-airport-parking', Key: filename, Body: fd }).promise();
+  const awsResp = await s3.putObject({ Bucket: 'omni-airport-parking', Key: filename, ContentType: 'application/javascript', Body: Buffer.from(dataForFile, 'binary')  }).promise();
   console.log('awsResp from sending file to server:', awsResp)
 // create a `Blob` object
 // will be converted to a `File` object when passed to `FormData`
