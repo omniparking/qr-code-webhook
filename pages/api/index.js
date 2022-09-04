@@ -2,8 +2,6 @@
 /*jshint esversion: 8 */
 
 // Import needed packages
-// import crypto from 'crypto'; // (encrypts/decrypts data)
-// import getRawBody from 'raw-body';
 import sendgridMailer from '@sendgrid/mail';
 import QRCode from 'qrcode'; // (generates qr code)
 import nodemailer from 'nodemailer'; // to send emails
@@ -15,12 +13,12 @@ import * as helpers from '../../helpers/index';
 
 // Deconstruct needed env variables from process.env
 const {
-  UPSTASH_REDIS_REST_URL: url, UPSTASH_REDIS_REST_TOKEN: token,
-  OMNI_AIRPORT_GMAIL_USER: user, OMNI_AIRPORT_GMAIL_PASS: pass,
-  SMTP_HOST: host, EMAIL_PORT: port,
-  AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
-  SENDGRID_API_KEY, GO_DADDY_PASS, GO_DADDY_USER, FILE_FOR_SERVER
-  /* SHOPIFY_SECRET, */
+  AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_BUCKET: Bucket, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
+  FILE_FOR_SERVER: Key,
+  GO_DADDY_PASS, GO_DADDY_USER,
+  OMNI_AIRPORT_GMAIL_PASS: pass, OMNI_AIRPORT_GMAIL_USER: user,
+  SENDGRID_API_KEY, SMTP_HOST: host, EMAIL_PORT: port,
+  UPSTASH_REDIS_REST_TOKEN: token, UPSTASH_REDIS_REST_URL: url,
 } = process.env;
 
 // Initialize s3 connection - using AWS S3 to store company logo
@@ -38,7 +36,7 @@ sendgridMailer.setApiKey(SENDGRID_API_KEY);
 
 const emailer = true ? transporter : sendgridMailer;
 
-const METHOD = 'POST';
+const POST = 'POST';
 
 /*
 * Handler function which handles http requests coming in (webhook calls from shopify)
@@ -49,12 +47,12 @@ export default async function handler(req, res) {
     res.status(201).send({ message: 'Webhook turned off. ' });
     return;
 
-    if (method === METHOD) {
+    if (method === POST) {
       // Grab needed data from request object
       // (i.e., line_items property has start / end times & req body has order_number / billing_address & billing info such as price & address)
       const {
-        billing_address, created_at, subtotal_price, total_price, total_tax, line_items, order_number,
-        current_subtotal_price, current_total_price, current_total_tax, id /* , email: to */
+        billing_address, created_at, current_subtotal_price, current_total_price, current_total_tax,
+        /* email: to, */ id, line_items, order_number, subtotal_price, total_price, total_tax,
       } = body;
       const bookingTimes = line_items && line_items[1] && line_items[1].properties || [];
       const billingItems = line_items && line_items[1];
@@ -73,16 +71,13 @@ export default async function handler(req, res) {
       // If no start or end times from booking, event failed
       // FOR TESTING ONLY -  adding in fake start_time and end_time
       if (!start_time || !end_time) {
-        // res.status(201).send({ message: 'Webhook event failed. No start/end times available. '});
-        // return;
-        if (!start_time) { start_time = '2022-04-24T20:24:36-04:00'; }  /* FOR TESTING ONLY */
-        if (!end_time) { end_time = '2022-04-25T06:24:36-04:00'; }  /* FOR TESTING ONLY */
+        res.status(201).send({ message: 'Webhook event failed. No start/end times available. '});
+        return;
+        // if (!start_time) { start_time = '2022-04-24T20:24:36-04:00'; }  /* FOR TESTING ONLY */
+        // if (!end_time) { end_time = '2022-04-25T06:24:36-04:00'; }  /* FOR TESTING ONLY */
       }
 
       // Set Headers
-      // Set Content-Type as text/html
-      // res.setHeader('Content-Type', 'text/html charset=UTF-8');
-      // res.setHeader('X-Attachment-Id', 'filename.png');
       // Describes lifetime of our resource telling CDN to serve from cache and update in background (at most once per second)
       res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
 
@@ -90,14 +85,14 @@ export default async function handler(req, res) {
       const createdAt = helpers.generateDateTimeAsString(created_at);
 
       // Get subtotal, taxes, and total price for email template
-      const subPrice = subtotal_price || current_subtotal_price;
+      const subtotalPrice = subtotal_price || current_subtotal_price;
       const totalTax = total_tax || current_total_tax;
       const totalPrice = total_price || current_total_price;
 
       let imagePath = '';
       // Make call to AWS S3 bucket where logo image is stored, response in binary format which is then translated to string
       try {
-        const { Body } = await s3.getObject({ Bucket: 'omni-airport-parking', Key: 'omni-airport-parking-logo.png' }).promise();
+        const { Body } = await s3.getObject({ Bucket, Key: `${Bucket}-logo.png` }).promise();
         imagePath = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
       } catch (e) { console.error('error getting image from aws => ', e); }
 
@@ -110,19 +105,28 @@ export default async function handler(req, res) {
       // Generate barcode with order information
       const qrCodeUrl = await helpers.generateQRCode(QRCode, uniqueIdForQRCode); // generate qr code for nodemailer
 
+      let fileForServer, respFromServer;
+      let fileHasBeenSaved = false;
       // Code to send data to omni airport parking server
       try {
         const dataForServer = { end_time, first_name, last_name, order_number, start_time };
-        await helpers.generateFileForServer(s3, dataForServer);
+        fileForServer = await helpers.generateFileForServer(dataForServer);
+        if (fileForServer) {
+          const uploadSuccessful = await helpers.uploadFileToS3(s3, fileForServer);
+          fileHasBeenSaved = uploadSuccessful;
+        }
+      } catch (e) { console.error('error calling generateFileForServer =>', e); }
 
-        const params = { Bucket: 'omni-airport-parking', Key: FILE_FOR_SERVER };
-        const { Body: bodyFile } = await s3.getObject(params).promise();
-        const fileForServer = bodyFile.toString('utf-8');
-        console.log('fileForServer:', fileForServer)
-        const respFromServer = await helpers.sendDataToServer(fileForServer);
-        console.log('respFromServer:', respFromServer)
-        const respDeleteFile = await s3.deleteObject(params);
-        // console.log('respDeleteFile:', respDeleteFile)
+      try {
+        if (fileHasBeenSaved) { fileForServer = await helpers.getHOSFileAsStringFromS3(s3); }
+        console.log('fileForServer:', fileForServer);
+      } catch (e) { console.error('error calling s3.getObject =>', e); }
+
+      try {
+        if (fileForServer) {
+          respFromServer = await helpers.sendDataToServer(fileForServer);
+          console.log('respFromServer:', respFromServer);
+        }
       } catch (e) {
         console.error('data not sent to omni airport parking server =>', e);
       }
@@ -132,8 +136,8 @@ export default async function handler(req, res) {
 
       // Define object for generating the HTML markup in generateHTMLMarkup function
       const htmlMarkupData = {
-        subtotal_price: subPrice, total_tax: totalTax, total_price: totalPrice,
-        qrCodeUrl, createdAt, start_time, end_time, quantity, price, name, title, imagePath,
+        end_time, imagePath, name, price, qrCodeUrl, createdAt, quantity, start_time,
+        subtotal_price: subtotalPrice, title, total_price: totalPrice, total_tax: totalTax,
       };
 
       // Generate HTML markup for email
