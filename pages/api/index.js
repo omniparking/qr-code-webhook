@@ -119,17 +119,17 @@ export default async function handler(req, res) {
       const qrCodeUrl = await helpers.generateQRCode(QRCode, uniqueIdForQRCode); // generate qr code for nodemailer
 
       const dataForServer = { end_time, first_name, last_name, order_number, start_time };
-      // try {
-      //   await helpers.generateS3File(s3, dataForServer);
-      // } catch (e) { console.error('error generating file in s3:', e);  }
+      try {
+        await helpers.generateS3File(s3, dataForServer);
+      } catch (e) { console.error('error generating file in s3:', e);  }
 
-      // const params = { Bucket, Key: FILE_FOR_SERVER };
-      // let fileForServer;
-      // try {
-      //   const { Body: bodyFile } = await s3.getObject(params).promise();
-      //   fileForServer = bodyFile.toString('utf-8');
-      //   console.log('fileForServer:', fileForServer)
-      // } catch (e) { console.error('error getting file from s3:', e);  }
+      const params = { Bucket, Key: FILE_FOR_SERVER };
+      let fileForServer;
+      try {
+        const { Body: bodyFile } = await s3.getObject(params).promise();
+        fileForServer = bodyFile.toString('utf-8');
+        console.log('fileForServer:', fileForServer)
+      } catch (e) { console.error('error getting file from s3:', e);  }
 
       // try {
       //   const respFromServer = await helpers.sendDataToServer(fileForServer);
@@ -140,7 +140,7 @@ export default async function handler(req, res) {
 
       // Generate markup for user's billing address to display in email
       const billingAddressMarkup = helpers.formatBillingAddressForHTMLMarkup(billing_address);
-
+      console.log('billingAddress:', billingAddressMarkup)
       // Define object for generating the HTML markup in generateHTMLMarkup function
       const htmlMarkupData = {
         subtotal_price: subPrice, total_tax: totalTax, total_price: totalPrice,
@@ -149,10 +149,10 @@ export default async function handler(req, res) {
 
       // Generate HTML markup for email
       const html = helpers.generateHTMLMarkup(htmlMarkupData, billingAddressMarkup);
-
+      console.log('html:', html && html.slice(0, 50))
       // Method to add webhook_id to redis
-      const getPrevWebhook = await redis.get(new_webhook_id);
-
+      const prevWebhook = await redis.get(new_webhook_id);
+      console.log('prevWebhook:', prevWebhook)
       // Define variables for sending email
       const to = 'alon.bibring@gmail.com'; // email recipient
     // const cc = ['alon.bibring@gmail.com']; // cc emails
@@ -162,7 +162,7 @@ export default async function handler(req, res) {
       const emailData = { from: 'omniairportparking@gmail.com', attachments, html, name, order_number, to, qrCodeUrl };
 
       // If webhook_id does not already exist in db
-      if (true || !getPrevWebhook) {
+      if (true || !prevWebhook) {
         let userEmailSuccessful;
         try {
           userEmailSuccessful = await helpers.sendEmail(emailer, emailData); // send email nodemailer - PUT BACK IN FOR EMAILS
