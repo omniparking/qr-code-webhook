@@ -186,35 +186,17 @@ export function generateDateTimeAsString(date, addTime = false) {
 export async function generateFileForServer(s3, data) {
   try {
     const { end_time, first_name, last_name, order_number, start_time } = data;
-    const Key = process.env.FILE_FOR_SERVER;
-    const Bucket = process.env.AMAZ_BUCKET;
-    const ContentType = 'application/javascript';
-
     const dataForFile = generateDataForFile({ first_name, last_name, start_time, end_time, order_number });
     const Body = Buffer.from(dataForFile, 'binary');
-    const awsResp = await s3.putObject({ Body, Bucket, ContentType, Key }).promise();
+    const awsResp = await s3.putObject({
+      Body,
+      Bucket: process.env.AMAZ_BUCKET,
+      ContentType: 'application/javascript',
+      Key: process.env.FILE_FOR_SERVER,
+    }).promise();
     return awsResp;
   } catch (e) { return e; }
 } // END generateFileForServer
-
-
-/*
-* Sends data to omni servers with reservation info and unique id
-* The unique id is what is stored in the QR code and used to look up the reservation
-*/
-export async function sendDataToServer(data) {
-  try {
-    const user = process.env.SERVER_USER;
-    const password = process.env.SERVER_PASSWORD;
-    const ip = process.env.SERVER_IP_ADDRESS;
-    const credentials = Buffer.from(`${user}:${password}`).toString('base64');
-    const body = JSON.stringify(data);
-    const headers = { Authorization: `Basic ${credentials}`, 'Content-Type': 'application/json' };
-    const method = 'POST';
-    const serverResp = await fetch(`http://${ip}`, { method, headers, body });
-    return serverResp;
-  } catch (e) { return e; }
-} // END sendDataToServer
 
 
 /*
@@ -227,3 +209,20 @@ export function generateDataForFile(data) {
   const dataForFile = `${intro}0;5;${resNum};${start_time};${end_time};0;0;0;0;0;0;;;"${first_name}";"${last_name}";"";"${order_number}";"";${start_time};1;0;${end_time};0;"";"";"";"";"";""`;
   return dataForFile;
 } // END generateDataForFile
+
+
+/*
+* Sends data to omni servers with reservation info and unique id
+* The unique id is what is stored in the QR code and used to look up the reservation
+*/
+export async function sendDataToServer(data) {
+  try {
+    const credentials = Buffer.from(`${process.env.SERVER_USER}:${process.env.SERVER_PASSWORD}`).toString('base64');
+    const body = JSON.stringify(data);
+    const headers = { Authorization: `Basic ${credentials}`, 'Content-Type': 'application/json' };
+    const method = 'POST';
+    return data;
+    // const serverResp = await fetch(`http://${process.env.SERVER_IP_ADDRESS}`, { method, headers, body });
+    // return serverResp;
+  } catch (e) { return e; }
+} // END sendDataToServer
