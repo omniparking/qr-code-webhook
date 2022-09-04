@@ -4,7 +4,6 @@
 // import path from 'path';
 
 const nextConfig = {
-  reactStrictMode: true,
   serverRuntimeConfig: {
     PROJECT_ROOT: __dirname
   }
