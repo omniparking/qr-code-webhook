@@ -1,8 +1,5 @@
 /*jshint esversion: 8 */
-import fs from 'fs';
 import { Buffer } from 'buffer';
-import * as dotenv from 'dotenv';
-dotenv.config()
 
 
 /*

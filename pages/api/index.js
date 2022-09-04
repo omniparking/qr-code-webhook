@@ -8,8 +8,6 @@ import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo/file for server from AWS
 import sharp from 'sharp'; // shortens text for S3 binary image
-import * as dotenv from 'dotenv';
-dotenv.config();
 
 import * as helpers from '../../helpers/index.js';
  
@@ -153,7 +151,7 @@ export default async function handler(req, res) {
       console.log('html:', html && html.slice(0, 50))
       // Method to add webhook_id to redis
       const prevWebhook = await redis.get(new_webhook_id);
-      console.log('prevWebhook:', prevWebhook)
+      console.log('prevWebhook:', prevWebhook);
       // Define variables for sending email
       const to = 'alon.bibring@gmail.com'; // email recipient
     // const cc = ['alon.bibring@gmail.com']; // cc emails
@@ -170,7 +168,7 @@ export default async function handler(req, res) {
         } catch (e) { console.error('error sending email:', e); }
         
         console.log('userEmailSuccessful:', userEmailSuccessful);
-        
+
         // If email is successful, add webhook to redis and send success response
         if (userEmailSuccessful) {
           await redis.set(new_webhook_id, new_webhook_id);
