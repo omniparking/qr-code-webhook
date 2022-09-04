@@ -127,6 +127,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
       const msg = { to: sendgridTo, from: sendgridFrom, subject, html, text, attachments: attachment }; // 
       let didEmailSend = false;
       const results = await transporter.send(msg);
+      console.log('resutls from email:', results)
       if (results && results[0] && results[0].statusCode === 202) {
         didEmailSend = true;
       } else {
@@ -139,7 +140,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
     if (useSendGrid) {
       console.error('error sending email =>', e && e.response && e.response.body && e.response.body.errors || e);
     } else {
-      console.error('error sending email =>', e);
+      console.error('AAAA error sending email =>', e);
     }
     return false;
   }
