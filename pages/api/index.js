@@ -139,7 +139,7 @@ export default async function handler(req, res) {
 
       // Generate markup for user's billing address to display in email
       const billingAddressMarkup = helpers.formatBillingAddressForHTMLMarkup(billing_address);
-      console.log('billingAddress:', billingAddressMarkup)
+
       // Define object for generating the HTML markup in generateHTMLMarkup function
       const htmlMarkupData = {
         subtotal_price: subPrice, total_tax: totalTax, total_price: totalPrice,
@@ -148,7 +148,7 @@ export default async function handler(req, res) {
 
       // Generate HTML markup for email
       const html = helpers.generateHTMLMarkup(htmlMarkupData, billingAddressMarkup);
-      console.log('html:', html && html.slice(0, 50))
+
       // Method to add webhook_id to redis
       const prevWebhook = await redis.get(new_webhook_id);
       console.log('prevWebhook:', prevWebhook);
@@ -165,7 +165,7 @@ export default async function handler(req, res) {
         let userEmailSuccessful;
         try {
           userEmailSuccessful = await helpers.sendEmail(emailer, emailData); // send email nodemailer - PUT BACK IN FOR EMAILS
-        } catch (e) { console.error('error sending email:', e); }
+        } catch (e) { console.error('2222 error sending email:', e); }
         
         console.log('userEmailSuccessful:', userEmailSuccessful);
 
@@ -195,7 +195,7 @@ export default async function handler(req, res) {
               res.status(201).send({ message: 'Webhook Event logged but email not sent. '});
             }
           } catch (e) {
-            console.error('error sending email => ', e);
+            console.error('111 error sending email => ', e);
             // Sending email or adding data to redis db threw an error somewhere send response message indicating webhook event logged but no email sent
             res.status(201).send({ message: 'Webhook Event logged but email not sent. '});
           }
