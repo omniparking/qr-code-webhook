@@ -2,26 +2,28 @@
 /*jshint esversion: 8 */
 
 // Import needed packages
-// import crypto from 'crypto'; // (encrypts/decrypts data)
-// import getRawBody from 'raw-body';
 import sendgridMailer from '@sendgrid/mail';
 import QRCode from 'qrcode'; // (generates qr code)
 import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
-import AWS from 'aws-sdk'; // to hit S3 to retrieve logo from AWS
+import AWS from 'aws-sdk'; // to hit S3 to retrieve logo/file for server from AWS
 import sharp from 'sharp'; // shortens text for S3 binary image
+import * as dotenv from 'dotenv';
+dotenv.config();
 
-import * as helpers from '../../helpers/index';
-
-// Deconstruct needed env variables from process.env
-const {
-  UPSTASH_REDIS_REST_URL: url, UPSTASH_REDIS_REST_TOKEN: token,
-  OMNI_AIRPORT_GMAIL_USER: user, OMNI_AIRPORT_GMAIL_PASS: pass,
-  SMTP_HOST: host, EMAIL_PORT: port,
-  AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
-  SENDGRID_API_KEY, GO_DADDY_PASS, GO_DADDY_USER, FILE_FOR_SERVER
-  /* SHOPIFY_SECRET, */
-} = process.env;
+import * as helpers from '../../helpers/index.js';
+ 
+const accessKeyId = process.env.AMAZ_ACCESS_KEY_ID;
+const secretAccessKey = process.env.AMAZ_SECRET_ACCESS_KEY;
+const FILE_FOR_SERVER = process.env.FILE_FOR_SERVER;
+const pass = process.env.OMNI_AIRPORT_GMAIL_PASS;
+const user = process.env.OMNI_AIRPORT_GMAIL_USER;
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+const host = process.env.SMTP_HOST;
+const port = process.env.EMAIL_PORT;
+const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+const url = process.env.UPSTASH_REDIS_REST_URL;
+const Bucket = process.env.AMAZ_BUCKET;
 
 // Initialize s3 connection - using AWS S3 to store company logo
 const s3 = new AWS.S3({ accessKeyId, secretAccessKey });
@@ -30,7 +32,7 @@ const s3 = new AWS.S3({ accessKeyId, secretAccessKey });
 const redis = new Redis({ url, token });
 
 // Initialize nodemailer (to send emails)
-const transporter = nodemailer.createTransport({ auth: { user, pass }, host, port, secure: true });
+const transporter = nodemailer.createTransport({ auth: { user, pass }, host, port, secure: false });
 //  const transporter = nodemailer.createTransport({ host: 'smtpout.secureserver.net', secureConnection: false, port: 587, auth: { user: '153210777', pass: GO_DADDY_PASS }, tls: { ciphers: 'SSLv3' } });
 
 // To use sendgrid for emails
@@ -38,7 +40,21 @@ sendgridMailer.setApiKey(SENDGRID_API_KEY);
 
 const emailer = true ? transporter : sendgridMailer;
 
-const METHOD = 'POST';
+let Client = require('ssh2-sftp-client');
+let sftp = new Client();
+
+sftp.connect({
+  host: process.env.SERVER_IP_ADDRESS,
+  port: '8080',
+  username: process.env.SERVER_USER,
+  password: process.env.SERVER_PASSWORD,
+}).then(() => {
+  return sftp.list('/pathname');
+}).then(data => {
+  console.log(data, 'the data info');
+}).catch(err => {
+  console.log(err, 'catch error');
+});
 
 /*
 * Handler function which handles http requests coming in (webhook calls from shopify)
@@ -46,15 +62,14 @@ const METHOD = 'POST';
 export default async function handler(req, res) {
   try {
     const { body, headers, method } = req;
-    res.status(201).send({ message: 'Webhook turned off. ' });
-    return;
-
-    if (method === METHOD) {
+    // res.status(201).send({ message: 'Webhook turned off. ' });
+    // return;
+    if (method === 'POST') {
       // Grab needed data from request object
-      // (i.e., line_items property has start / end times & req body has order_number / billing_address & billing info such as price & address)
+      // (i.e., line_items property has start/end times & req body has order_number/billing_address & billing info such as price & address)
       const {
-        billing_address, created_at, subtotal_price, total_price, total_tax, line_items, order_number,
-        current_subtotal_price, current_total_price, current_total_tax, id /* , email: to */
+        billing_address, created_at, current_subtotal_price, current_total_price, current_total_tax,
+        email, id, line_items, order_number, subtotal_price, total_price, total_tax,
       } = body;
       const bookingTimes = line_items && line_items[1] && line_items[1].properties || [];
       const billingItems = line_items && line_items[1];
@@ -71,18 +86,11 @@ export default async function handler(req, res) {
       }
 
       // If no start or end times from booking, event failed
-      // FOR TESTING ONLY -  adding in fake start_time and end_time
       if (!start_time || !end_time) {
-        // res.status(201).send({ message: 'Webhook event failed. No start/end times available. '});
-        // return;
-        if (!start_time) { start_time = '2022-04-24T20:24:36-04:00'; }  /* FOR TESTING ONLY */
-        if (!end_time) { end_time = '2022-04-25T06:24:36-04:00'; }  /* FOR TESTING ONLY */
+        res.status(201).send({ message: 'Webhook event failed. No start/end times available. '});
+        return;
       }
 
-      // Set Headers
-      // Set Content-Type as text/html
-      // res.setHeader('Content-Type', 'text/html charset=UTF-8');
-      // res.setHeader('X-Attachment-Id', 'filename.png');
       // Describes lifetime of our resource telling CDN to serve from cache and update in background (at most once per second)
       res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
 
@@ -97,7 +105,7 @@ export default async function handler(req, res) {
       let imagePath = '';
       // Make call to AWS S3 bucket where logo image is stored, response in binary format which is then translated to string
       try {
-        const { Body } = await s3.getObject({ Bucket: 'omni-airport-parking', Key: 'omni-airport-parking-logo.png' }).promise();
+        const { Body } = await s3.getObject({ Bucket, Key: 'omni-airport-parking-logo.png' }).promise();
         imagePath = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
       } catch (e) { console.error('error getting image from aws => ', e); }
 
@@ -115,14 +123,14 @@ export default async function handler(req, res) {
         const dataForServer = { end_time, first_name, last_name, order_number, start_time };
         await helpers.generateFileForServer(s3, dataForServer);
 
-        const params = { Bucket: 'omni-airport-parking', Key: FILE_FOR_SERVER };
+        const params = { Bucket, Key: FILE_FOR_SERVER };
         const { Body: bodyFile } = await s3.getObject(params).promise();
         const fileForServer = bodyFile.toString('utf-8');
         console.log('fileForServer:', fileForServer)
         const respFromServer = await helpers.sendDataToServer(fileForServer);
         console.log('respFromServer:', respFromServer)
         const respDeleteFile = await s3.deleteObject(params);
-        // console.log('respDeleteFile:', respDeleteFile)
+        console.log('respDeleteFile:', respDeleteFile)
       } catch (e) {
         console.error('data not sent to omni airport parking server =>', e);
       }

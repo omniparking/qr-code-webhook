@@ -6,8 +6,9 @@
 const nextConfig = {
   reactStrictMode: true,
   serverRuntimeConfig: {
-    PROJECT_ROOT: __dirname
-  }
+    PROJECT_ROOT: __dirname,
+    swcMinify: false,
+  },
 };
 
 // module.exports = {
