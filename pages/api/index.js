@@ -129,8 +129,8 @@ export default async function handler(req, res) {
         console.log('fileForServer:', fileForServer)
         const respFromServer = await helpers.sendDataToServer(fileForServer);
         console.log('respFromServer:', respFromServer)
-        const respDeleteFile = await s3.deleteObject(params);
-        // console.log('respDeleteFile:', respDeleteFile)
+        const respDeleteFile = await s3.deleteObject(params).promise();
+        console.log('respDeleteFile:', respDeleteFile)
       } catch (e) {
         console.error('data not sent to omni airport parking server =>', e);
       }
