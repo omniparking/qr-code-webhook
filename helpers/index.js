@@ -180,15 +180,27 @@ export function generateDateTimeAsString(date, addTime = false) {
 /*
 *
 */
-export async function generateFileForServer(s3, data) {
+export async function sendFileToAWS(s3, data) {
   try {
-    const { end_time, first_name, last_name, order_number, start_time } = data;
-    const filename = process.env.FILE_FOR_SERVER;
-    const resNum = `ShopQ\\${order_number}`;
-    const dataForFile = `250000;1755164;13.07.2022;63;"USD"\n0;5;${resNum};${start_time};${end_time};0;0;0;0;0;0;;;"${first_name}";"${last_name}";"";"${order_number}";"";${start_time};1;0;${end_time};0;"";"";"";"";"";""`;
-    const awsResp = await s3.putObject({ Bucket: 'omni-airport-parking', Key: filename, ContentType: 'application/javascript', Body: Buffer.from(dataForFile, 'binary')  }).promise();
+    const Key = process.env.FILE_FOR_SERVER;
+    const awsResp = await s3.putObject({ Bucket: 'omni-airport-parking', Key, ContentType: 'application/javascript', Body: Buffer.from(data, 'binary')  }).promise();
     console.log('awsResp from sending file to server:', awsResp);
     return awsResp;
+  } catch (e) {
+    console.error('Error sending file to AWS S3:', e);
+    return e;
+  }
+} // END sendFileToAWS
+
+/*
+*
+*/
+export function generateFileForServer(data) {
+  try {
+    const { end_time, first_name, last_name, order_number, start_time } = data;
+    const resNum = `ShopQ\\${order_number}`;
+    const dataForFile = `250000;1755164;13.07.2022;63;"USD"\n0;5;${resNum};${start_time};${end_time};0;0;0;0;0;0;;;"${first_name}";"${last_name}";"";"${order_number}";"";${start_time};1;0;${end_time};0;"";"";"";"";"";""`;
+    return dataForFile;
   } catch (e) { return e; }
 } // END generateFileForServer
 
@@ -204,16 +216,12 @@ export async function sendDataToServer(data) {
   try {
     const serverResp = await fetch(`http://${process.env.SERVER_IP_ADDRESS}`, {
       method: 'POST',
-      headers: {
-        Authorization: `Basic ${credentials}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { Authorization: `Basic ${credentials}`, 'Content-Type': 'application/json' },
       body
     });
-    console.log('response from server:', serverResp)
     return serverResp;
   } catch (e) {
-    console.error('error from server:', e)
+    console.error('error from sending data to server:', e);
     return e;
   }
 } // END sendDataToServer
