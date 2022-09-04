@@ -131,12 +131,12 @@ export default async function handler(req, res) {
         console.log('fileForServer:', fileForServer)
       } catch (e) { console.error('error getting file from s3:', e);  }
 
-      try {
-        const respFromServer = await helpers.sendDataToServer(fileForServer);
-        console.log('respFromServer:', respFromServer)
-      } catch (e) {
-        console.error('data not sent to omni airport parking server =>', e);
-      }
+      // try {
+      //   const respFromServer = await helpers.sendDataToServer(fileForServer);
+      //   console.log('respFromServer:', respFromServer)
+      // } catch (e) {
+      //   console.error('data not sent to omni airport parking server =>', e);
+      // }
 
       // Generate markup for user's billing address to display in email
       const billingAddressMarkup = helpers.formatBillingAddressForHTMLMarkup(billing_address);
