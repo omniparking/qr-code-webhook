@@ -119,17 +119,17 @@ export default async function handler(req, res) {
       const qrCodeUrl = await helpers.generateQRCode(QRCode, uniqueIdForQRCode); // generate qr code for nodemailer
 
       const dataForServer = { end_time, first_name, last_name, order_number, start_time };
-      try {
-        await helpers.generateS3File(s3, dataForServer);
-      } catch (e) { console.error('error generating file in s3:', e);  }
+      // try {
+      //   await helpers.generateS3File(s3, dataForServer);
+      // } catch (e) { console.error('error generating file in s3:', e);  }
 
-      const params = { Bucket, Key: FILE_FOR_SERVER };
-      let fileForServer;
-      try {
-        const { Body: bodyFile } = await s3.getObject(params).promise();
-        fileForServer = bodyFile.toString('utf-8');
-        console.log('fileForServer:', fileForServer)
-      } catch (e) { console.error('error getting file from s3:', e);  }
+      // const params = { Bucket, Key: FILE_FOR_SERVER };
+      // let fileForServer;
+      // try {
+      //   const { Body: bodyFile } = await s3.getObject(params).promise();
+      //   fileForServer = bodyFile.toString('utf-8');
+      //   console.log('fileForServer:', fileForServer)
+      // } catch (e) { console.error('error getting file from s3:', e);  }
 
       // try {
       //   const respFromServer = await helpers.sendDataToServer(fileForServer);
