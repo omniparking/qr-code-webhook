@@ -138,10 +138,16 @@ export default async function handler(req, res) {
         console.error('data not sent to omni airport parking server =>', e);
       }
 
-      try {
-        const respDeleteFile = await s3.deleteObject(params).promise();
-        console.log('respDeleteFile:', respDeleteFile)
-      } catch (e) { console.error('error deleting object from s3:', e);  }
+      // try {
+       s3.deleteObject(params, (err, data) => {
+          if (err) {
+            console.error('error deleting s3 object:', err)
+          } else {
+            console.log('data from deleting s3 object:', data)
+          }
+        });
+        // console.log('respDeleteFile:', respDeleteFile)
+      // } catch (e) { console.error('error deleting object from s3:', e);  }
 
       // Generate markup for user's billing address to display in email
       const billingAddressMarkup = helpers.formatBillingAddressForHTMLMarkup(billing_address);
