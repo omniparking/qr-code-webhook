@@ -40,21 +40,22 @@ sendgridMailer.setApiKey(SENDGRID_API_KEY);
 
 const emailer = true ? transporter : sendgridMailer;
 
-let Client = require('ssh2-sftp-client');
-let sftp = new Client();
+// let Client = require('ssh2-sftp-client');
+// let sftp = new Client();
+// try {
+// sftp.connect({
+//   host: process.env.SERVER_IP_ADDRESS,
+//   username: process.env.SERVER_USER,
+//   password: process.env.SERVER_PASSWORD,
+// }).then(() => {
+//   return sftp.list('/pathname');
+// }).then(data => {
+//   console.log(data, 'the data info');
+// }).catch(err => {
+//   console.log(err, 'catch error');
+// });
+// } catch (e) { console.error('error:', e);  }
 
-sftp.connect({
-  host: process.env.SERVER_IP_ADDRESS,
-  port: '8080',
-  username: process.env.SERVER_USER,
-  password: process.env.SERVER_PASSWORD,
-}).then(() => {
-  return sftp.list('/pathname');
-}).then(data => {
-  console.log(data, 'the data info');
-}).catch(err => {
-  console.log(err, 'catch error');
-});
 
 /*
 * Handler function which handles http requests coming in (webhook calls from shopify)
@@ -131,12 +132,12 @@ export default async function handler(req, res) {
         console.log('fileForServer:', fileForServer)
       } catch (e) { console.error('error getting file from s3:', e);  }
 
-      // try {
-      //   const respFromServer = await helpers.sendDataToServer(fileForServer);
-      //   console.log('respFromServer:', respFromServer)
-      // } catch (e) {
-      //   console.error('data not sent to omni airport parking server =>', e);
-      // }
+      try {
+        if (fileForServer) {
+          const respFromServer = await helpers.sendDataToServer(fileForServer);
+          console.log('respFromServer:', respFromServer)
+        }
+      } catch (e) { console.error('data not sent to omni airport parking server =>', e); }
 
       // Generate markup for user's billing address to display in email
       const billingAddressMarkup = helpers.formatBillingAddressForHTMLMarkup(billing_address);
@@ -166,10 +167,10 @@ export default async function handler(req, res) {
         let userEmailSuccessful;
         try {
           userEmailSuccessful = await helpers.sendEmail(emailer, emailData); // send email nodemailer - PUT BACK IN FOR EMAILS
-        } catch (e) {
-          console.error('error sending email:', e)
-        }
-        console.log('userEmailSuccessful:', userEmailSuccessful)
+        } catch (e) { console.error('error sending email:', e); }
+        
+        console.log('userEmailSuccessful:', userEmailSuccessful);
+        
         // If email is successful, add webhook to redis and send success response
         if (userEmailSuccessful) {
           await redis.set(new_webhook_id, new_webhook_id);
