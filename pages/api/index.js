@@ -118,22 +118,30 @@ export default async function handler(req, res) {
       // Generate barcode with order information
       const qrCodeUrl = await helpers.generateQRCode(QRCode, uniqueIdForQRCode); // generate qr code for nodemailer
 
-      // Code to send data to omni airport parking server
+      const dataForServer = { end_time, first_name, last_name, order_number, start_time };
       try {
-        const dataForServer = { end_time, first_name, last_name, order_number, start_time };
-        await helpers.generateFileForServer(s3, dataForServer);
+        await helpers.generateS3File(s3, dataForServer);
+      } catch (e) { console.error('error generating file in s3:', e);  }
 
-        const params = { Bucket, Key: FILE_FOR_SERVER };
+      const params = { Bucket, Key: FILE_FOR_SERVER };
+      let fileForServer;
+      try {
         const { Body: bodyFile } = await s3.getObject(params).promise();
-        const fileForServer = bodyFile.toString('utf-8');
+        fileForServer = bodyFile.toString('utf-8');
         console.log('fileForServer:', fileForServer)
+      } catch (e) { console.error('error getting file from s3:', e);  }
+
+      try {
         const respFromServer = await helpers.sendDataToServer(fileForServer);
         console.log('respFromServer:', respFromServer)
-        const respDeleteFile = await s3.deleteObject(params).promise();
-        console.log('respDeleteFile:', respDeleteFile)
       } catch (e) {
         console.error('data not sent to omni airport parking server =>', e);
       }
+
+      try {
+        const respDeleteFile = await s3.deleteObject(params).promise();
+        console.log('respDeleteFile:', respDeleteFile)
+      } catch (e) { console.error('error deleting object from s3:', e);  }
 
       // Generate markup for user's billing address to display in email
       const billingAddressMarkup = helpers.formatBillingAddressForHTMLMarkup(billing_address);

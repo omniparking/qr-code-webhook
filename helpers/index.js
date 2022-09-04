@@ -183,7 +183,7 @@ export function generateDateTimeAsString(date, addTime = false) {
 /*
 *
 */
-export async function generateFileForServer(s3, data) {
+export async function generateS3File(s3, data) {
   try {
     const { end_time, first_name, last_name, order_number, start_time } = data;
     const dataForFile = generateDataForFile({ first_name, last_name, start_time, end_time, order_number });
@@ -196,7 +196,7 @@ export async function generateFileForServer(s3, data) {
     }).promise();
     return awsResp;
   } catch (e) { return e; }
-} // END generateFileForServer
+} // END generateS3File
 
 
 /*
