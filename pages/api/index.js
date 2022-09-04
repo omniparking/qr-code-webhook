@@ -163,8 +163,13 @@ export default async function handler(req, res) {
 
       // If webhook_id does not already exist in db
       if (true || !getPrevWebhook) {
-        const userEmailSuccessful = await helpers.sendEmail(emailer, emailData); // send email nodemailer - PUT BACK IN FOR EMAILS
-
+        let userEmailSuccessful;
+        try {
+          userEmailSuccessful = await helpers.sendEmail(emailer, emailData); // send email nodemailer - PUT BACK IN FOR EMAILS
+        } catch (e) {
+          console.error('error sending email:', e)
+        }
+        console.log('userEmailSuccessful:', userEmailSuccessful)
         // If email is successful, add webhook to redis and send success response
         if (userEmailSuccessful) {
           await redis.set(new_webhook_id, new_webhook_id);
