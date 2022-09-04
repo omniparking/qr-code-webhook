@@ -41,7 +41,8 @@ const emailer = true ? transporter: sendgridMailer;
 export default async function handler(req, res) {
   try {
     const { body, headers, method } = req;
-
+    res.status(201).send({ message: 'Webhook turned off. '});
+    return;
     if (method === 'POST') {
 
       // Grab needed data from request object
