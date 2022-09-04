@@ -132,8 +132,8 @@ export default async function handler(req, res) {
 
       try {
         if (fileForServer) {
-          const respFromServer = await helpers.sendDataToServer(fileForServer);
-          console.log('respFromServer:', respFromServer)
+          // const respFromServer = await helpers.sendDataToServer(fileForServer);
+          // console.log('respFromServer:', respFromServer)
         }
       } catch (e) { console.error('data not sent to omni airport parking server =>', e); }
 
