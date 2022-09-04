@@ -1,6 +1,6 @@
 /*jshint esversion: 8 */
+import fs from 'fs';
 import { Buffer } from 'buffer';
-
 
 /*
 *
@@ -119,7 +119,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
       }
     } else {
       // To use emails using SendGrid
-      // const qrCodeContent = fs.readFileSync(`${__dirname}./qrcode.png`).toString('base64');
+      const qrCodeContent = fs.readFileSync(`${__dirname}./qrcode.png`).toString('base64');
       const attachment = [{ content, filename: 'qrcode.png', type: 'application/png', disposition: 'inline', content_id: 'qrcode' }];
       const sendgridTo = { name, email: to };
       const sendgridFrom = { email: 'info@omniairportparking.com', name: 'Omni Airport Parking' };
@@ -127,7 +127,6 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
       const msg = { to: sendgridTo, from: sendgridFrom, subject, html, text, attachments: attachment }; // 
       let didEmailSend = false;
       const results = await transporter.send(msg);
-      console.log('resutls from email:', results)
       if (results && results[0] && results[0].statusCode === 202) {
         didEmailSend = true;
       } else {
@@ -140,7 +139,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
     if (useSendGrid) {
       console.error('error sending email =>', e && e.response && e.response.body && e.response.body.errors || e);
     } else {
-      console.error('AAAA error sending email =>', e);
+      console.error('error sending email =>', e);
     }
     return false;
   }
@@ -154,7 +153,7 @@ export async function generateQRCode(QRCode, data, forSendgrid = false) {
   try {
     let codeUrl = '';
     if (forSendgrid) {
-      // codeUrl = await QRCode.toFile(`${__dirname}./qrcode.png`, data);
+      codeUrl = await QRCode.toFile(`${__dirname}./qrcode.png`, data);
     } else {
       codeUrl = await QRCode.toDataURL(data, { errorCorrectionLevel: 'L', version: 9 });
     }
@@ -181,32 +180,17 @@ export function generateDateTimeAsString(date, addTime = false) {
 /*
 *
 */
-export async function generateS3File(s3, data) {
+export async function generateFileForServer(s3, data) {
   try {
     const { end_time, first_name, last_name, order_number, start_time } = data;
-    const dataForFile = generateDataForFile({ first_name, last_name, start_time, end_time, order_number });
-    const Body = Buffer.from(dataForFile, 'binary');
-    const awsResp = await s3.putObject({
-      Body,
-      Bucket: process.env.AMAZ_BUCKET,
-      ContentType: 'application/javascript',
-      Key: process.env.FILE_FOR_SERVER,
-    }).promise();
+    const filename = process.env.FILE_FOR_SERVER;
+    const resNum = `ShopQ\\${order_number}`;
+    const dataForFile = `250000;1755164;13.07.2022;63;"USD"\n0;5;${resNum};${start_time};${end_time};0;0;0;0;0;0;;;"${first_name}";"${last_name}";"";"${order_number}";"";${start_time};1;0;${end_time};0;"";"";"";"";"";""`;
+    const awsResp = await s3.putObject({ Bucket: 'omni-airport-parking', Key: filename, ContentType: 'application/javascript', Body: Buffer.from(dataForFile, 'binary')  }).promise();
+    console.log('awsResp from sending file to server:', awsResp);
     return awsResp;
   } catch (e) { return e; }
-} // END generateS3File
-
-
-/*
-* Generates data for file sent to server (string format)
-*/
-export function generateDataForFile(data) {
-  const { start_time, end_time, first_name, last_name, order_number } = data;
-  const resNum = `ShopQ\\${order_number}`;
-  const intro = '250000;1755164;13.07.2022;63;"USD"\n';
-  const dataForFile = `${intro}0;5;${resNum};${start_time};${end_time};0;0;0;0;0;0;;;"${first_name}";"${last_name}";"";"${order_number}";"";${start_time};1;0;${end_time};0;"";"";"";"";"";""`;
-  return dataForFile;
-} // END generateDataForFile
+} // END generateFileForServer
 
 
 /*
@@ -214,13 +198,22 @@ export function generateDataForFile(data) {
 * The unique id is what is stored in the QR code and used to look up the reservation
 */
 export async function sendDataToServer(data) {
+  const credentials = Buffer.from(`${process.env.SERVER_USER}:${process.env.SERVER_PASSWORD}`).toString('base64');
+  const body = JSON.stringify(data);
+
   try {
-    const credentials = Buffer.from(`${process.env.SERVER_USER}:${process.env.SERVER_PASSWORD}`).toString('base64');
-    const body = JSON.stringify(data);
-    const headers = { Authorization: `Basic ${credentials}`, 'Content-Type': 'application/json' };
-    const method = 'POST';
-    return data;
-    // const serverResp = await fetch(`http://${process.env.SERVER_IP_ADDRESS}`, { method, headers, body });
-    // return serverResp;
-  } catch (e) { return e; }
+    const serverResp = await fetch(`http://${process.env.SERVER_IP_ADDRESS}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        'Content-Type': 'application/json',
+      },
+      body
+    });
+    console.log('response from server:', serverResp)
+    return serverResp;
+  } catch (e) {
+    console.error('error from server:', e)
+    return e;
+  }
 } // END sendDataToServer
