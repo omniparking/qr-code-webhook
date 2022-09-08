@@ -48,7 +48,14 @@ export default async function handler(req, res) {
     const { body, headers, method } = req;
     // res.status(201).send({ message: 'Webhook turned off. ' });
     // return;
-    console.log('readFile:', fs.readFileSync('/omni-parking-logo.png'))
+    // console.log('readFile:', )
+    fs.readFile('/omni-parking-logo.png', (err, data) => {
+      if (err) {
+        console.error('error retrieving data:', err)
+      } else {
+        console.log('data from file', data)
+      }
+    })
     if (method === POST) {
       // Grab needed data from request object
       // (i.e., line_items property has start / end times & req body has order_number / billing_address & billing info such as price & address)
