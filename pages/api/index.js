@@ -1,6 +1,8 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 /*jshint esversion: 8 */
 
+// PORT 21 FOR FTP
+
 // Import needed packages
 import sendgridMailer from '@sendgrid/mail';
 import QRCode from 'qrcode'; // (generates qr code)
@@ -8,7 +10,7 @@ import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo from AWS
 import sharp from 'sharp'; // shortens text for S3 binary image
-
+import fs from 'fs';
 import * as helpers from '../../helpers/index';
 
 // Deconstruct needed env variables from process.env
@@ -44,9 +46,9 @@ const POST = 'POST';
 export default async function handler(req, res) {
   try {
     const { body, headers, method } = req;
-    res.status(201).send({ message: 'Webhook turned off. ' });
-    return;
-
+    // res.status(201).send({ message: 'Webhook turned off. ' });
+    // return;
+    console.log('readFile:', fs.readFileSync('/omni-parking-logo.png'))
     if (method === POST) {
       // Grab needed data from request object
       // (i.e., line_items property has start / end times & req body has order_number / billing_address & billing info such as price & address)
