@@ -9,6 +9,12 @@ const {
   SERVER_USER: USER,
 } = process.env;
 
+// const Bucket = process.env.AMAZ_BUCKET;
+// const Key = process.env.FILE_FOR_SERVER;
+// const IP = process.env.SERVER_IP_ADDRESS;
+// const PASS = process.env.SERVER_PASSWORD;
+// const USER = process.env.SERVER_USER;
+
 /*
 *
 */
@@ -132,7 +138,6 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
       const msg = { to: sendgridTo, from: sendgridFrom, subject, html, text, attachments: attachment }; // 
       let didEmailSend = false;
       const results = await transporter.send(msg);
-      console.log('resutls from email:', results)
       if (results && results[0] && results[0].statusCode === 202) {
         didEmailSend = true;
       } else {
