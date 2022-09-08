@@ -1,6 +1,13 @@
 /*jshint esversion: 8 */
 import { Buffer } from 'buffer';
 
+const {
+  AMAZ_BUCKET: Bucket,
+  FILE_FOR_SERVER: Key,
+  SERVER_IP_ADDRESS: IP,
+  SERVER_PASSWORD: PASS,
+  SERVER_USER: USER,
+} = process.env;
 
 /*
 *
@@ -45,7 +52,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
       <p>This email is to confirm your recent order.</p>
       <p>Date ${purchaseDate}</p>
       <p style="font-weight: bold; margin: 0px 0px 1px 0px; padding 0px;">Billing Address:</p>
-      ${billingAddressMarkup}
+      <p>${billingAddressMarkup}</p>
       <br />
       ${generateIconImageForEmailTemplate(imagePath)}
       <p style="margin: 0px 0px 1px 0px;">1x Facility Charge for $4.99 each</p>
@@ -61,8 +68,6 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
     </body>
     `;
 } // END generateHTMLMarkup
-//         
-//       <img height="200" width="200" style="display: block; object=fit: contain;" src="${qrCodeUrl}" alt="QR Code" title="QR Code" />
 
 
 /*
@@ -82,7 +87,7 @@ export function formatBillingAddressForHTMLMarkup(billing_address) {
       </section>
     `;
   } catch (e) {
-    console.error('error formating billing address => ', e);
+    console.error('error in formatBillingAddressForHTMLMarkup: => ', e);
     return '';
   }
 } // END formatBillingAddressForHTMLMarkup
@@ -127,6 +132,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
       const msg = { to: sendgridTo, from: sendgridFrom, subject, html, text, attachments: attachment }; // 
       let didEmailSend = false;
       const results = await transporter.send(msg);
+      console.log('resutls from email:', results)
       if (results && results[0] && results[0].statusCode === 202) {
         didEmailSend = true;
       } else {
@@ -137,9 +143,9 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
     }
   } catch (e) {
     if (useSendGrid) {
-      console.error('error sending email =>', e && e.response && e.response.body && e.response.body.errors || e);
+      console.error('error in sendEmail =>', e && e.response && e.response.body && e.response.body.errors || e);
     } else {
-      console.error('error sending email =>', e);
+      console.error('error in sendEmail =>', e);
     }
     return false;
   }
@@ -160,7 +166,7 @@ export async function generateQRCode(QRCode, data, forSendgrid = false) {
     // codeUrl = codeUrl.replace('data:image/png;base64, ', '');
     return codeUrl;
   } catch (e) {
-    console.error('error generating qr code => ', e);
+    console.error('error in generateQRCode => ', e);
     return '';
   }
 } // END generateQRCode
@@ -180,32 +186,48 @@ export function generateDateTimeAsString(date, addTime = false) {
 /*
 *
 */
-export async function generateS3File(s3, data) {
+export async function uploadFileToS3(s3, file) {
   try {
-    const { end_time, first_name, last_name, order_number, start_time } = data;
-    const dataForFile = generateDataForFile({ first_name, last_name, start_time, end_time, order_number });
-    const Body = Buffer.from(dataForFile, 'binary');
-    const awsResp = await s3.putObject({
-      Body,
-      Bucket: process.env.AMAZ_BUCKET,
-      ContentType: 'application/javascript',
-      Key: process.env.FILE_FOR_SERVER,
-    }).promise();
-    return awsResp;
-  } catch (e) { return e; }
-} // END generateS3File
+    const Body = Buffer.from(file, 'binary');
+    const ContentType = 'application/javascript';
+    const awsResp = await s3.putObject({ Body, Bucket, ContentType, Key}).promise();
+    return true;
+  } catch (e) {
+    console.error('error in uploadFileToS3 =>', e);
+    return false;
+  }
+} // END uploadFileToS3
 
 
 /*
-* Generates data for file sent to server (string format)
+*
 */
-export function generateDataForFile(data) {
-  const { start_time, end_time, first_name, last_name, order_number } = data;
-  const resNum = `ShopQ\\${order_number}`;
-  const intro = '250000;1755164;13.07.2022;63;"USD"\n';
-  const dataForFile = `${intro}0;5;${resNum};${start_time};${end_time};0;0;0;0;0;0;;;"${first_name}";"${last_name}";"";"${order_number}";"";${start_time};1;0;${end_time};0;"";"";"";"";"";""`;
-  return dataForFile;
-} // END generateDataForFile
+export async function getHOSFileAsStringFromS3(s3) {
+  try {
+    const params = { Bucket, Key };
+    const { Body } = await s3.getObject(params).promise();
+    const file = Body.toString('utf-8');
+    return file;
+  } catch (e) {
+    console.error('error in getHOSFileAsStringFromS3 =>', e);
+    return e;
+  }
+} // END getHOSFileAsStringFromS3
+
+/*
+*
+*/
+export function generateFileForServer(data) {
+  try {
+    const { end_time, first_name, last_name, order_number, start_time } = data;
+    const resNum = `ShopQ\\${order_number}`;
+    const dataForFile = `250000;1755164;13.07.2022;63;"USD"\n0;5;${resNum};${start_time};${end_time};0;0;0;0;0;0;;;"${first_name}";"${last_name}";"";"${order_number}";"";${start_time};1;0;${end_time};0;"";"";"";"";"";""`;
+    return dataForFile;
+  } catch (e) {
+    console.error('Error in generateFileForServer =>', e);
+    return e;
+  }
+} // END generateFileForServer
 
 
 /*
@@ -214,12 +236,13 @@ export function generateDataForFile(data) {
 */
 export async function sendDataToServer(data) {
   try {
-    const credentials = Buffer.from(`${process.env.SERVER_USER}:${process.env.SERVER_PASSWORD}`).toString('base64');
+    const credentials = Buffer.from(`${USER}:${PASS}`).toString('base64');
     const body = JSON.stringify(data);
     const headers = { Authorization: `Basic ${credentials}`, 'Content-Type': 'application/json' };
-    const method = 'POST';
-    return data;
-    // const serverResp = await fetch(`http://${process.env.SERVER_IP_ADDRESS}`, { method, headers, body });
-    // return serverResp;
-  } catch (e) { return e; }
+    const serverResp = await fetch(`http://${IP}`, { method: 'POST', headers, body });
+    return serverResp;
+  } catch (e) {
+    console.error('error in sendDataToServer =>', e);
+    return e;
+  }
 } // END sendDataToServer
