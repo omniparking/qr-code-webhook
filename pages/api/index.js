@@ -46,17 +46,12 @@ const POST = 'POST';
 export default async function handler(req, res) {
   try {
     const { body, headers, method } = req;
-    res.status(201).send({ message: 'Webhook turned off. ' });
+    res.status(201).send({ message: 'Webhook turned off!' });
     return;
     const client = new ftp.Client(0);
     client.ftp.verbose = true;
 
-    console.group('dirnames')
     console.log('__dirname =>', __dirname)
-    console.log('__dirname/../ =>', `${__dirname}/../`)
-    console.log('__dirname/../../ =>', `${__dirname}/../../`)
-    console.log('__dirname/../../../ =>', `${__dirname}/../../../`)
-    console.groupEnd()
 
     if (method === POST) {
       // Grab needed data from request object
@@ -70,6 +65,12 @@ export default async function handler(req, res) {
       const { first_name, last_name } = body.customer;
       const { quantity, price, name, title } = billingItems;
       let start_time, end_time;
+
+      if (!bookingTimes || !billingItems || !(body && body.customer)) {
+        const message = 'Webhook event failed. Critical data is missing from request body!';
+        res.status(201).send({ message });
+        return;
+      }
 
       // Get start and end times of booking
       if (bookingTimes && bookingTimes.length > 0) {
