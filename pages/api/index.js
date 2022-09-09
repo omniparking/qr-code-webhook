@@ -126,9 +126,9 @@ export default async function handler(req, res) {
       } catch (e) { console.error('error calling generateFileForServer =>', e); }
 
       try {
-      //   if (fileHasBeenSaved) { fileForServer = await helpers.getHOSFileAsStringFromS3(s3); }
-      //   console.log('fileForServer:', fileForServer);
-      // } catch (e) { console.error('error calling s3.getObject =>', e); }
+        // if (fileHasBeenSaved) { fileForServer = await helpers.getHOSFileAsStringFromS3(s3); }
+        // console.log('fileForServer:', fileForServer);
+      } catch (e) { console.error('error calling s3.getObject =>', e); }
 
       try {
         if (fileForServer) {
