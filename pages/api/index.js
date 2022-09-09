@@ -10,7 +10,7 @@ import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 // import AWS from 'aws-sdk'; // to hit S3 to retrieve logo/file for server from AWS
 import sharp from 'sharp'; // shortens text for S3 binary image
-// import fs from 'fs';
+import fs from 'fs';
 import * as helpers from '../../helpers/index';
 
 // Deconstruct needed env variables from process.env
