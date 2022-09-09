@@ -257,12 +257,13 @@ export async function sendDataToServer(client, data) {
       console.log('response from ftp server:', response);
       // await client.uploadFrom("README.md", "README_FTP.md")
       // await client.downloadTo("README_COPY.md", "README_FTP.md")
+      return true;
     } catch(err) {
-        console.log(err)
+      console.log(err)
+      return false;
     }
-    return serverResp;
   } catch (e) {
     console.error('error in sendDataToServer =>', e);
-    return e;
+    return false;
   }
 } // END sendDataToServer
