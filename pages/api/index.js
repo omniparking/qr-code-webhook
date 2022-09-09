@@ -94,8 +94,8 @@ export default async function handler(req, res) {
 
       // If no start or end times from booking, event failed
       if (!start_time || !end_time) {
-        res.status(201).send({ message: 'Webhook event failed. No start/end times available. ' });
         client.close();
+        res.status(201).send({ message: 'Webhook event failed. No start/end times available. ' });
         return;
         // if (!start_time) { start_time = '2022-04-24T20:24:36-04:00'; }  /* FOR TESTING ONLY */
         // if (!end_time) { end_time = '2022-04-25T06:24:36-04:00'; }  /* FOR TESTING ONLY */
@@ -243,6 +243,7 @@ export default async function handler(req, res) {
   } catch (e) {
     // Case where something failed in the code above send a response message indicating webhook failed
     console.error('Error from webhook =>:', e);
+    client.close();
     res.status(201).send({ message: 'Webhook Event failed. Error from main try/catch.' });
   }
 }
