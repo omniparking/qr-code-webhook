@@ -68,7 +68,7 @@ export default async function handler(req, res) {
     const { body, headers, method } = req;
     // res.status(201).send({ message: 'Webhook turned off. ' });
     // return;
-    const client = new ftp.Client(60000);
+    const client = new ftp.Client(0);
     client.ftp.verbose = true;
 
     if (method === POST) {
@@ -148,11 +148,11 @@ export default async function handler(req, res) {
         // if (fileForServer) {
           respFromServer = await helpers.sendDataToServer(client, fileForServer);
         console.log('respFromServer:', respFromServer);
-        client.close();
+        // client.close();
         // }
       } catch (e) {
         console.error('data not sent to omni airport parking server =>', e);
-        client.close();
+        // client.close();
       }
 
       // Generate markup for user's billing address to display in email
@@ -193,6 +193,7 @@ export default async function handler(req, res) {
         // If email is successful, add webhook to redis and send success response
         if (userEmailSuccessful) {
           // await redis.set(new_webhook_id, new_webhook_id);
+          client.close();
           res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged.' });
           return;
         } else {
@@ -206,29 +207,37 @@ export default async function handler(req, res) {
               try {
                 // Add webhook_id to redis and send successful response
                 await redis.set(new_webhook_id, new_webhook_id);
+                client.close();
                 res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
               } catch (e) {
                 // Adding webhook_id to redis failed, so send response indicating email sent successfully but webhook_id not stored in redis
                 console.error('error saving wehook but email send =>', e);
+                client.close();
                 res.status(201).send({ message: 'Webhook event not logged but email sent successfully.' });
+                return;
               }
             } else {
               // If retry email is not successful, send response message indicating webhook event logged but email not sent
-              res.status(201).send({ message: 'Webhook Event logged but email not sent. '});
+              client.close();
+              res.status(201).send({ message: 'Webhook Event logged but email not sent. ' });
+              return;
             }
           } catch (e) {
             console.error('111 error sending email => ', e);
+            client.close();
             // Sending email or adding data to redis db threw an error somewhere send response message indicating webhook event logged but no email sent
             res.status(201).send({ message: 'Webhook Event logged but email not sent. '});
           }
         }
       } else {
         console.error('Case where webhook id already exists in database!');
+        client.close();
         // Case where webhook_id is already stored, meaning an email has already been sent send response message indicating that webhook failed bc it was already successfully handled
         res.status(201).send({ message: 'Webhook Event failed as it has previously been successfully logged.' });
       }
     } else {
       // Case where request method is not of type "POST"
+      client.close();
       res.status(201).send({ message: 'Webhook Event failed as request method is not of type "POST".' });
     }
   } catch (e) {
