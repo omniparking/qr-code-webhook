@@ -50,6 +50,7 @@ export default async function handler(req, res) {
     // return;
     // console.log('readFile:', )
     console.log('__dirname:', __dirname)
+    console.log('__dirname plus:', `${__dirname}../../`);
     fs.readFile('./omni-parking-logo.png', (err, data) => {
       if (err) {
         console.error('error retrieving data:', err)
