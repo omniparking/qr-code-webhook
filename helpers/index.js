@@ -28,10 +28,10 @@ export function encode(data) {
 /*
 *
 */
-function generateIconImageForEmailTemplate(imgPath) {
-  // const src = encode(imgPath);
-  // return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="${imgPath}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
-  return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="data:image/png;base64, ${imgPath}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
+function generateIconImageForEmailTemplate(logoImage) {
+  // const src = encode(logoImage);
+  // return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="${logoImage}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
+  return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="data:image/png;base64, ${logoImage}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
 } // END generateIconImageForEmailTemplate
 
 
@@ -40,7 +40,7 @@ function generateIconImageForEmailTemplate(imgPath) {
 */
 export function generateHTMLMarkup(data, billingAddressMarkup) {
   const {
-    createdAt: purchaseDate, end_time, imagePath, price, name, quantity,
+    createdAt: purchaseDate, end_time, logoImage, price, name, quantity,
     start_time, subtotal_price, total_price, total_tax, title, qrCodeUrl,
   } = data;
 
@@ -61,7 +61,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
       <p style="font-weight: bold; margin: 0px 0px 1px 0px; padding 0px;">Billing Address:</p>
       <p>${billingAddressMarkup}</p>
       <br />
-      ${generateIconImageForEmailTemplate(imagePath)}
+      ${generateIconImageForEmailTemplate(logoImage)}
       <p style="margin: 0px 0px 1px 0px;">1x Facility Charge for $4.99 each</p>
       <p style="margin: 1px 0px 0px 0px; padding: 0px;">${quantity}x ${name.toUpperCase()} for $${price} each</p>
       <p style="margin: 8px 0px 0px 0px; padding: 0px;">Drop off: ${start}</p>

@@ -8,7 +8,7 @@ import sendgridMailer from '@sendgrid/mail';
 import QRCode from 'qrcode'; // (generates qr code)
 import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
-// import AWS from 'aws-sdk'; // to hit S3 to retrieve logo/file for server from AWS
+import AWS from 'aws-sdk'; // to hit S3 to retrieve logo/file for server from AWS
 import sharp from 'sharp'; // shortens text for S3 binary image
 import fs from 'fs';
 // const Client = require('ftp');
@@ -71,6 +71,14 @@ export default async function handler(req, res) {
     const client = new ftp.Client(0);
     client.ftp.verbose = true;
 
+    console.group('dirnames')
+    console.log('__dirname =>', __dirname)
+    console.log('__dirname/../ =>', `${__dirname}/../`)
+    console.log('__dirname/../../ =>', `${__dirname}/../../`)
+    console.log('__dirname/../../../ =>', `${__dirname}/../../../`)
+    console.groupEnd(
+
+    )
     if (method === POST) {
       // Grab needed data from request object
       // (i.e., line_items property has start/end times & req body has order_number/billing_address & billing info such as price & address)
@@ -100,10 +108,6 @@ export default async function handler(req, res) {
         // if (!start_time) { start_time = '2022-04-24T20:24:36-04:00'; }  /* FOR TESTING ONLY */
         // if (!end_time) { end_time = '2022-04-25T06:24:36-04:00'; }  /* FOR TESTING ONLY */
       }
-      console.log('GOT HERE')
-      // Set Headers
-      // Describes lifetime of our resource telling CDN to serve from cache and update in background (at most once per second)
-      // res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
 
       // Generate date in MM/DD/YYYY format for email
       const createdAt = helpers.generateDateTimeAsString(created_at);
@@ -113,13 +117,13 @@ export default async function handler(req, res) {
       const totalTax = total_tax || current_total_tax;
       const totalPrice = total_price || current_total_price;
 
-      let imagePath = '';
+      let logoImage = '';
       // Make call to AWS S3 bucket where logo image is stored, response in binary format which is then translated to string
       try {
-      //   const { Body } = await s3.getObject({ Bucket, Key: `${Bucket}-logo.png` }).promise();
-      //   imagePath = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
+        const { Body } = await s3.getObject({ Bucket, Key: `${Bucket}-logo.png` }).promise();
+        logoImage = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
       } catch (e) { console.error('error getting image from aws => ', e); }
-
+      console.log('logoImage =>', logoImage)
       // Grab unique webhook_id
       const new_webhook_id = headers['x-shopify-webhook-id'] || '';
 
@@ -146,7 +150,7 @@ export default async function handler(req, res) {
 
       try {
         // if (fileForServer) {
-          respFromServer = await helpers.sendDataToServer(client, fileForServer);
+        respFromServer = await helpers.sendDataToServer(client, fileForServer);
         console.log('respFromServer:', respFromServer);
         // client.close();
         // }
@@ -160,7 +164,7 @@ export default async function handler(req, res) {
 
       // Define object for generating the HTML markup in generateHTMLMarkup function
       const htmlMarkupData = {
-        end_time, imagePath, name, price, qrCodeUrl, createdAt, quantity, start_time,
+        end_time, logoImage, name, price, qrCodeUrl, createdAt, quantity, start_time,
         subtotal_price: subtotalPrice, title, total_price: totalPrice, total_tax: totalTax,
       };
 
