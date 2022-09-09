@@ -4,9 +4,9 @@ import { Buffer } from 'buffer';
 const {
   AMAZ_BUCKET: Bucket,
   FILE_FOR_SERVER: Key,
-  SERVER_IP_ADDRESS: IP,
-  SERVER_PASSWORD: PASS,
-  SERVER_USER: USER,
+  SERVER_IP_ADDRESS: host,
+  SERVER_PASSWORD: password,
+  SERVER_USER: user,
 } = process.env;
 
 // const Bucket = process.env.AMAZ_BUCKET;
@@ -245,7 +245,21 @@ export async function sendDataToServer(client, data) {
     const body = JSON.stringify(data);
     const headers = { Authorization: `Basic ${credentials}`, 'Content-Type': 'application/json' };
     // const serverResp = await fetch(`http://${IP}`, { method: 'POST', headers, body });
-    client.put(Buffer.from(data, 'base64'))
+    // client.put(Buffer.from(data, 'base64'))
+    try {
+      await client.access({ host, user, password, port: 21, secure: false });
+      // console.log('LIST', await client.list());
+      const Readable = require('stream').Readable;
+      const s = new Readable();
+      s._read = () => {}; // redundant? see update below
+      s.push(data);
+      const response = await client.uploadFrom(s, 'RS220713.HOS');
+      console.log('response from ftp server:', response);
+      // await client.uploadFrom("README.md", "README_FTP.md")
+      // await client.downloadTo("README_COPY.md", "README_FTP.md")
+    } catch(err) {
+        console.log(err)
+    }
     return serverResp;
   } catch (e) {
     console.error('error in sendDataToServer =>', e);

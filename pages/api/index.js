@@ -70,29 +70,7 @@ export default async function handler(req, res) {
     // return;
     const client = new ftp.Client();
     client.ftp.verbose = true;
-    try {
-      await client.access({
-        host: SERVER_IP_ADDRESS,
-        user: SERVER_USER,
-        password: SERVER_PASSWORD,
-        port: 21,
-        secure: false
-      });
-      console.log('LIST', await client.list());
-      // await client.uploadFrom("README.md", "README_FTP.md")
-      // await client.downloadTo("README_COPY.md", "README_FTP.md")
-    }
-    catch(err) {
-        console.log(err)
-    }
 
-    // fs.readFile('./omni-parking-logo.png', (err, data) => {
-    //   if (err) {
-    //     console.error('error retrieving data:', err)
-    //   } else {
-    //     console.log('data from file', data)
-    //   }
-    // })
     if (method === POST) {
       // Grab needed data from request object
       // (i.e., line_items property has start/end times & req body has order_number/billing_address & billing info such as price & address)
@@ -169,7 +147,7 @@ export default async function handler(req, res) {
 
       try {
         if (fileForServer) {
-          respFromServer = await helpers.sendDataToServer(c, fileForServer);
+          respFromServer = await helpers.sendDataToServer(client, fileForServer);
           console.log('respFromServer:', respFromServer);
         }
       } catch (e) {
