@@ -68,7 +68,7 @@ export default async function handler(req, res) {
     const { body, headers, method } = req;
     // res.status(201).send({ message: 'Webhook turned off. ' });
     // return;
-    const client = new ftp.Client();
+    const client = new ftp.Client(60000);
     // client.ftp.verbose = true;
 
     if (method === POST) {
