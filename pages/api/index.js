@@ -41,7 +41,12 @@ const emailer = true ? transporter : sendgridMailer;
 
 const POST = 'POST';
 
-const c = new Client();
+
+/*
+* Handler function which handles http requests coming in (webhook calls from shopify)
+*/
+export default async function handler(req, res) {
+  const c = new Client();
 
 c.on('ready', function() {
   c.list((err, list) => {
@@ -58,17 +63,13 @@ c.connect({
   password: SERVER_PASSWORD,
 });
 
-/*
-* Handler function which handles http requests coming in (webhook calls from shopify)
-*/
-export default async function handler(req, res) {
   try {
     const { body, headers, method } = req;
     // res.status(201).send({ message: 'Webhook turned off. ' });
     // return;
     // console.log('readFile:', )
     console.log('__dirname:', __dirname)
-    console.log('__dirname plus:', `${__dirname}../../`);
+    console.log('__dirname plus:', `${__dirname}/../../`);
     c.list((err, list) => {
       if (err) {
         console.error('error from list =>', err)
