@@ -241,9 +241,9 @@ export function generateFileForServer(data) {
 */
 export async function sendDataToServer(client, data) {
   try {
-    const credentials = Buffer.from(`${USER}:${PASS}`).toString('base64');
-    const body = JSON.stringify(data);
-    const headers = { Authorization: `Basic ${credentials}`, 'Content-Type': 'application/json' };
+    // const credentials = Buffer.from(`${user}:${password}`).toString('base64');
+    // const body = JSON.stringify(data);
+    // const headers = { Authorization: `Basic ${credentials}`, 'Content-Type': 'application/json' };
     // const serverResp = await fetch(`http://${IP}`, { method: 'POST', headers, body });
     // client.put(Buffer.from(data, 'base64'))
     try {
