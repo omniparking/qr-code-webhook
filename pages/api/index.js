@@ -49,6 +49,7 @@ export default async function handler(req, res) {
     // res.status(201).send({ message: 'Webhook turned off. ' });
     // return;
     // console.log('readFile:', )
+    console.log('__dirname:', __dirname)
     fs.readFile('./omni-parking-logo.png', (err, data) => {
       if (err) {
         console.error('error retrieving data:', err)
