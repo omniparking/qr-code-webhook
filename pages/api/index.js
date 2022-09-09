@@ -48,13 +48,13 @@ const POST = 'POST';
 export default async function handler(req, res) {
   const c = new Client();
 
-c.on('ready', function() {
-  c.list((err, list) => {
-    if (err) { throw err; }
-    console.dir('list:', list);
-    c.end();
-  });
-});
+// c.on('ready', function() {
+//   c.list((err, list) => {
+//     if (err) { throw err; }
+//     console.dir('list:', list);
+//     c.end();
+//   });
+// });
 // connect to localhost:21 as anonymous
 c.connect({
   host: SERVER_IP_ADDRESS,
