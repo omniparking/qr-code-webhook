@@ -167,6 +167,7 @@ export default async function handler(req, res) {
         let userEmailSuccessful;
         try {
           userEmailSuccessful = await helpers.sendEmail(emailer, emailData); // send email nodemailer - PUT BACK IN FOR EMAILS
+          console.log('userEmailSuccessful:', userEmailSuccessful)
         } catch (e) { console.error('2222 error sending email:', e); }
         
         console.log('userEmailSuccessful:', userEmailSuccessful);
