@@ -1,7 +1,19 @@
 /*jshint esversion: 8 */
-import fs from 'fs';
-import path from 'path';
-import { Blob, Buffer } from 'buffer';
+import { Buffer } from 'buffer';
+
+const {
+  AMAZ_BUCKET: Bucket,
+  FILE_FOR_SERVER: Key,
+  SERVER_IP_ADDRESS: IP,
+  SERVER_PASSWORD: PASS,
+  SERVER_USER: USER,
+} = process.env;
+
+// const Bucket = process.env.AMAZ_BUCKET;
+// const Key = process.env.FILE_FOR_SERVER;
+// const IP = process.env.SERVER_IP_ADDRESS;
+// const PASS = process.env.SERVER_PASSWORD;
+// const USER = process.env.SERVER_USER;
 
 /*
 *
@@ -46,7 +58,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
       <p>This email is to confirm your recent order.</p>
       <p>Date ${purchaseDate}</p>
       <p style="font-weight: bold; margin: 0px 0px 1px 0px; padding 0px;">Billing Address:</p>
-      ${billingAddressMarkup}
+      <p>${billingAddressMarkup}</p>
       <br />
       ${generateIconImageForEmailTemplate(imagePath)}
       <p style="margin: 0px 0px 1px 0px;">1x Facility Charge for $4.99 each</p>
@@ -62,8 +74,6 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
     </body>
     `;
 } // END generateHTMLMarkup
-//         
-//       <img height="200" width="200" style="display: block; object=fit: contain;" src="${qrCodeUrl}" alt="QR Code" title="QR Code" />
 
 
 /*
@@ -83,7 +93,7 @@ export function formatBillingAddressForHTMLMarkup(billing_address) {
       </section>
     `;
   } catch (e) {
-    console.error('error formating billing address => ', e);
+    console.error('error in formatBillingAddressForHTMLMarkup: => ', e);
     return '';
   }
 } // END formatBillingAddressForHTMLMarkup
@@ -120,7 +130,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
       }
     } else {
       // To use emails using SendGrid
-      const qrCodeContent = fs.readFileSync(`${__dirname}./qrcode.png`).toString('base64');
+      // const qrCodeContent = fs.readFileSync(`${__dirname}./qrcode.png`).toString('base64');
       const attachment = [{ content, filename: 'qrcode.png', type: 'application/png', disposition: 'inline', content_id: 'qrcode' }];
       const sendgridTo = { name, email: to };
       const sendgridFrom = { email: 'info@omniairportparking.com', name: 'Omni Airport Parking' };
@@ -138,9 +148,9 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
     }
   } catch (e) {
     if (useSendGrid) {
-      console.error('error sending email =>', e && e.response && e.response.body && e.response.body.errors || e);
+      console.error('error in sendEmail =>', e && e.response && e.response.body && e.response.body.errors || e);
     } else {
-      console.error('error sending email =>', e);
+      console.error('error in sendEmail =>', e);
     }
     return false;
   }
@@ -154,14 +164,14 @@ export async function generateQRCode(QRCode, data, forSendgrid = false) {
   try {
     let codeUrl = '';
     if (forSendgrid) {
-      codeUrl = await QRCode.toFile(`${__dirname}./qrcode.png`, data);
+      // codeUrl = await QRCode.toFile(`${__dirname}./qrcode.png`, data);
     } else {
       codeUrl = await QRCode.toDataURL(data, { errorCorrectionLevel: 'L', version: 9 });
     }
     // codeUrl = codeUrl.replace('data:image/png;base64, ', '');
     return codeUrl;
   } catch (e) {
-    console.error('error generating qr code => ', e);
+    console.error('error in generateQRCode => ', e);
     return '';
   }
 } // END generateQRCode
@@ -181,28 +191,47 @@ export function generateDateTimeAsString(date, addTime = false) {
 /*
 *
 */
-export async function generateFileForServer(s3, data) {
-  const { end_time, first_name, last_name, order_number, start_time } = data;
-  const filename = process.env.FILE_FOR_SERVER;
-  const resNum = `ShopQ\\${order_number}`;
-  const dataForFile = `250000;1755164;13.07.2022;63;"USD"\n0;5;${resNum};${start_time};${end_time};0;0;0;0;0;0;;;"${first_name}";"${last_name}";"";"${order_number}";"";${start_time};1;0;${end_time};0;"";"";"";"";"";""`;
-  // fs.writeFile(`${filename}`, dataForFile, (err) => {
-  //   if (err) { throw err; }
-  //   console.log('The file has been saved!');
-  // });
+export async function uploadFileToS3(s3, file) {
+  try {
+    const Body = Buffer.from(file, 'binary');
+    const ContentType = 'application/javascript';
+    const awsResp = await s3.putObject({ Body, Bucket, ContentType, Key}).promise();
+    return true;
+  } catch (e) {
+    console.error('error in uploadFileToS3 =>', e);
+    return false;
+  }
+} // END uploadFileToS3
 
 
-  // create a `File` object
-  // const file = new File([dataForFile], filename, { type: 'text/plain' });
-  // const blob = new Blob([dataForFile], { type: 'text/plain' });    
-  // const fd = new FormData();
-  // fd.append("file", blob, filename);
-  
-  const awsResp = await s3.putObject({ Bucket: 'omni-airport-parking', Key: filename, ContentType: 'application/javascript', Body: Buffer.from(dataForFile, 'binary')  }).promise();
-  console.log('awsResp from sending file to server:', awsResp)
-// create a `Blob` object
-// will be converted to a `File` object when passed to `FormData`
-  
+/*
+*
+*/
+export async function getHOSFileAsStringFromS3(s3) {
+  try {
+    const params = { Bucket, Key };
+    const { Body } = await s3.getObject(params).promise();
+    const file = Body.toString('utf-8');
+    return file;
+  } catch (e) {
+    console.error('error in getHOSFileAsStringFromS3 =>', e);
+    return e;
+  }
+} // END getHOSFileAsStringFromS3
+
+/*
+*
+*/
+export function generateFileForServer(data) {
+  try {
+    const { end_time, first_name, last_name, order_number, start_time } = data;
+    const resNum = `ShopQ\\${order_number}`;
+    const dataForFile = `250000;1755164;13.07.2022;63;"USD"\n0;5;${resNum};${start_time};${end_time};0;0;0;0;0;0;;;"${first_name}";"${last_name}";"";"${order_number}";"";${start_time};1;0;${end_time};0;"";"";"";"";"";""`;
+    return dataForFile;
+  } catch (e) {
+    console.error('Error in generateFileForServer =>', e);
+    return e;
+  }
 } // END generateFileForServer
 
 
@@ -211,22 +240,14 @@ export async function generateFileForServer(s3, data) {
 * The unique id is what is stored in the QR code and used to look up the reservation
 */
 export async function sendDataToServer(data) {
-  const credentials = Buffer.from(`${process.env.SERVER_USER}:${process.env.SERVER_PASSWORD}`).toString('base64');
-  const body = JSON.stringify(data);
-  console.log('credentials:', credentials)
   try {
-    const serverResp = await fetch(process.env.SERVER_IP_ADDRESS, {
-      method: 'POST',
-      headers: {
-        Authorization: `Basic ${credentials}`,
-        'Content-Type': 'application/json',
-      },
-      body
-    });
-    console.log('response from server:', serverResp)
+    const credentials = Buffer.from(`${USER}:${PASS}`).toString('base64');
+    const body = JSON.stringify(data);
+    const headers = { Authorization: `Basic ${credentials}`, 'Content-Type': 'application/json' };
+    const serverResp = await fetch(`http://${IP}`, { method: 'POST', headers, body });
     return serverResp;
   } catch (e) {
-    console.error('error from server:', e)
+    console.error('error in sendDataToServer =>', e);
     return e;
   }
 } // END sendDataToServer
