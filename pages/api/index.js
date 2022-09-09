@@ -46,7 +46,12 @@ const POST = 'POST';
 * Handler function which handles http requests coming in (webhook calls from shopify)
 */
 export default async function handler(req, res) {
-  const c = new Client();
+  const c = new Client({
+  host: SERVER_IP_ADDRESS,
+  port: 21,
+  user: SERVER_USER,
+  password: SERVER_PASSWORD,
+});
 
 // c.on('ready', function() {
 //   c.list((err, list) => {
@@ -56,12 +61,7 @@ export default async function handler(req, res) {
 //   });
 // });
 // connect to localhost:21 as anonymous
-c.connect({
-  host: SERVER_IP_ADDRESS,
-  port: 21,
-  user: SERVER_USER,
-  password: SERVER_PASSWORD,
-});
+c.connect();
 
   try {
     const { body, headers, method } = req;
