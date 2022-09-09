@@ -128,13 +128,11 @@ export default async function handler(req, res) {
 
       // Generate barcode with order information
       const qrCodeUrl = await helpers.generateQRCode(QRCode, uniqueIdForQRCode); // generate qr code for nodemailer
-
-      let fileForServer, respFromServer;
+      const fileForServer = helpers.generateFileForServer({ end_time, first_name, last_name, order_number, start_time });
+      let respFromServer;
       let fileHasBeenSaved = false;
       // Code to send data to omni airport parking server
       try {
-        const dataForServer = { end_time, first_name, last_name, order_number, start_time };
-        fileForServer = helpers.generateFileForServer(dataForServer);
         if (fileForServer) {
           // const uploadSuccessful = await helpers.uploadFileToS3(s3, fileForServer);
           // fileHasBeenSaved = uploadSuccessful;
@@ -194,8 +192,9 @@ export default async function handler(req, res) {
 
         // If email is successful, add webhook to redis and send success response
         if (userEmailSuccessful) {
-          await redis.set(new_webhook_id, new_webhook_id);
+          // await redis.set(new_webhook_id, new_webhook_id);
           res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged.' });
+          return;
         } else {
           // If the email is not successful, try sending it again
           try {
