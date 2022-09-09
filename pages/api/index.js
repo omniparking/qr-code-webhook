@@ -69,7 +69,7 @@ export default async function handler(req, res) {
     // res.status(201).send({ message: 'Webhook turned off. ' });
     // return;
     const client = new ftp.Client();
-    client.ftp.verbose = true;
+    // client.ftp.verbose = true;
 
     if (method === POST) {
       // Grab needed data from request object
@@ -102,7 +102,7 @@ export default async function handler(req, res) {
       console.log('GOT HERE')
       // Set Headers
       // Describes lifetime of our resource telling CDN to serve from cache and update in background (at most once per second)
-      res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
+      // res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
 
       // Generate date in MM/DD/YYYY format for email
       const createdAt = helpers.generateDateTimeAsString(created_at);
@@ -133,7 +133,7 @@ export default async function handler(req, res) {
       // Code to send data to omni airport parking server
       try {
         const dataForServer = { end_time, first_name, last_name, order_number, start_time };
-        fileForServer = await helpers.generateFileForServer(dataForServer);
+        fileForServer = helpers.generateFileForServer(dataForServer);
         if (fileForServer) {
           // const uploadSuccessful = await helpers.uploadFileToS3(s3, fileForServer);
           // fileHasBeenSaved = uploadSuccessful;
@@ -167,7 +167,7 @@ export default async function handler(req, res) {
       const html = helpers.generateHTMLMarkup(htmlMarkupData, billingAddressMarkup);
 
       // Method to add webhook_id to redis
-      const prevWebhook = await redis.get(new_webhook_id);
+      // const prevWebhook = await redis.get(new_webhook_id);
       console.log('prevWebhook:', prevWebhook);
       // Define variables for sending email
       const to = 'alon.bibring@gmail.com'; // email recipient
