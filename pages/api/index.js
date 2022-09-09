@@ -168,7 +168,7 @@ export default async function handler(req, res) {
 
       // Method to add webhook_id to redis
       // const prevWebhook = await redis.get(new_webhook_id);
-      console.log('prevWebhook:', prevWebhook);
+      // console.log('prevWebhook:', prevWebhook);
       // Define variables for sending email
       const to = 'alon.bibring@gmail.com'; // email recipient
     // const cc = ['alon.bibring@gmail.com']; // cc emails
@@ -178,7 +178,7 @@ export default async function handler(req, res) {
       const emailData = { from: 'omniairportparking@gmail.com', attachments, html, name, order_number, to, qrCodeUrl };
 
       // If webhook_id does not already exist in db
-      if (true || !prevWebhook) {
+      if (true /*|| !prevWebhook*/) {
         let userEmailSuccessful;
         try {
           userEmailSuccessful = await helpers.sendEmail(emailer, emailData); // send email nodemailer - PUT BACK IN FOR EMAILS
