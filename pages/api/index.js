@@ -1,30 +1,30 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 /*jshint esversion: 8 */
 
+// PORT 21 FOR FTP
+
 // Import needed packages
 import sendgridMailer from '@sendgrid/mail';
 import QRCode from 'qrcode'; // (generates qr code)
 import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
-import AWS from 'aws-sdk'; // to hit S3 to retrieve logo/file for server from AWS
+// import AWS from 'aws-sdk'; // to hit S3 to retrieve logo/file for server from AWS
 import sharp from 'sharp'; // shortens text for S3 binary image
+// import fs from 'fs';
+import * as helpers from '../../helpers/index';
 
-import * as helpers from '../../helpers/index.js';
- 
-const accessKeyId = process.env.AMAZ_ACCESS_KEY_ID;
-const secretAccessKey = process.env.AMAZ_SECRET_ACCESS_KEY;
-const FILE_FOR_SERVER = process.env.FILE_FOR_SERVER;
-const pass = process.env.OMNI_AIRPORT_GMAIL_PASS;
-const user = process.env.OMNI_AIRPORT_GMAIL_USER;
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-const host = process.env.SMTP_HOST;
-const port = process.env.EMAIL_PORT;
-const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-const url = process.env.UPSTASH_REDIS_REST_URL;
-const Bucket = process.env.AMAZ_BUCKET;
+// Deconstruct needed env variables from process.env
+const {
+  // AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_BUCKET: Bucket, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
+  FILE_FOR_SERVER: Key,
+  GO_DADDY_PASS, GO_DADDY_USER,
+  OMNI_AIRPORT_GMAIL_PASS: pass, OMNI_AIRPORT_GMAIL_USER: user,
+  SENDGRID_API_KEY, SMTP_HOST: host, EMAIL_PORT: port,
+  UPSTASH_REDIS_REST_TOKEN: token, UPSTASH_REDIS_REST_URL: url,
+} = process.env;
 
 // Initialize s3 connection - using AWS S3 to store company logo
-const s3 = new AWS.S3({ accessKeyId, secretAccessKey });
+// const s3 = new AWS.S3({ accessKeyId, secretAccessKey });
 
 // Initialize redis (to store webhook ids)
 const redis = new Redis({ url, token });
@@ -38,22 +38,7 @@ sendgridMailer.setApiKey(SENDGRID_API_KEY);
 
 const emailer = true ? transporter : sendgridMailer;
 
-// let Client = require('ssh2-sftp-client');
-// let sftp = new Client();
-// try {
-// sftp.connect({
-//   host: process.env.SERVER_IP_ADDRESS,
-//   username: process.env.SERVER_USER,
-//   password: process.env.SERVER_PASSWORD,
-// }).then(() => {
-//   return sftp.list('/pathname');
-// }).then(data => {
-//   console.log(data, 'the data info');
-// }).catch(err => {
-//   console.log(err, 'catch error');
-// });
-// } catch (e) { console.error('error:', e);  }
-
+const POST = 'POST';
 
 /*
 * Handler function which handles http requests coming in (webhook calls from shopify)
@@ -63,12 +48,20 @@ export default async function handler(req, res) {
     const { body, headers, method } = req;
     // res.status(201).send({ message: 'Webhook turned off. ' });
     // return;
-    if (method === 'POST') {
+    // console.log('readFile:', )
+    fs.readFile('./omni-parking-logo.png', (err, data) => {
+      if (err) {
+        console.error('error retrieving data:', err)
+      } else {
+        console.log('data from file', data)
+      }
+    })
+    if (method === POST) {
       // Grab needed data from request object
       // (i.e., line_items property has start/end times & req body has order_number/billing_address & billing info such as price & address)
       const {
         billing_address, created_at, current_subtotal_price, current_total_price, current_total_tax,
-        email, id, line_items, order_number, subtotal_price, total_price, total_tax,
+        /* email: to, */ id, line_items, order_number, subtotal_price, total_price, total_tax,
       } = body;
       const bookingTimes = line_items && line_items[1] && line_items[1].properties || [];
       const billingItems = line_items && line_items[1];
@@ -88,8 +81,11 @@ export default async function handler(req, res) {
       if (!start_time || !end_time) {
         res.status(201).send({ message: 'Webhook event failed. No start/end times available. '});
         return;
+        // if (!start_time) { start_time = '2022-04-24T20:24:36-04:00'; }  /* FOR TESTING ONLY */
+        // if (!end_time) { end_time = '2022-04-25T06:24:36-04:00'; }  /* FOR TESTING ONLY */
       }
-
+      console.log('GOT HERE')
+      // Set Headers
       // Describes lifetime of our resource telling CDN to serve from cache and update in background (at most once per second)
       res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
 
@@ -97,16 +93,16 @@ export default async function handler(req, res) {
       const createdAt = helpers.generateDateTimeAsString(created_at);
 
       // Get subtotal, taxes, and total price for email template
-      const subPrice = subtotal_price || current_subtotal_price;
+      const subtotalPrice = subtotal_price || current_subtotal_price;
       const totalTax = total_tax || current_total_tax;
       const totalPrice = total_price || current_total_price;
 
       let imagePath = '';
       // Make call to AWS S3 bucket where logo image is stored, response in binary format which is then translated to string
-      try {
-        const { Body } = await s3.getObject({ Bucket, Key: 'omni-airport-parking-logo.png' }).promise();
-        imagePath = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
-      } catch (e) { console.error('error getting image from aws => ', e); }
+      // try {
+      //   const { Body } = await s3.getObject({ Bucket, Key: `${Bucket}-logo.png` }).promise();
+      //   imagePath = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
+      // } catch (e) { console.error('error getting image from aws => ', e); }
 
       // Grab unique webhook_id
       const new_webhook_id = headers['x-shopify-webhook-id'] || '';
@@ -117,33 +113,39 @@ export default async function handler(req, res) {
       // Generate barcode with order information
       const qrCodeUrl = await helpers.generateQRCode(QRCode, uniqueIdForQRCode); // generate qr code for nodemailer
 
-      const dataForServer = { end_time, first_name, last_name, order_number, start_time };
+      let fileForServer, respFromServer;
+      let fileHasBeenSaved = false;
+      // Code to send data to omni airport parking server
       try {
-        await helpers.generateS3File(s3, dataForServer);
-      } catch (e) { console.error('error generating file in s3:', e);  }
+        const dataForServer = { end_time, first_name, last_name, order_number, start_time };
+        fileForServer = await helpers.generateFileForServer(dataForServer);
+        // if (fileForServer) {
+        //   const uploadSuccessful = await helpers.uploadFileToS3(s3, fileForServer);
+        //   fileHasBeenSaved = uploadSuccessful;
+        // }
+      } catch (e) { console.error('error calling generateFileForServer =>', e); }
 
-      const params = { Bucket, Key: FILE_FOR_SERVER };
-      let fileForServer;
       try {
-        const { Body: bodyFile } = await s3.getObject(params).promise();
-        fileForServer = bodyFile.toString('utf-8');
-        console.log('fileForServer:', fileForServer)
-      } catch (e) { console.error('error getting file from s3:', e);  }
+        // if (fileHasBeenSaved) { fileForServer = await helpers.getHOSFileAsStringFromS3(s3); }
+        // console.log('fileForServer:', fileForServer);
+      } catch (e) { console.error('error calling s3.getObject =>', e); }
 
       try {
         if (fileForServer) {
-          const respFromServer = await helpers.sendDataToServer(fileForServer);
-          console.log('respFromServer:', respFromServer)
+          // respFromServer = await helpers.sendDataToServer(fileForServer);
+          // console.log('respFromServer:', respFromServer);
         }
-      } catch (e) { console.error('data not sent to omni airport parking server =>', e); }
+      } catch (e) {
+        console.error('data not sent to omni airport parking server =>', e);
+      }
 
       // Generate markup for user's billing address to display in email
       const billingAddressMarkup = helpers.formatBillingAddressForHTMLMarkup(billing_address);
 
       // Define object for generating the HTML markup in generateHTMLMarkup function
       const htmlMarkupData = {
-        subtotal_price: subPrice, total_tax: totalTax, total_price: totalPrice,
-        qrCodeUrl, createdAt, start_time, end_time, quantity, price, name, title, imagePath,
+        end_time, imagePath, name, price, qrCodeUrl, createdAt, quantity, start_time,
+        subtotal_price: subtotalPrice, title, total_price: totalPrice, total_tax: totalTax,
       };
 
       // Generate HTML markup for email
@@ -165,6 +167,7 @@ export default async function handler(req, res) {
         let userEmailSuccessful;
         try {
           userEmailSuccessful = await helpers.sendEmail(emailer, emailData); // send email nodemailer - PUT BACK IN FOR EMAILS
+          console.log('userEmailSuccessful:', userEmailSuccessful)
         } catch (e) { console.error('2222 error sending email:', e); }
         
         console.log('userEmailSuccessful:', userEmailSuccessful);
