@@ -61,7 +61,7 @@ export default async function handler(req, res) {
 //   });
 // });
 // connect to localhost:21 as anonymous
-c.connect();
+
 
   try {
     const { body, headers, method } = req;
@@ -70,13 +70,16 @@ c.connect();
     // console.log('readFile:', )
     console.log('__dirname:', __dirname)
     console.log('__dirname plus:', `${__dirname}/../../`);
-    c.list((err, list) => {
+    c.connect(() => {
+      c.list((err, list) => {
       if (err) {
         console.error('error from list =>', err)
       } else {
         console.log('LIST:', list)
       }
     })
+    });
+
     // fs.readFile('./omni-parking-logo.png', (err, data) => {
     //   if (err) {
     //     console.error('error retrieving data:', err)
