@@ -72,10 +72,11 @@ export default async function handler(req, res) {
     client.ftp.verbose = true;
     try {
       await client.access({
-        host: "myftpserver.com",
-        user: "very",
-        password: "password",
-        secure: true
+        host: SERVER_IP_ADDRESS,
+        user: SERVER_USER,
+        password: SERVER_PASSWORD,
+        port: 21,
+        secure: false
       });
       console.log('LIST', await client.list());
       // await client.uploadFrom("README.md", "README_FTP.md")
