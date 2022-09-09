@@ -67,10 +67,10 @@ export default async function handler(req, res) {
     const { body, headers, method } = req;
     // res.status(201).send({ message: 'Webhook turned off. ' });
     // return;
-    // console.log('readFile:', )
+    console.log('CCCC:', c)
     console.log('__dirname:', __dirname)
     console.log('__dirname plus:', `${__dirname}/../../`);
-    c.connect(() => {
+    c.connect().then(() => {
       c.list((err, list) => {
       if (err) {
         console.error('error from list =>', err)
@@ -78,7 +78,7 @@ export default async function handler(req, res) {
         console.log('LIST:', list)
       }
     })
-    });
+    })
 
     // fs.readFile('./omni-parking-logo.png', (err, data) => {
     //   if (err) {
