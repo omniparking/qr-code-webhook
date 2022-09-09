@@ -24,7 +24,7 @@ const {
 } = process.env;
 
 // Initialize s3 connection - using AWS S3 to store company logo
-const s3 = new AWS.S3({ accessKeyId, secretAccessKey });
+// const s3 = new AWS.S3({ accessKeyId, secretAccessKey });
 
 // Initialize redis (to store webhook ids)
 const redis = new Redis({ url, token });
@@ -46,16 +46,16 @@ const POST = 'POST';
 export default async function handler(req, res) {
   try {
     const { body, headers, method } = req;
-    res.status(201).send({ message: 'Webhook turned off. ' });
-    return;
+    // res.status(201).send({ message: 'Webhook turned off. ' });
+    // return;
     // console.log('readFile:', )
-    // fs.readFile('/omni-parking-logo.png', (err, data) => {
-    //   if (err) {
-    //     console.error('error retrieving data:', err)
-    //   } else {
-    //     console.log('data from file', data)
-    //   }
-    // })
+    fs.readFile('./omni-parking-logo.png', (err, data) => {
+      if (err) {
+        console.error('error retrieving data:', err)
+      } else {
+        console.log('data from file', data)
+      }
+    })
     if (method === POST) {
       // Grab needed data from request object
       // (i.e., line_items property has start/end times & req body has order_number/billing_address & billing info such as price & address)
@@ -99,10 +99,10 @@ export default async function handler(req, res) {
 
       let imagePath = '';
       // Make call to AWS S3 bucket where logo image is stored, response in binary format which is then translated to string
-      try {
-        const { Body } = await s3.getObject({ Bucket, Key: `${Bucket}-logo.png` }).promise();
-        imagePath = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
-      } catch (e) { console.error('error getting image from aws => ', e); }
+      // try {
+      //   const { Body } = await s3.getObject({ Bucket, Key: `${Bucket}-logo.png` }).promise();
+      //   imagePath = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
+      // } catch (e) { console.error('error getting image from aws => ', e); }
 
       // Grab unique webhook_id
       const new_webhook_id = headers['x-shopify-webhook-id'] || '';
@@ -119,16 +119,16 @@ export default async function handler(req, res) {
       try {
         const dataForServer = { end_time, first_name, last_name, order_number, start_time };
         fileForServer = await helpers.generateFileForServer(dataForServer);
-        if (fileForServer) {
-          const uploadSuccessful = await helpers.uploadFileToS3(s3, fileForServer);
-          fileHasBeenSaved = uploadSuccessful;
-        }
+        // if (fileForServer) {
+        //   const uploadSuccessful = await helpers.uploadFileToS3(s3, fileForServer);
+        //   fileHasBeenSaved = uploadSuccessful;
+        // }
       } catch (e) { console.error('error calling generateFileForServer =>', e); }
 
       try {
-        if (fileHasBeenSaved) { fileForServer = await helpers.getHOSFileAsStringFromS3(s3); }
-        console.log('fileForServer:', fileForServer);
-      } catch (e) { console.error('error calling s3.getObject =>', e); }
+      //   if (fileHasBeenSaved) { fileForServer = await helpers.getHOSFileAsStringFromS3(s3); }
+      //   console.log('fileForServer:', fileForServer);
+      // } catch (e) { console.error('error calling s3.getObject =>', e); }
 
       try {
         if (fileForServer) {
