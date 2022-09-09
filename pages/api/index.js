@@ -84,7 +84,7 @@ export default async function handler(req, res) {
         // if (!start_time) { start_time = '2022-04-24T20:24:36-04:00'; }  /* FOR TESTING ONLY */
         // if (!end_time) { end_time = '2022-04-25T06:24:36-04:00'; }  /* FOR TESTING ONLY */
       }
-
+      console.log('GOT HERE')
       // Set Headers
       // Describes lifetime of our resource telling CDN to serve from cache and update in background (at most once per second)
       res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
