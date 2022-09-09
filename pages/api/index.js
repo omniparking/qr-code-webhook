@@ -77,7 +77,6 @@ c.connect();
         console.log('LIST:', list)
       }
     })
-    c
     // fs.readFile('./omni-parking-logo.png', (err, data) => {
     //   if (err) {
     //     console.error('error retrieving data:', err)
