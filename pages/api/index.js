@@ -10,23 +10,20 @@ import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo/file for server from AWS
 import sharp from 'sharp'; // shortens text for S3 binary image
-import fs from 'fs';
-// const Client = require('ftp');
 import * as ftp from 'basic-ftp';
 import * as helpers from '../../helpers/index';
 
 // Deconstruct needed env variables from process.env
 const {
   AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_BUCKET: Bucket, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
-  FILE_FOR_SERVER: Key, SERVER_IP_ADDRESS, SERVER_PASSWORD, SERVER_USER,
-  GO_DADDY_PASS, GO_DADDY_USER,
   OMNI_AIRPORT_GMAIL_PASS: pass, OMNI_AIRPORT_GMAIL_USER: user,
   SENDGRID_API_KEY, SMTP_HOST: host, EMAIL_PORT: port,
   UPSTASH_REDIS_REST_TOKEN: token, UPSTASH_REDIS_REST_URL: url,
 } = process.env;
-
+console.log('BUCKET:', Bucket)
+  
 // Initialize s3 connection - using AWS S3 to store company logo
-// const s3 = new AWS.S3({ accessKeyId, secretAccessKey });
+const s3 = new AWS.S3({ accessKeyId, secretAccessKey });
 
 // Initialize redis (to store webhook ids)
 const redis = new Redis({ url, token });
@@ -47,27 +44,10 @@ const POST = 'POST';
 * Handler function which handles http requests coming in (webhook calls from shopify)
 */
 export default async function handler(req, res) {
-//   const c = new Client({
-//   host: SERVER_IP_ADDRESS,
-//   port: 21,
-//   user: SERVER_USER,
-//   password: SERVER_PASSWORD,
-// });
-
-// c.on('ready', function() {
-//   c.list((err, list) => {
-//     if (err) { throw err; }
-//     console.dir('list:', list);
-//     c.end();
-//   });
-// });
-// connect to localhost:21 as anonymous
-
-
   try {
     const { body, headers, method } = req;
-    // res.status(201).send({ message: 'Webhook turned off. ' });
-    // return;
+    res.status(201).send({ message: 'Webhook turned off. ' });
+    return;
     const client = new ftp.Client(0);
     client.ftp.verbose = true;
 
@@ -76,9 +56,8 @@ export default async function handler(req, res) {
     console.log('__dirname/../ =>', `${__dirname}/../`)
     console.log('__dirname/../../ =>', `${__dirname}/../../`)
     console.log('__dirname/../../../ =>', `${__dirname}/../../../`)
-    console.groupEnd(
+    console.groupEnd()
 
-    )
     if (method === POST) {
       // Grab needed data from request object
       // (i.e., line_items property has start/end times & req body has order_number/billing_address & billing info such as price & address)
@@ -117,13 +96,13 @@ export default async function handler(req, res) {
       const totalTax = total_tax || current_total_tax;
       const totalPrice = total_price || current_total_price;
 
-      let logoImage = '';
+      let logoImageBase64 = '';
       // Make call to AWS S3 bucket where logo image is stored, response in binary format which is then translated to string
       try {
-        const { Body } = await s3.getObject({ Bucket, Key: `${Bucket}-logo.png` }).promise();
-        logoImage = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
+        const { Body } = await s3.getObject({ Bucket: 'omni-airport-parking', Key: `omni-airport-parking-logo.png` }).promise();
+        logoImageBase64 = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
       } catch (e) { console.error('error getting image from aws => ', e); }
-      console.log('logoImage =>', logoImage)
+      console.log('logoImageBase64 =>', logoImageBase64)
       // Grab unique webhook_id
       const new_webhook_id = headers['x-shopify-webhook-id'] || '';
 
@@ -164,7 +143,7 @@ export default async function handler(req, res) {
 
       // Define object for generating the HTML markup in generateHTMLMarkup function
       const htmlMarkupData = {
-        end_time, logoImage, name, price, qrCodeUrl, createdAt, quantity, start_time,
+        end_time, logoImageBase64, name, price, qrCodeUrl, createdAt, quantity, start_time,
         subtotal_price: subtotalPrice, title, total_price: totalPrice, total_tax: totalTax,
       };
 

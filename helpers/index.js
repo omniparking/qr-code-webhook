@@ -10,28 +10,14 @@ const {
   SERVER_USER: user,
 } = process.env;
 
-// const Bucket = process.env.AMAZ_BUCKET;
-// const Key = process.env.FILE_FOR_SERVER;
-// const IP = process.env.SERVER_IP_ADDRESS;
-// const PASS = process.env.SERVER_PASSWORD;
-// const USER = process.env.SERVER_USER;
 
 /*
 *
 */
-export function encode(data) {
-  const str = data.reduce((a, b) => { return a + String.fromCharCode(b); },'');
-  return Buffer.from(str).toString('base64').replace(/.{76}(?=.)/g, '$&\n');
-} // END encode
-
-
-/*
-*
-*/
-function generateIconImageForEmailTemplate(logoImage) {
-  // const src = encode(logoImage);
-  // return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="${logoImage}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
-  return `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" src="data:image/png;base64, ${logoImage}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
+function generateIconImageForEmailTemplate(logoImageBase64) {
+  let imgElString = `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" `;
+  imgElString += `src="data:image/png;base64, ${logoImageBase64}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
+  return imgElString;
 } // END generateIconImageForEmailTemplate
 
 
@@ -40,7 +26,7 @@ function generateIconImageForEmailTemplate(logoImage) {
 */
 export function generateHTMLMarkup(data, billingAddressMarkup) {
   const {
-    createdAt: purchaseDate, end_time, logoImage, price, name, quantity,
+    createdAt: purchaseDate, end_time, logoImageBase64, price, name, quantity,
     start_time, subtotal_price, total_price, total_tax, title, qrCodeUrl,
   } = data;
 
@@ -61,7 +47,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
       <p style="font-weight: bold; margin: 0px 0px 1px 0px; padding 0px;">Billing Address:</p>
       <p>${billingAddressMarkup}</p>
       <br />
-      ${generateIconImageForEmailTemplate(logoImage)}
+      ${generateIconImageForEmailTemplate(logoImageBase64)}
       <p style="margin: 0px 0px 1px 0px;">1x Facility Charge for $4.99 each</p>
       <p style="margin: 1px 0px 0px 0px; padding: 0px;">${quantity}x ${name.toUpperCase()} for $${price} each</p>
       <p style="margin: 8px 0px 0px 0px; padding: 0px;">Drop off: ${start}</p>
@@ -94,7 +80,7 @@ export function formatBillingAddressForHTMLMarkup(billing_address) {
       </section>
     `;
   } catch (e) {
-    console.error('error in formatBillingAddressForHTMLMarkup: => ', e);
+    console.error('Error in formatBillingAddressForHTMLMarkup: => ', e);
     return '';
   }
 } // END formatBillingAddressForHTMLMarkup
@@ -131,7 +117,6 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
       }
     } else {
       // To use emails using SendGrid
-      // const qrCodeContent = fs.readFileSync(`${__dirname}./qrcode.png`).toString('base64');
       const attachment = [{ content, filename: 'qrcode.png', type: 'application/png', disposition: 'inline', content_id: 'qrcode' }];
       const sendgridTo = { name, email: to };
       const sendgridFrom = { email: 'info@omniairportparking.com', name: 'Omni Airport Parking' };
@@ -149,9 +134,9 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
     }
   } catch (e) {
     if (useSendGrid) {
-      console.error('error in sendEmail =>', e && e.response && e.response.body && e.response.body.errors || e);
+      console.error('Error in sendEmail (using sendGrid) =>', e && e.response && e.response.body && e.response.body.errors || e);
     } else {
-      console.error('error in sendEmail =>', e);
+      console.error('Error in sendEmail (using nodemailer) =>', e);
     }
     return false;
   }
@@ -165,14 +150,13 @@ export async function generateQRCode(QRCode, data, forSendgrid = false) {
   try {
     let codeUrl = '';
     if (forSendgrid) {
-      // codeUrl = await QRCode.toFile(`${__dirname}./qrcode.png`, data);
     } else {
       codeUrl = await QRCode.toDataURL(data, { errorCorrectionLevel: 'L', version: 9 });
     }
     // codeUrl = codeUrl.replace('data:image/png;base64, ', '');
     return codeUrl;
   } catch (e) {
-    console.error('error in generateQRCode => ', e);
+    console.error('Error in generateQRCode => ', e);
     return '';
   }
 } // END generateQRCode
@@ -197,7 +181,7 @@ export async function uploadFileToS3(s3, file) {
     const Body = Buffer.from(file, 'binary');
     const ContentType = 'application/javascript';
     const awsResp = await s3.putObject({ Body, Bucket, ContentType, Key}).promise();
-    return true;
+    return awsResp ? true : false;
   } catch (e) {
     console.error('error in uploadFileToS3 =>', e);
     return false;
@@ -216,7 +200,7 @@ export async function getHOSFileAsStringFromS3(s3) {
     return file;
   } catch (e) {
     console.error('error in getHOSFileAsStringFromS3 =>', e);
-    return e;
+    return null;
   }
 } // END getHOSFileAsStringFromS3
 
@@ -231,7 +215,7 @@ export function generateFileForServer(data) {
     return dataForFile;
   } catch (e) {
     console.error('Error in generateFileForServer =>', e);
-    return e;
+    return null;
   }
 } // END generateFileForServer
 
@@ -242,22 +226,12 @@ export function generateFileForServer(data) {
 */
 export async function sendDataToServer(client, data) {
   try {
-    try {
-      await client.access({ host, user, password, port: 21, secure: false });
-      // console.log('LIST', await client.list());
-
-      const stream = new Readable();
-      stream._read = () => {}; // redundant? see update below
-      stream.push(data);
-      const response = await client.upload(stream, 'RS220713.HOS');
-      console.log('response from ftp server:', response);
-      // await client.uploadFrom("README.md", "README_FTP.md")
-      // await client.downloadTo("README_COPY.md", "README_FTP.md")
-      return true;
-    } catch(err) {
-      console.log(err)
-      return false;
-    }
+    await client.access({ host, user, password, port: 21, secure: false });
+    const stream = new Readable();
+    stream._read = () => {};
+    stream.push(data);
+    const response = await client.upload(stream, 'RS220713.HOS'); // uploadFrom
+    return true;
   } catch (e) {
     console.error('error in sendDataToServer =>', e);
     return false;
