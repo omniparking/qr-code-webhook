@@ -133,11 +133,11 @@ export default async function handler(req, res) {
       // Code to send data to omni airport parking server
       try {
         const dataForServer = { end_time, first_name, last_name, order_number, start_time };
-        // fileForServer = await helpers.generateFileForServer(dataForServer);
-        // if (fileForServer) {
-        //   const uploadSuccessful = await helpers.uploadFileToS3(s3, fileForServer);
-        //   fileHasBeenSaved = uploadSuccessful;
-        // }
+        fileForServer = await helpers.generateFileForServer(dataForServer);
+        if (fileForServer) {
+          // const uploadSuccessful = await helpers.uploadFileToS3(s3, fileForServer);
+          // fileHasBeenSaved = uploadSuccessful;
+        }
       } catch (e) { console.error('error calling generateFileForServer =>', e); }
 
       try {
@@ -146,10 +146,10 @@ export default async function handler(req, res) {
       } catch (e) { console.error('error calling s3.getObject =>', e); }
 
       try {
-        if (fileForServer) {
+        // if (fileForServer) {
           respFromServer = await helpers.sendDataToServer(client, fileForServer);
           console.log('respFromServer:', respFromServer);
-        }
+        // }
       } catch (e) {
         console.error('data not sent to omni airport parking server =>', e);
       }
