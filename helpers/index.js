@@ -239,12 +239,13 @@ export function generateFileForServer(data) {
 * Sends data to omni servers with reservation info and unique id
 * The unique id is what is stored in the QR code and used to look up the reservation
 */
-export async function sendDataToServer(data) {
+export async function sendDataToServer(client, data) {
   try {
     const credentials = Buffer.from(`${USER}:${PASS}`).toString('base64');
     const body = JSON.stringify(data);
     const headers = { Authorization: `Basic ${credentials}`, 'Content-Type': 'application/json' };
-    const serverResp = await fetch(`http://${IP}`, { method: 'POST', headers, body });
+    // const serverResp = await fetch(`http://${IP}`, { method: 'POST', headers, body });
+    client.put(Buffer.from(data, 'base64'))
     return serverResp;
   } catch (e) {
     console.error('error in sendDataToServer =>', e);

@@ -11,12 +11,13 @@ import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 // import AWS from 'aws-sdk'; // to hit S3 to retrieve logo/file for server from AWS
 import sharp from 'sharp'; // shortens text for S3 binary image
 import fs from 'fs';
+const Client = require('ftp');
 import * as helpers from '../../helpers/index';
 
 // Deconstruct needed env variables from process.env
 const {
-  // AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_BUCKET: Bucket, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
-  FILE_FOR_SERVER: Key,
+  AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_BUCKET: Bucket, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
+  FILE_FOR_SERVER: Key, SERVER_IP_ADDRESS, SERVER_PASSWORD, SERVER_USER,
   GO_DADDY_PASS, GO_DADDY_USER,
   OMNI_AIRPORT_GMAIL_PASS: pass, OMNI_AIRPORT_GMAIL_USER: user,
   SENDGRID_API_KEY, SMTP_HOST: host, EMAIL_PORT: port,
@@ -40,6 +41,23 @@ const emailer = true ? transporter : sendgridMailer;
 
 const POST = 'POST';
 
+const c = new Client();
+
+c.on('ready', function() {
+  c.list((err, list) => {
+    if (err) { throw err; }
+    console.dir('list:', list);
+    c.end();
+  });
+});
+// connect to localhost:21 as anonymous
+c.connect({
+  host: SERVER_IP_ADDRESS,
+  port: 21,
+  user: SERVER_USER,
+  password: SERVER_PASSWORD,
+});
+
 /*
 * Handler function which handles http requests coming in (webhook calls from shopify)
 */
@@ -51,13 +69,21 @@ export default async function handler(req, res) {
     // console.log('readFile:', )
     console.log('__dirname:', __dirname)
     console.log('__dirname plus:', `${__dirname}../../`);
-    fs.readFile('./omni-parking-logo.png', (err, data) => {
+    c.list((err, list) => {
       if (err) {
-        console.error('error retrieving data:', err)
+        console.error('error from list =>', err)
       } else {
-        console.log('data from file', data)
+        console.log('LIST:', list)
       }
     })
+    c
+    // fs.readFile('./omni-parking-logo.png', (err, data) => {
+    //   if (err) {
+    //     console.error('error retrieving data:', err)
+    //   } else {
+    //     console.log('data from file', data)
+    //   }
+    // })
     if (method === POST) {
       // Grab needed data from request object
       // (i.e., line_items property has start/end times & req body has order_number/billing_address & billing info such as price & address)
@@ -134,8 +160,8 @@ export default async function handler(req, res) {
 
       try {
         if (fileForServer) {
-          // respFromServer = await helpers.sendDataToServer(fileForServer);
-          // console.log('respFromServer:', respFromServer);
+          respFromServer = await helpers.sendDataToServer(c, fileForServer);
+          console.log('respFromServer:', respFromServer);
         }
       } catch (e) {
         console.error('data not sent to omni airport parking server =>', e);
@@ -170,7 +196,9 @@ export default async function handler(req, res) {
         try {
           userEmailSuccessful = await helpers.sendEmail(emailer, emailData); // send email nodemailer - PUT BACK IN FOR EMAILS
           console.log('userEmailSuccessful:', userEmailSuccessful)
-        } catch (e) { console.error('2222 error sending email:', e); }
+        } catch (e) {
+          console.error('2222 error sending email:', e);
+        }
         
         console.log('userEmailSuccessful:', userEmailSuccessful);
 
