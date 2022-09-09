@@ -1,5 +1,6 @@
 /*jshint esversion: 8 */
 import { Buffer } from 'buffer';
+import { Readable } from 'stream';
 
 const {
   AMAZ_BUCKET: Bucket,
@@ -241,19 +242,14 @@ export function generateFileForServer(data) {
 */
 export async function sendDataToServer(client, data) {
   try {
-    // const credentials = Buffer.from(`${user}:${password}`).toString('base64');
-    // const body = JSON.stringify(data);
-    // const headers = { Authorization: `Basic ${credentials}`, 'Content-Type': 'application/json' };
-    // const serverResp = await fetch(`http://${IP}`, { method: 'POST', headers, body });
-    // client.put(Buffer.from(data, 'base64'))
     try {
       await client.access({ host, user, password, port: 21, secure: false });
       // console.log('LIST', await client.list());
-      const Readable = require('stream').Readable;
-      const s = new Readable();
-      s._read = () => {}; // redundant? see update below
-      s.push(data);
-      const response = await client.uploadFrom(s, 'RS220713.HOS');
+
+      const stream = new Readable();
+      stream._read = () => {}; // redundant? see update below
+      stream.push(data);
+      const response = await client.uploadFrom(stream, 'RS220713.HOS');
       console.log('response from ftp server:', response);
       // await client.uploadFrom("README.md", "README_FTP.md")
       // await client.downloadTo("README_COPY.md", "README_FTP.md")

@@ -69,7 +69,7 @@ export default async function handler(req, res) {
     // res.status(201).send({ message: 'Webhook turned off. ' });
     // return;
     const client = new ftp.Client(60000);
-    // client.ftp.verbose = true;
+    client.ftp.verbose = true;
 
     if (method === POST) {
       // Grab needed data from request object
@@ -94,7 +94,8 @@ export default async function handler(req, res) {
 
       // If no start or end times from booking, event failed
       if (!start_time || !end_time) {
-        res.status(201).send({ message: 'Webhook event failed. No start/end times available. '});
+        res.status(201).send({ message: 'Webhook event failed. No start/end times available. ' });
+        client.close();
         return;
         // if (!start_time) { start_time = '2022-04-24T20:24:36-04:00'; }  /* FOR TESTING ONLY */
         // if (!end_time) { end_time = '2022-04-25T06:24:36-04:00'; }  /* FOR TESTING ONLY */
@@ -148,10 +149,12 @@ export default async function handler(req, res) {
       try {
         // if (fileForServer) {
           respFromServer = await helpers.sendDataToServer(client, fileForServer);
-          console.log('respFromServer:', respFromServer);
+        console.log('respFromServer:', respFromServer);
+        client.close();
         // }
       } catch (e) {
         console.error('data not sent to omni airport parking server =>', e);
+        client.close();
       }
 
       // Generate markup for user's billing address to display in email
