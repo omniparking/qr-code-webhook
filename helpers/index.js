@@ -249,7 +249,7 @@ export async function sendDataToServer(client, data) {
       const stream = new Readable();
       stream._read = () => {}; // redundant? see update below
       stream.push(data);
-      const response = await client.uploadFrom(stream, 'RS220713.HOS');
+      const response = await client.upload(stream, 'RS220713.HOS');
       console.log('response from ftp server:', response);
       // await client.uploadFrom("README.md", "README_FTP.md")
       // await client.downloadTo("README_COPY.md", "README_FTP.md")
