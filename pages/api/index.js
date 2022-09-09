@@ -11,7 +11,8 @@ import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 // import AWS from 'aws-sdk'; // to hit S3 to retrieve logo/file for server from AWS
 import sharp from 'sharp'; // shortens text for S3 binary image
 import fs from 'fs';
-const Client = require('ftp');
+// const Client = require('ftp');
+import * as ftp from 'basic-ftp';
 import * as helpers from '../../helpers/index';
 
 // Deconstruct needed env variables from process.env
@@ -46,12 +47,12 @@ const POST = 'POST';
 * Handler function which handles http requests coming in (webhook calls from shopify)
 */
 export default async function handler(req, res) {
-  const c = new Client({
-  host: SERVER_IP_ADDRESS,
-  port: 21,
-  user: SERVER_USER,
-  password: SERVER_PASSWORD,
-});
+//   const c = new Client({
+//   host: SERVER_IP_ADDRESS,
+//   port: 21,
+//   user: SERVER_USER,
+//   password: SERVER_PASSWORD,
+// });
 
 // c.on('ready', function() {
 //   c.list((err, list) => {
@@ -67,18 +68,22 @@ export default async function handler(req, res) {
     const { body, headers, method } = req;
     // res.status(201).send({ message: 'Webhook turned off. ' });
     // return;
-    console.log('CCCC:', c)
-    console.log('__dirname:', __dirname)
-    console.log('__dirname plus:', `${__dirname}/../../`);
-    c.connect().then(() => {
-      c.list((err, list) => {
-      if (err) {
-        console.error('error from list =>', err)
-      } else {
-        console.log('LIST:', list)
-      }
-    })
-    })
+    const client = new ftp.Client();
+    client.ftp.verbose = true;
+    try {
+      await client.access({
+        host: "myftpserver.com",
+        user: "very",
+        password: "password",
+        secure: true
+      });
+      console.log('LIST', await client.list());
+      // await client.uploadFrom("README.md", "README_FTP.md")
+      // await client.downloadTo("README_COPY.md", "README_FTP.md")
+    }
+    catch(err) {
+        console.log(err)
+    }
 
     // fs.readFile('./omni-parking-logo.png', (err, data) => {
     //   if (err) {
