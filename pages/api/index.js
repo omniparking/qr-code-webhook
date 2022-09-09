@@ -46,8 +46,8 @@ const POST = 'POST';
 export default async function handler(req, res) {
   try {
     const { body, headers, method } = req;
-    // res.status(201).send({ message: 'Webhook turned off. ' });
-    // return;
+    res.status(201).send({ message: 'Webhook turned off. ' });
+    return;
     // console.log('readFile:', )
     // fs.readFile('/omni-parking-logo.png', (err, data) => {
     //   if (err) {
