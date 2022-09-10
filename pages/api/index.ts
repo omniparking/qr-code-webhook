@@ -1,9 +1,9 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 /*jshint esversion: 8 */
 
-// PORT 21 FOR FTP
-
 // Import needed packages
+import type { NextApiRequest, NextApiResponse } from 'next';
+
 import sendgridMailer from '@sendgrid/mail';
 import QRCode from 'qrcode'; // (generates qr code)
 import nodemailer from 'nodemailer'; // to send emails
@@ -12,8 +12,7 @@ import AWS from 'aws-sdk'; // to hit S3 to retrieve logo/file for server from AW
 import sharp from 'sharp'; // shortens text for S3 binary image
 import * as ftp from 'basic-ftp';
 import * as helpers from '../../helpers/index';
-
-import type { NextApiRequest, NextApiResponse } from 'next';
+import path from 'path';
 
 
 // Deconstruct needed env variables from process.env
@@ -50,10 +49,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const { body, headers, method } = req;
     res.status(201).send({ message: 'Webhook turned off!' });
     return;
-    const client = new ftp.Client(0);
-    client.ftp.verbose = true;
 
-    console.log('__dirname =>', __dirname)
+    console.log('__dirname =>', path.join(__dirname + '/../'));
 
     if (method === POST) {
       // Grab needed data from request object
@@ -86,7 +83,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       // If no start or end times from booking, event failed
       if (!start_time || !end_time) {
-        client.close();
         res.status(201).send({ message: 'Webhook event failed. No start/end times available. ' });
         return;
         // if (!start_time) { start_time = '2022-04-24T20:24:36-04:00'; }  /* FOR TESTING ONLY */
@@ -131,6 +127,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         // if (fileHasBeenSaved) { fileForServer = await helpers.getHOSFileAsStringFromS3(s3); }
         // console.log('fileForServer:', fileForServer);
       } catch (e) { console.error('error calling s3.getObject =>', e); }
+
+      const client = new ftp.Client(0);
+      client.ftp.verbose = true;
 
       try {
         // if (fileForServer) {
@@ -225,7 +224,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
     } else {
       // Case where request method is not of type "POST"
-      client.close();
       res.status(201).send({ message: 'Webhook Event failed as request method is not of type "POST".' });
     }
   } catch (e) {
