@@ -63,7 +63,7 @@ function generateIconImageForEmailTemplate(logoImageBase64: string): string {
 export function generateHTMLMarkup(data: any, billingAddressMarkup: string): string {
   const {
     createdAt: purchaseDate, end_time, logoImageBase64, price, name, quantity,
-    start_time, subtotal_price, total_price, total_tax, title, qrCodeUrl,
+    start_time, subtotal_price, total_price, total_tax, title, qrcodeUrl,
   } = data;
 
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
@@ -71,34 +71,12 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
   const end = generateDateTimeAsString(end_time, true);
 
   // To have image directly in email template (instead of attachment) - add to last line of text:
-  // <img height="200" width="200" style="display: block; object=fit: contain;" src="${qrCodeUrl}" alt="QR Code" title="QR Code" />
-
-  // return `
-  //   <html>
-  //   <body>
-  //     <b>Parking Confirmation Details:</b>
-  //     <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
-  //     <p>This email is to confirm your recent order.</p>
-  //     <p>Date ${purchaseDate}</p>
-  //     <p style="font-weight: bold; margin: 0px 0px 1px 0px; padding 0px;">Billing Address:</p>
-  //     <p>${billingAddressMarkup}</p>
-  //     <br />
-  //     ${generateIconImageForEmailTemplate(logoImageBase64)}
-  //     <p style="margin: 0px 0px 1px 0px;">1x Facility Charge for $4.99 each</p>
-  //     <p style="margin: 1px 0px 0px 0px; padding: 0px;">${quantity}x ${name.toUpperCase()} for $${price} each</p>
-  //     <p style="margin: 8px 0px 0px 0px; padding: 0px;">Drop off: ${start}</p>
-  //     <p style="margin: 1px 0px 0px 0px; padding: 0px;">Pick up: ${end}</p>
-  //     <br />
-  //     <p style="margin: 0px; padding: 0px;">Subtotal: $${subtotal_price}</p>
-  //     <p style="margin: 0px; padding: 0px;">Taxes and Fees: $${total_tax}</p>
-  //     <p style="margin: 0px; padding: 0px;">Total: $${total_price}</p>
-  //     <br />
-  //       <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:qrcode" alt="QR Code" title="QR Code" />
-  //   </body>
-  //   `;
+  // <img height="200" width="200" style="display: block; object=fit: contain;" src="${qrcodeUrl}" alt="QR Code" title="QR Code" />
 
   return `
-        <b>Parking Confirmation Details:</b>
+    <html>
+    <body>
+      <b>Parking Confirmation Details:</b>
       <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
       <p>This email is to confirm your recent order.</p>
       <p>Date ${purchaseDate}</p>
@@ -116,7 +94,8 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
       <p style="margin: 0px; padding: 0px;">Total: $${total_price}</p>
       <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique@omniparking.com" alt="QR Code" title="QR Code"></img>
       <br />
-  `
+    </body>
+    `;
 } // END generateHTMLMarkup
 
 
@@ -148,14 +127,14 @@ export function formatBillingAddressForHTMLMarkup(billing_address: any): string 
 */
 export async function sendEmail(transporter, emailInfo: any): Promise<boolean> {
   // Define variables needed for sending emails
-  const { to, from, html, order_number, attachments, qrCodeUrl: content, name } = emailInfo;
+  const { to, from, html, order_number, attachments, qrcodeUrl: content, name } = emailInfo;
   const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
   const subject = `Order #${order_number} confirmed`;
 
   try {
       // To send emails using nodemailer
       const results = await transporter.sendMail({ to, from, html, text, subject, attachments });
-    console.log('email results:', results)
+      console.log('email results:', results)
       // Check results from email request -> if receiver is found in the accepted array, then email was sent succesfully
       // However if the receiver's email is found in the rejected array, then the email was not sent successfully
       if (results) {

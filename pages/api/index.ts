@@ -29,8 +29,6 @@ const redis = new Redis({ url, token });
 // Initialize nodemailer (to send emails)
 const transporter = nodemailer.createTransport({ auth: { user, pass }, host, port, secure: true });
 
-const POST = 'POST';
-
 
 /*
 * Handler function which handles http requests coming in (webhook calls from shopify)
@@ -41,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     res.status(201).send({ message: 'Webhook turned off!' });
     return;
 
-    if (method === POST) {
+    if (method === 'POST') {
       // Grab needed data from request object
       // (i.e., line_items property has start/end times & req body has order_number/billing_address & billing info such as price & address)
       const {
@@ -50,17 +48,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       } = body;
       const bookingTimes = line_items?.[1]?.properties || [];
       const billingItems = line_items?.[1];
+      const { first_name, last_name } = body?.customer;
+      const { quantity, price, name, title } = billingItems;
+      let start_time: string;
+      let end_time: string;
+      let logoImageBase64 = '';
+      let respFromServer;
 
       if (!(bookingTimes || bookingTimes?.length) || !billingItems || !(body?.customer)) {
         const message = 'Webhook event failed. Critical data is missing from request body!';
         res.status(201).send({ message });
         return;
       }
-
-      const { first_name, last_name } = body?.customer;
-      const { quantity, price, name, title } = billingItems;
-      let start_time: string;
-      let end_time: string;
 
       // Get start and end times of booking
       if (bookingTimes?.length) {
@@ -86,7 +85,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const totalTax: string = total_tax || current_total_tax || '';
       const totalPrice: string = total_price || current_total_price || '';
 
-      let logoImageBase64 = '';
       // Make call to AWS S3 bucket where logo image is stored, response in binary format which is then translated to string
       try {
         const { Body } = await s3.getObject({ Bucket, Key: `${Bucket}-logo.png` }).promise();
@@ -100,7 +98,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const uniqueIdForQRCode = `1755164${order_number}`;
 
       // Generate barcode with order information
-      const qrCodeUrl = await helpers.generateQRCode(QRCode, uniqueIdForQRCode);
+      const qrcodeUrl = await helpers.generateQRCode(QRCode, uniqueIdForQRCode);
       const fileForServer: string = helpers.generateFileForServer({ end_time: bookingEndServer, start_time: bookingStartServer, first_name, last_name, order_number });
 
       const client = new Client();
@@ -112,7 +110,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         password: process.env.SERVER_PASSWORD
       });
 
-      let respFromServer;
       try {
         if (fileForServer?.trim()) {
           respFromServer = await helpers.sendDataToServer(client, fileForServer);
@@ -127,7 +124,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       // Define object for generating the HTML markup in generateHTMLMarkup function
       const htmlMarkupData = {
-        end_time, logoImageBase64, name, price, qrCodeUrl, createdAt, quantity, start_time,
+        end_time, logoImageBase64, name, price, qrcodeUrl, createdAt, quantity, start_time,
         subtotal_price: subtotalPrice, title, total_price: totalPrice, total_tax: totalTax,
       };
 
@@ -135,15 +132,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const html = helpers.generateHTMLMarkup(htmlMarkupData, billingAddressMarkup);
 
       // Method to add webhook_id to redis
-      const prevWebhook = await redis.get(new_webhook_id);
+      const prevWebhook: string = await redis.get(new_webhook_id);
       console.log('previous webhook id:', prevWebhook)
       // Define variables for sending email
       const to = 'alon.bibring@gmail.com'; // email recipient
       // const cc = ['alon.bibring@gmail.com']; // cc emails
 
-      const attachments = [{ path: qrCodeUrl, filename: 'attachment-1.png', cid: 'unique@omniparking.com' }];
+      const attachments = [{ path: qrcodeUrl, filename: 'attachment-1.png', cid: 'unique@omniparking.com' }];
 
-      const emailData = { from: 'omniairportparking@gmail.com', attachments, html, name, order_number, to, qrCodeUrl };
+      const emailData = { from: 'omniairportparking@gmail.com', attachments, html, name, order_number, to, qrcodeUrl };
 
       // If webhook_id does not already exist in db
       if (true || !prevWebhook) {
