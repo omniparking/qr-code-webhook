@@ -1,6 +1,5 @@
 /*jshint esversion: 8 */
 import { Buffer } from 'buffer';
-import { Readable } from 'stream';
 
 const {
   AMAZ_BUCKET: Bucket,
@@ -9,6 +8,43 @@ const {
   SERVER_PASSWORD: password,
   SERVER_USER: user,
 } = process.env;
+
+/*
+*
+*/
+const addLeadingZeroIfNecessary = (time: number): string => {
+  if (+time < 10) { return `0${time}`; }
+  return `${time}`;
+} // END addLeadingZeroIfNecessary
+
+
+/*
+*
+*/
+export function formatDate(dateString: string, justHoursAndMinutes = false): string {
+  if (!dateString?.trim() && !justHoursAndMinutes) { return ''; }
+  let date: Date;
+  if (!dateString && justHoursAndMinutes) {
+    date = new Date();
+  } else {
+    date = new Date(dateString);
+  }
+  const h = date.getHours();
+  const mi = date.getMinutes();
+  const s = date.getSeconds();
+  const seconds = addLeadingZeroIfNecessary(s);
+  const minutes = addLeadingZeroIfNecessary(mi);
+  const hours = addLeadingZeroIfNecessary(h);
+  let m = date.getUTCMonth() + 1; // months from 1-12
+  let d = date.getUTCDate();
+  let y = date.getUTCFullYear();
+  const month = addLeadingZeroIfNecessary(m);
+  const day = addLeadingZeroIfNecessary(d);
+  const year = addLeadingZeroIfNecessary(y);
+
+  if (justHoursAndMinutes) { return `${hours}:${minutes}`; }
+  return `${day}.${month}.${year}${hours}:${minutes}:${seconds}`;
+} // END formatDate
 
 
 /*
@@ -37,10 +73,32 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
   // To have image directly in email template (instead of attachment) - add to last line of text:
   // <img height="200" width="200" style="display: block; object=fit: contain;" src="${qrCodeUrl}" alt="QR Code" title="QR Code" />
 
+  // return `
+  //   <html>
+  //   <body>
+  //     <b>Parking Confirmation Details:</b>
+  //     <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
+  //     <p>This email is to confirm your recent order.</p>
+  //     <p>Date ${purchaseDate}</p>
+  //     <p style="font-weight: bold; margin: 0px 0px 1px 0px; padding 0px;">Billing Address:</p>
+  //     <p>${billingAddressMarkup}</p>
+  //     <br />
+  //     ${generateIconImageForEmailTemplate(logoImageBase64)}
+  //     <p style="margin: 0px 0px 1px 0px;">1x Facility Charge for $4.99 each</p>
+  //     <p style="margin: 1px 0px 0px 0px; padding: 0px;">${quantity}x ${name.toUpperCase()} for $${price} each</p>
+  //     <p style="margin: 8px 0px 0px 0px; padding: 0px;">Drop off: ${start}</p>
+  //     <p style="margin: 1px 0px 0px 0px; padding: 0px;">Pick up: ${end}</p>
+  //     <br />
+  //     <p style="margin: 0px; padding: 0px;">Subtotal: $${subtotal_price}</p>
+  //     <p style="margin: 0px; padding: 0px;">Taxes and Fees: $${total_tax}</p>
+  //     <p style="margin: 0px; padding: 0px;">Total: $${total_price}</p>
+  //     <br />
+  //       <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:qrcode" alt="QR Code" title="QR Code" />
+  //   </body>
+  //   `;
+
   return `
-    <html>
-    <body>
-      <b>Parking Confirmation Details:</b>
+        <b>Parking Confirmation Details:</b>
       <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
       <p>This email is to confirm your recent order.</p>
       <p>Date ${purchaseDate}</p>
@@ -56,10 +114,9 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
       <p style="margin: 0px; padding: 0px;">Subtotal: $${subtotal_price}</p>
       <p style="margin: 0px; padding: 0px;">Taxes and Fees: $${total_tax}</p>
       <p style="margin: 0px; padding: 0px;">Total: $${total_price}</p>
+      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique@omniparking.com" alt="QR Code" title="QR Code"></img>
       <br />
-      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique@omniparking.com" alt="QR Code" title="QR Code" /> 
-    </body>
-    `;
+  `
 } // END generateHTMLMarkup
 
 
@@ -89,17 +146,16 @@ export function formatBillingAddressForHTMLMarkup(billing_address: any): string 
 /*
 * Sends email to user - returns true if email was sent and false if not
 */
-export async function sendEmail(transporter, emailInfo: any, useSendGrid = false): Promise<boolean> {
+export async function sendEmail(transporter, emailInfo: any): Promise<boolean> {
   // Define variables needed for sending emails
-  const { to, from, html, order_number, attachments, qrCodeUrl: content, name, /*sendgridQrCode*/ } = emailInfo;
+  const { to, from, html, order_number, attachments, qrCodeUrl: content, name } = emailInfo;
   const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
   const subject = `Order #${order_number} confirmed`;
 
   try {
-    if (!useSendGrid) {
       // To send emails using nodemailer
       const results = await transporter.sendMail({ to, from, html, text, subject, attachments });
-
+    console.log('email results:', results)
       // Check results from email request -> if receiver is found in the accepted array, then email was sent succesfully
       // However if the receiver's email is found in the rejected array, then the email was not sent successfully
       if (results) {
@@ -115,46 +171,20 @@ export async function sendEmail(transporter, emailInfo: any, useSendGrid = false
       } else {
         return false;
       }
-    } else {
-      // To use emails using SendGrid
-      const attachment = [{ content, filename: 'qrcode.png', type: 'application/png', disposition: 'inline', content_id: 'qrcode' }];
-      const sendgridTo = { name, email: to };
-      const sendgridFrom = { email: 'info@omniairportparking.com', name: 'Omni Airport Parking' };
-
-      const msg = { to: sendgridTo, from: sendgridFrom, subject, html, text, attachments: attachment }; // 
-      let didEmailSend = false;
-      const results = await transporter.send(msg);
-      if (results?.[0]?.statusCode === 202) {
-        didEmailSend = true;
-      } else {
-        didEmailSend = false;
-      }
-      if (didEmailSend) { return true; }
-      return false;
-    }
   } catch (e) {
-    if (useSendGrid) {
-      console.error('Error in sendEmail (using sendGrid) =>', e?.response?.body?.errors || e);
-    } else {
-      console.error('Error in sendEmail (using nodemailer) =>', e);
-    }
+    console.error('Error in sendEmail (using nodemailer) =>', e);
     return false;
   }
 } // END sendEmail
 
 
 /*
-* Generates qr code with order id, start date, and end date for sendgrid or nodemailer 
+* Generates qr code with order id
 */
-export async function generateQRCode(QRCode, data, forSendgrid = false): Promise<string> {
+export async function generateQRCode(QRCode, data): Promise<string> {
   try {
-    let codeUrl = '';
-    if (forSendgrid) {
-    } else {
-      codeUrl = await QRCode.toDataURL(data, { errorCorrectionLevel: 'L', version: 9 });
-    }
-    // codeUrl = codeUrl.replace('data:image/png;base64, ', '');
-    return codeUrl;
+    const qrcodeUrl = await QRCode.toDataURL(data, { errorCorrectionLevel: 'L', version: 9 });
+    return qrcodeUrl;
   } catch (e) {
     console.error('Error in generateQRCode => ', e);
     return '';
@@ -207,7 +237,7 @@ export async function getHOSFileAsStringFromS3(s3) {
 /*
 *
 */
-export function generateFileForServer(data) {
+export function generateFileForServer(data): string {
   try {
     const { end_time, first_name, last_name, order_number, start_time } = data;
     const resNum = `ShopQ\\${order_number}`;
@@ -215,7 +245,7 @@ export function generateFileForServer(data) {
     return dataForFile;
   } catch (e) {
     console.error('Error in generateFileForServer =>', e);
-    return null;
+    return '';
   }
 } // END generateFileForServer
 
@@ -224,14 +254,13 @@ export function generateFileForServer(data) {
 * Sends data to omni servers with reservation info and unique id
 * The unique id is what is stored in the QR code and used to look up the reservation
 */
-export async function sendDataToServer(client, data) {
+export function sendDataToServer(client, data: string): boolean {
   try {
-    await client.access({ host, user, password, port: 21, secure: false });
-    const stream: Readable = new Readable();
-    stream._read = () => { };
-    stream.push(data);
-    const response = await client.upload(stream, 'RS220713.HOS'); // uploadFrom
-    return true;
+    client.on('ready', async () => {
+      const response = await client.put(data, `${Key}${formatDate('', true)}`);
+      console.log('response from server:', response)
+      return !response ?  true : false;
+    });
   } catch (e) {
     console.error('error in sendDataToServer =>', e);
     return false;

@@ -4,25 +4,22 @@
 // Import needed packages
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-import sendgridMailer from '@sendgrid/mail';
-import QRCode from 'qrcode'; // (generates qr code)
+import QRCode from 'qrcode'; // to generate qr code
 import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo/file for server from AWS
-import sharp from 'sharp'; // shortens text for S3 binary image
-import * as ftp from 'basic-ftp';
+import sharp from 'sharp'; // to shorten text for S3 binary image
+import Client from 'ftp';
+import os from 'os';
+
 import * as helpers from '../../helpers/index';
-import path from 'path';
-
-
 // Deconstruct needed env variables from process.env
 const {
   AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_BUCKET: Bucket, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
   OMNI_AIRPORT_GMAIL_PASS: pass, OMNI_AIRPORT_GMAIL_USER: user,
-  SENDGRID_API_KEY, SMTP_HOST: host, EMAIL_PORT: port,
+  SMTP_HOST: host, EMAIL_PORT: port,
   UPSTASH_REDIS_REST_TOKEN: token, UPSTASH_REDIS_REST_URL: url,
 } = process.env;
-
 // Initialize s3 connection - using AWS S3 to store company logo
 const s3 = new AWS.S3({ accessKeyId, secretAccessKey });
 
@@ -30,13 +27,7 @@ const s3 = new AWS.S3({ accessKeyId, secretAccessKey });
 const redis = new Redis({ url, token });
 
 // Initialize nodemailer (to send emails)
-const transporter = nodemailer.createTransport({ auth: { user, pass }, host, port, secure: false });
-//  const transporter = nodemailer.createTransport({ host: 'smtpout.secureserver.net', secureConnection: false, port: 587, auth: { user: '153210777', pass: GO_DADDY_PASS }, tls: { ciphers: 'SSLv3' } });
-
-// To use sendgrid for emails
-sendgridMailer.setApiKey(SENDGRID_API_KEY);
-
-const emailer = true ? transporter : sendgridMailer;
+const transporter = nodemailer.createTransport({ auth: { user, pass }, host, port, secure: true });
 
 const POST = 'POST';
 
@@ -47,10 +38,8 @@ const POST = 'POST';
 export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { body, headers, method } = req;
-    res.status(201).send({ message: 'Webhook turned off!' });
-    return;
-
-    console.log('__dirname =>', path.join(__dirname + '/../'));
+    // res.status(201).send({ message: 'Webhook turned off!' });
+    // return;
 
     if (method === POST) {
       // Grab needed data from request object
@@ -80,14 +69,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           if (name === 'booking-finish') { end_time = value; }
         });
       }
-
       // If no start or end times from booking, event failed
       if (!start_time || !end_time) {
         res.status(201).send({ message: 'Webhook event failed. No start/end times available. ' });
         return;
-        // if (!start_time) { start_time = '2022-04-24T20:24:36-04:00'; }  /* FOR TESTING ONLY */
-        // if (!end_time) { end_time = '2022-04-25T06:24:36-04:00'; }  /* FOR TESTING ONLY */
       }
+
+      const bookingStartServer: string = helpers.formatDate(start_time);
+      const bookingEndServer: string = helpers.formatDate(end_time);
 
       // Generate date in MM/DD/YYYY format for email
       const createdAt: string = helpers.generateDateTimeAsString(created_at);
@@ -108,38 +97,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const new_webhook_id = headers?.['x-shopify-webhook-id'] as string || '';
 
       // Data required in qr code
-      const uniqueIdForQRCode: string = `1755164${order_number}`;
+      const uniqueIdForQRCode = `1755164${order_number}`;
 
       // Generate barcode with order information
-      const qrCodeUrl: string = await helpers.generateQRCode(QRCode, uniqueIdForQRCode); // generate qr code for nodemailer
-      const fileForServer: string = helpers.generateFileForServer({ end_time, first_name, last_name, order_number, start_time });
+      const qrCodeUrl = await helpers.generateQRCode(QRCode, uniqueIdForQRCode);
+      const fileForServer: string = helpers.generateFileForServer({ end_time: bookingEndServer, start_time: bookingStartServer, first_name, last_name, order_number });
+
+      const client = new Client();
+      client.connect({
+        host: process.env.SERVER_IP_ADDRESS,
+        port: 21,
+        secure: false,
+        user: process.env.SERVER_USER,
+        password: process.env.SERVER_PASSWORD
+      });
+
       let respFromServer;
-      let fileHasBeenSaved = false;
-      // Code to send data to omni airport parking server
       try {
-        if (fileForServer) {
-          // const uploadSuccessful = await helpers.uploadFileToS3(s3, fileForServer);
-          // fileHasBeenSaved = uploadSuccessful;
+        if (fileForServer?.trim()) {
+          respFromServer = await helpers.sendDataToServer(client, fileForServer);
+          console.log('respFromServer:', respFromServer)
         }
-      } catch (e) { console.error('error calling generateFileForServer =>', e); }
-
-      try {
-        // if (fileHasBeenSaved) { fileForServer = await helpers.getHOSFileAsStringFromS3(s3); }
-        // console.log('fileForServer:', fileForServer);
-      } catch (e) { console.error('error calling s3.getObject =>', e); }
-
-      const client = new ftp.Client(0);
-      client.ftp.verbose = true;
-
-      try {
-        // if (fileForServer) {
-        respFromServer = await helpers.sendDataToServer(client, fileForServer);
-        console.log('respFromServer:', respFromServer);
-        // client.close();
-        // }
       } catch (e) {
         console.error('data not sent to omni airport parking server =>', e);
-        // client.close();
       }
 
       // Generate markup for user's billing address to display in email
@@ -156,7 +136,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       // Method to add webhook_id to redis
       const prevWebhook = await redis.get(new_webhook_id);
-      console.log('prevWebhook:', prevWebhook);
+      console.log('previous webhook id:', prevWebhook)
       // Define variables for sending email
       const to = 'alon.bibring@gmail.com'; // email recipient
       // const cc = ['alon.bibring@gmail.com']; // cc emails
@@ -166,59 +146,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const emailData = { from: 'omniairportparking@gmail.com', attachments, html, name, order_number, to, qrCodeUrl };
 
       // If webhook_id does not already exist in db
-      if (!prevWebhook) {
+      if (true || !prevWebhook) {
         let userEmailSuccessful;
         try {
-          userEmailSuccessful = await helpers.sendEmail(emailer, emailData); // send email nodemailer - PUT BACK IN FOR EMAILS
+          userEmailSuccessful = await helpers.sendEmail(transporter, emailData);
           console.log('userEmailSuccessful:', userEmailSuccessful)
         } catch (e) {
-          console.error('2222 error sending email:', e);
+          console.error('error sending email (first time):', e);
         }
-
-        console.log('userEmailSuccessful:', userEmailSuccessful);
 
         // If email is successful, add webhook to redis and send success response
         if (userEmailSuccessful) {
           await redis.set(new_webhook_id, new_webhook_id);
-          client.close();
           res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged.' });
           return;
         } else {
           // If the email is not successful, try sending it again
           try {
             // Resending email using Nodemailer
-            const userEmailSuccessful = await helpers.sendEmail(emailer, emailData); // PUT BACK IN FOR EMAILS
+            const userEmailSuccessful = await helpers.sendEmail(transporter, emailData);
 
             // If resent email is successful
             if (userEmailSuccessful) {
               try {
                 // Add webhook_id to redis and send successful response
                 await redis.set(new_webhook_id, new_webhook_id);
-                client.close();
-                res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. ' });
+                res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged.' });
               } catch (e) {
                 // Adding webhook_id to redis failed, so send response indicating email sent successfully but webhook_id not stored in redis
                 console.error('error saving wehook but email send =>', e);
-                client.close();
                 res.status(201).send({ message: 'Webhook event not logged but email sent successfully.' });
                 return;
               }
             } else {
               // If retry email is not successful, send response message indicating webhook event logged but email not sent
-              client.close();
-              res.status(201).send({ message: 'Webhook Event logged but email not sent. ' });
+              res.status(201).send({ message: 'Webhook Event logged but email not sent.' });
               return;
             }
           } catch (e) {
-            console.error('111 error sending email => ', e);
-            client.close();
+            console.error('error sending email (2nd attempt) => ', e);
             // Sending email or adding data to redis db threw an error somewhere send response message indicating webhook event logged but no email sent
-            res.status(201).send({ message: 'Webhook Event logged but email not sent. ' });
+            res.status(201).send({ message: 'Webhook Event logged but email not sent.' });
           }
         }
       } else {
         console.error('Case where webhook id already exists in database!');
-        client.close();
         // Case where webhook_id is already stored, meaning an email has already been sent send response message indicating that webhook failed bc it was already successfully handled
         res.status(201).send({ message: 'Webhook Event failed as it has previously been successfully logged.' });
       }
