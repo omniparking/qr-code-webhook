@@ -103,13 +103,13 @@ export async function sendEmail(transporter, emailInfo: any, useSendGrid = false
       // Check results from email request -> if receiver is found in the accepted array, then email was sent succesfully
       // However if the receiver's email is found in the rejected array, then the email was not sent successfully
       if (results) {
-        if (results.accepted && results.accepted.indexOf(to) > -1) {
+        if (results?.accepted?.indexOf(to) > -1) {
           return true;
-        } else if (results.rejected && results.rejected.indexOf(to) > -1) {
+        } else if (results?.rejected?.indexOf(to) > -1) {
           return false;
-        } else if ((results.rejected && results.rejected.length > 0) || results.accepted && results.accepted.length === 0) {
+        } else if ((results?.rejected?.length > 0) || results?.accepted?.length === 0) {
           return false;
-        } else if (results.rejected && results.rejected.length === 0) {
+        } else if (results?.rejected?.length === 0) {
           return true;
         }
       } else {
@@ -124,7 +124,7 @@ export async function sendEmail(transporter, emailInfo: any, useSendGrid = false
       const msg = { to: sendgridTo, from: sendgridFrom, subject, html, text, attachments: attachment }; // 
       let didEmailSend = false;
       const results = await transporter.send(msg);
-      if (results && results[0] && results[0].statusCode === 202) {
+      if (results?.[0]?.statusCode === 202) {
         didEmailSend = true;
       } else {
         didEmailSend = false;
@@ -134,7 +134,7 @@ export async function sendEmail(transporter, emailInfo: any, useSendGrid = false
     }
   } catch (e) {
     if (useSendGrid) {
-      console.error('Error in sendEmail (using sendGrid) =>', e && e.response && e.response.body && e.response.body.errors || e);
+      console.error('Error in sendEmail (using sendGrid) =>', e?.response?.body?.errors || e);
     } else {
       console.error('Error in sendEmail (using nodemailer) =>', e);
     }

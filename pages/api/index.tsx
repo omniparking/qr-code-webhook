@@ -48,8 +48,8 @@ const POST = 'POST';
 export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { body, headers, method } = req;
-    // res.status(201).send({ message: 'Webhook turned off!' });
-    // return;
+    res.status(201).send({ message: 'Webhook turned off!' });
+    return;
     const client = new ftp.Client(0);
     client.ftp.verbose = true;
 
@@ -77,7 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       let end_time: string;
 
       // Get start and end times of booking
-      if (bookingTimes && bookingTimes.length > 0) {
+      if (bookingTimes?.length) {
         bookingTimes.forEach(({ name, value }: { name: string, value: string }) => {
           if (name === 'booking-start') { start_time = value; }
           if (name === 'booking-finish') { end_time = value; }
