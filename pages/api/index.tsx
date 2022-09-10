@@ -13,6 +13,9 @@ import sharp from 'sharp'; // shortens text for S3 binary image
 import * as ftp from 'basic-ftp';
 import * as helpers from '../../helpers/index';
 
+import type { NextApiRequest, NextApiResponse } from 'next';
+
+
 // Deconstruct needed env variables from process.env
 const {
   AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_BUCKET: Bucket, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
@@ -20,8 +23,7 @@ const {
   SENDGRID_API_KEY, SMTP_HOST: host, EMAIL_PORT: port,
   UPSTASH_REDIS_REST_TOKEN: token, UPSTASH_REDIS_REST_URL: url,
 } = process.env;
-console.log('BUCKET:', Bucket)
-  
+
 // Initialize s3 connection - using AWS S3 to store company logo
 const s3 = new AWS.S3({ accessKeyId, secretAccessKey });
 
@@ -43,11 +45,11 @@ const POST = 'POST';
 /*
 * Handler function which handles http requests coming in (webhook calls from shopify)
 */
-export default async function handler(req, res) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { body, headers, method } = req;
-    res.status(201).send({ message: 'Webhook turned off!' });
-    return;
+    // res.status(201).send({ message: 'Webhook turned off!' });
+    // return;
     const client = new ftp.Client(0);
     client.ftp.verbose = true;
 
@@ -60,21 +62,23 @@ export default async function handler(req, res) {
         billing_address, created_at, current_subtotal_price, current_total_price, current_total_tax,
         /* email: to, */ id, line_items, order_number, subtotal_price, total_price, total_tax,
       } = body;
-      const bookingTimes = line_items && line_items[1] && line_items[1].properties || [];
-      const billingItems = line_items && line_items[1];
-      const { first_name, last_name } = body.customer;
-      const { quantity, price, name, title } = billingItems;
-      let start_time, end_time;
+      const bookingTimes = line_items?.[1]?.properties || [];
+      const billingItems = line_items?.[1];
 
-      if (!bookingTimes || !billingItems || !(body && body.customer)) {
+      if (!(bookingTimes || bookingTimes?.length) || !billingItems || !(body?.customer)) {
         const message = 'Webhook event failed. Critical data is missing from request body!';
         res.status(201).send({ message });
         return;
       }
 
+      const { first_name, last_name } = body?.customer;
+      const { quantity, price, name, title } = billingItems;
+      let start_time: string;
+      let end_time: string;
+
       // Get start and end times of booking
       if (bookingTimes && bookingTimes.length > 0) {
-        bookingTimes.forEach(({ name, value }) => {
+        bookingTimes.forEach(({ name, value }: { name: string, value: string }) => {
           if (name === 'booking-start') { start_time = value; }
           if (name === 'booking-finish') { end_time = value; }
         });
@@ -90,29 +94,29 @@ export default async function handler(req, res) {
       }
 
       // Generate date in MM/DD/YYYY format for email
-      const createdAt = helpers.generateDateTimeAsString(created_at);
+      const createdAt: string = helpers.generateDateTimeAsString(created_at);
 
       // Get subtotal, taxes, and total price for email template
-      const subtotalPrice = subtotal_price || current_subtotal_price;
-      const totalTax = total_tax || current_total_tax;
-      const totalPrice = total_price || current_total_price;
+      const subtotalPrice: string = subtotal_price || current_subtotal_price || '';
+      const totalTax: string = total_tax || current_total_tax || '';
+      const totalPrice: string = total_price || current_total_price || '';
 
       let logoImageBase64 = '';
       // Make call to AWS S3 bucket where logo image is stored, response in binary format which is then translated to string
       try {
-        const { Body } = await s3.getObject({ Bucket: 'omni-airport-parking', Key: `omni-airport-parking-logo.png` }).promise();
+        const { Body } = await s3.getObject({ Bucket, Key: `${Bucket}-logo.png` }).promise();
         logoImageBase64 = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
       } catch (e) { console.error('error getting image from aws => ', e); }
-      console.log('logoImageBase64 =>', logoImageBase64)
+
       // Grab unique webhook_id
-      const new_webhook_id = headers['x-shopify-webhook-id'] || '';
+      const new_webhook_id = headers?.['x-shopify-webhook-id'] as string || '';
 
       // Data required in qr code
-      const uniqueIdForQRCode = `1755164${order_number}`;
+      const uniqueIdForQRCode: string = `1755164${order_number}`;
 
       // Generate barcode with order information
-      const qrCodeUrl = await helpers.generateQRCode(QRCode, uniqueIdForQRCode); // generate qr code for nodemailer
-      const fileForServer = helpers.generateFileForServer({ end_time, first_name, last_name, order_number, start_time });
+      const qrCodeUrl: string = await helpers.generateQRCode(QRCode, uniqueIdForQRCode); // generate qr code for nodemailer
+      const fileForServer: string = helpers.generateFileForServer({ end_time, first_name, last_name, order_number, start_time });
       let respFromServer;
       let fileHasBeenSaved = false;
       // Code to send data to omni airport parking server
@@ -140,7 +144,7 @@ export default async function handler(req, res) {
       }
 
       // Generate markup for user's billing address to display in email
-      const billingAddressMarkup = helpers.formatBillingAddressForHTMLMarkup(billing_address);
+      const billingAddressMarkup: string = helpers.formatBillingAddressForHTMLMarkup(billing_address);
 
       // Define object for generating the HTML markup in generateHTMLMarkup function
       const htmlMarkupData = {
@@ -152,18 +156,18 @@ export default async function handler(req, res) {
       const html = helpers.generateHTMLMarkup(htmlMarkupData, billingAddressMarkup);
 
       // Method to add webhook_id to redis
-      // const prevWebhook = await redis.get(new_webhook_id);
-      // console.log('prevWebhook:', prevWebhook);
+      const prevWebhook = await redis.get(new_webhook_id);
+      console.log('prevWebhook:', prevWebhook);
       // Define variables for sending email
       const to = 'alon.bibring@gmail.com'; // email recipient
-    // const cc = ['alon.bibring@gmail.com']; // cc emails
+      // const cc = ['alon.bibring@gmail.com']; // cc emails
 
       const attachments = [{ path: qrCodeUrl, filename: 'attachment-1.png', cid: 'unique@omniparking.com' }];
 
       const emailData = { from: 'omniairportparking@gmail.com', attachments, html, name, order_number, to, qrCodeUrl };
 
       // If webhook_id does not already exist in db
-      if (true /*|| !prevWebhook*/) {
+      if (!prevWebhook) {
         let userEmailSuccessful;
         try {
           userEmailSuccessful = await helpers.sendEmail(emailer, emailData); // send email nodemailer - PUT BACK IN FOR EMAILS
@@ -171,12 +175,12 @@ export default async function handler(req, res) {
         } catch (e) {
           console.error('2222 error sending email:', e);
         }
-        
+
         console.log('userEmailSuccessful:', userEmailSuccessful);
 
         // If email is successful, add webhook to redis and send success response
         if (userEmailSuccessful) {
-          // await redis.set(new_webhook_id, new_webhook_id);
+          await redis.set(new_webhook_id, new_webhook_id);
           client.close();
           res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged.' });
           return;
@@ -192,7 +196,7 @@ export default async function handler(req, res) {
                 // Add webhook_id to redis and send successful response
                 await redis.set(new_webhook_id, new_webhook_id);
                 client.close();
-                res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. '});
+                res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged. ' });
               } catch (e) {
                 // Adding webhook_id to redis failed, so send response indicating email sent successfully but webhook_id not stored in redis
                 console.error('error saving wehook but email send =>', e);
@@ -210,7 +214,7 @@ export default async function handler(req, res) {
             console.error('111 error sending email => ', e);
             client.close();
             // Sending email or adding data to redis db threw an error somewhere send response message indicating webhook event logged but no email sent
-            res.status(201).send({ message: 'Webhook Event logged but email not sent. '});
+            res.status(201).send({ message: 'Webhook Event logged but email not sent. ' });
           }
         }
       } else {
@@ -227,7 +231,6 @@ export default async function handler(req, res) {
   } catch (e) {
     // Case where something failed in the code above send a response message indicating webhook failed
     console.error('Error from webhook =>:', e);
-    client.close();
     res.status(201).send({ message: 'Webhook Event failed. Error from main try/catch.' });
   }
 }

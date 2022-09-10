@@ -14,7 +14,7 @@ const {
 /*
 *
 */
-function generateIconImageForEmailTemplate(logoImageBase64) {
+function generateIconImageForEmailTemplate(logoImageBase64: string): string {
   let imgElString = `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" `;
   imgElString += `src="data:image/png;base64, ${logoImageBase64}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
   return imgElString;
@@ -24,7 +24,7 @@ function generateIconImageForEmailTemplate(logoImageBase64) {
 /*
 * Generates HTML markup for email
 */
-export function generateHTMLMarkup(data, billingAddressMarkup) {
+export function generateHTMLMarkup(data: any, billingAddressMarkup: string): string {
   const {
     createdAt: purchaseDate, end_time, logoImageBase64, price, name, quantity,
     start_time, subtotal_price, total_price, total_tax, title, qrCodeUrl,
@@ -66,7 +66,7 @@ export function generateHTMLMarkup(data, billingAddressMarkup) {
 /*
 * Generates billing address HTML markup for email
 */
-export function formatBillingAddressForHTMLMarkup(billing_address) {
+export function formatBillingAddressForHTMLMarkup(billing_address: any): string {
   try {
     const { name, address1, address2, city, province, zip, country } = billing_address;
     return `
@@ -89,7 +89,7 @@ export function formatBillingAddressForHTMLMarkup(billing_address) {
 /*
 * Sends email to user - returns true if email was sent and false if not
 */
-export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
+export async function sendEmail(transporter, emailInfo: any, useSendGrid = false): Promise<boolean> {
   // Define variables needed for sending emails
   const { to, from, html, order_number, attachments, qrCodeUrl: content, name, /*sendgridQrCode*/ } = emailInfo;
   const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
@@ -146,7 +146,7 @@ export async function sendEmail(transporter, emailInfo, useSendGrid = false) {
 /*
 * Generates qr code with order id, start date, and end date for sendgrid or nodemailer 
 */
-export async function generateQRCode(QRCode, data, forSendgrid = false) {
+export async function generateQRCode(QRCode, data, forSendgrid = false): Promise<string> {
   try {
     let codeUrl = '';
     if (forSendgrid) {
@@ -180,7 +180,7 @@ export async function uploadFileToS3(s3, file) {
   try {
     const Body = Buffer.from(file, 'binary');
     const ContentType = 'application/javascript';
-    const awsResp = await s3.putObject({ Body, Bucket, ContentType, Key}).promise();
+    const awsResp = await s3.putObject({ Body, Bucket, ContentType, Key }).promise();
     return awsResp ? true : false;
   } catch (e) {
     console.error('error in uploadFileToS3 =>', e);
@@ -227,8 +227,8 @@ export function generateFileForServer(data) {
 export async function sendDataToServer(client, data) {
   try {
     await client.access({ host, user, password, port: 21, secure: false });
-    const stream = new Readable();
-    stream._read = () => {};
+    const stream: Readable = new Readable();
+    stream._read = () => { };
     stream.push(data);
     const response = await client.upload(stream, 'RS220713.HOS'); // uploadFrom
     return true;
