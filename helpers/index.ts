@@ -54,9 +54,12 @@ export function formatDate(dateString: string, justHoursAndMinutes = false): str
 *
 */
 function generateIconImageForEmailTemplate(logoImageBase64: string): string {
-  let imgElString = `<img width="100" height="50" style="display: block; margin-right: 2px; margin-left: 4px;" `;
-  imgElString += `src="data:image/png;base64, ${logoImageBase64}" alt="Omni Airport Parking logo" title="Omni Airport Parking logo" />`;
-  return imgElString;
+  const styles = 'display: block; margin-right: 2px; margin-left: 4px;';
+  const heightAndWidth = 'width="100" height="50"';
+  const alt = 'Omni Airport Parking logo';
+  const title = 'Omni Airport Parking logo';
+  const src = `data:image/png;base64, ${logoImageBase64}`;
+  return `<img ${heightAndWidth} style="${styles}" src="${src}" alt="${alt}" title="${title}" />`;
 } // END generateIconImageForEmailTemplate
 
 
@@ -95,7 +98,7 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
       <p style="margin: 0px; padding: 0px;">Subtotal: $${subtotal_price}</p>
       <p style="margin: 0px; padding: 0px;">Taxes and Fees: $${total_tax}</p>
       <p style="margin: 0px; padding: 0px;">Total: $${total_price}</p>
-      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique@omniparking.com" alt="QR Code" title="QR Code"></img>
+      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique@omniparking.com" alt="QR Code" title="QR Code" />
       <br />
     </body>
     `;
@@ -108,14 +111,15 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
 export function formatBillingAddressForHTMLMarkup(billing_address: any): string {
   try {
     const { name, address1, address2, city, province, zip, country } = billing_address;
+    const style = 'padding: 0px; margin: 0px;';
     return `
       <section>
-        <p style="padding: 0px; margin: 0px;">${name}</p>
-        <p style="padding: 0px; margin: 0px;">${address1}</p>
-        ${address2 ? `<p style="padding: 0px; margin: 0px;">${address2}</p>` : ''}
-        <p style="padding: 0px; margin: 0px;">${city}</p>
-        <p style="padding: 0px; margin: 0px;">${province} ${zip}</p>
-        <p style="padding: 0px; margin: 0px;">${country}</p>
+        <p style="${style}">${name}</p>
+        <p style="${style}">${address1}</p>
+        ${address2 ? `<p style="${style}">${address2}</p>` : ''}
+        <p style="${style}">${city}</p>
+        <p style="${style}">${province} ${zip}</p>
+        <p style="${style}">${country}</p>
       </section>
     `;
   } catch (e) {
@@ -128,32 +132,32 @@ export function formatBillingAddressForHTMLMarkup(billing_address: any): string 
 /*
 * Sends email to user - returns true if email was sent and false if not
 */
-export async function sendEmail(transporter, emailInfo: any): Promise<boolean> {
+export async function sendEmail(transporter: any, emailInfo: any): Promise<boolean> {
   // Define variables needed for sending emails
-  const { to, from, html, order_number, attachments, qrcodeUrl: content, name } = emailInfo;
+  const { to, from, html, order_number, attachments } = emailInfo;
   const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
   const subject = `Order #${order_number} confirmed`;
 
   try {
       // To send emails using nodemailer
-      const results = await transporter.sendMail({ to, from, html, text, subject, attachments });
-      console.log('email results:', results)
+    const results = await transporter.sendMail({ attachments, from, html, subject, text, to });
+    console.log('email results:', results)
 
-      // Check results from email request -> if receiver is found in the accepted array, then email was sent succesfully
-      // However if the receiver's email is found in the rejected array, then the email was not sent successfully
-      if (results) {
-        if (results?.accepted?.indexOf(to) > -1) {
-          return true;
-        } else if (results?.rejected?.indexOf(to) > -1) {
-          return false;
-        } else if ((results?.rejected?.length > 0) || results?.accepted?.length === 0) {
-          return false;
-        } else if (results?.rejected?.length === 0) {
-          return true;
-        }
-      } else {
+    // Check results from email request -> if receiver is found in the accepted array, then email was sent succesfully
+    // However if the receiver's email is found in the rejected array, then the email was not sent successfully
+    if (results) {
+      if (results?.accepted?.indexOf(to) > -1) {
+        return true;
+      } else if (results?.rejected?.indexOf(to) > -1) {
         return false;
+      } else if ((results?.rejected?.length > 0) || results?.accepted?.length === 0) {
+        return false;
+      } else if (results?.rejected?.length === 0) {
+        return true;
       }
+    } else {
+      return false;
+    }
   } catch (e) {
     console.error('Error in sendEmail (using nodemailer) =>', e);
     return false;
@@ -164,7 +168,7 @@ export async function sendEmail(transporter, emailInfo: any): Promise<boolean> {
 /*
 * Generates qr code with order id
 */
-export async function generateQRCode(QRCode, data): Promise<string> {
+export async function generateQRCode(QRCode: any, data: any): Promise<string> {
   try {
     const qrcodeUrl = await QRCode.toDataURL(data, { errorCorrectionLevel: 'L', version: 9 });
     return qrcodeUrl;
@@ -206,17 +210,28 @@ export function generateFileForServer(data: any): string {
 * Sends data to omni servers with reservation info and unique id
 * The unique id is what is stored in the QR code and used to look up the reservation
 */
-export function sendDataToServer(client: any, data: string): boolean {
+export function sendDataToServer(client: any, data: string): Promise<boolean> {
   try {
     const ftpPut = promisify(client.put.bind(client));
+    let results: any;
+    
     client.on('ready', async () => {
       const response = await ftpPut(data, `${Key}${formatDate('', true)}`);
-      console.log('response from server:', response)
-      client.end();
-      return !response ?  true : false;
+      console.log('response:', response)
+      results = response;
     });
+
+    return new Promise(resolve => { 
+      setTimeout(() => {
+        if (!results) {
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      }, 3000);
+    })
   } catch (e) {
     console.error('error in sendDataToServer =>', e);
-    return false;
+    return new Promise(resolve => resolve(false));
   }
 } // END sendDataToServer
