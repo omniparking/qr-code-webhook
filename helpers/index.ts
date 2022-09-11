@@ -214,6 +214,7 @@ export async function sendDataToServer(client: any, data: string): Promise<any> 
       console.log('filename:', filename)
       client.put(data, filename, (err) => {
         if (err) {
+          console.error('errrrrrrr:', err)
           resolve(false)
         } else {
           resolve(true)
