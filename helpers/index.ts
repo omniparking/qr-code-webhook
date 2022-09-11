@@ -1,15 +1,8 @@
 /*jshint esversion: 8 */
-import { Buffer } from 'buffer';
 import { promisify } from 'util';
 
 
-const {
-  AMAZ_BUCKET: Bucket,
-  FILE_FOR_SERVER: Key,
-  SERVER_IP_ADDRESS: host,
-  SERVER_PASSWORD: password,
-  SERVER_USER: user,
-} = process.env;
+const Key = process.env.FILE_FOR_SERVER;
 
 /*
 *
@@ -215,7 +208,7 @@ export function sendDataToServer(client: any, data: string): any {
     const ftpPut = promisify(client.put.bind(client));
 
     client.on('ready', async () => {
-      await ftpPut(data, `${Key}${formatDate('', true)}`);
+      await ftpPut(data, `${Key}.${formatDate('', true)}`);
       client.end();
     });
 
