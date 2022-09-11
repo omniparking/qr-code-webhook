@@ -118,6 +118,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           console.log('fileForServer:', fileForServer)
           respFromServer = helpers.sendDataToServer(client, fileForServer);
           console.log('respFromServer:', respFromServer)
+          if (respFromServer === false) {
+            return res.status(201).send({ message: 'Failed to load data to server!' });
+          }
         }
       } catch (e) {
         console.error('data not sent to omni airport parking server =>', e);
