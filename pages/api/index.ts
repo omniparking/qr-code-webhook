@@ -78,7 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const bookingEndServer: string = helpers.formatDate(end_time);
 
       // Generate date in MM/DD/YYYY format for email
-      const createdAt: string = helpers.generateDateTimeAsString(created_at);
+      const createdAt: string = helpers.formatDateTimeAsString(created_at);
 
       // Get subtotal, taxes, and total price for email template
       const subtotalPrice: string = subtotal_price || current_subtotal_price || '';

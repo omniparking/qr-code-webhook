@@ -24,6 +24,7 @@ const addLeadingZeroIfNecessary = (time: number): string => {
 export function formatDate(dateString: string, justHoursAndMinutes = false): string {
   if (!dateString?.trim() && !justHoursAndMinutes) { return ''; }
   let date: Date;
+  
   if (!dateString && justHoursAndMinutes) {
     date = new Date();
   } else {
@@ -35,9 +36,9 @@ export function formatDate(dateString: string, justHoursAndMinutes = false): str
   const seconds = addLeadingZeroIfNecessary(s);
   const minutes = addLeadingZeroIfNecessary(mi);
   const hours = addLeadingZeroIfNecessary(h);
-  let m = date.getUTCMonth() + 1; // months from 1-12
-  let d = date.getUTCDate();
-  let y = date.getUTCFullYear();
+  const m = date.getUTCMonth() + 1; // months from 1-12
+  const d = date.getUTCDate();
+  const y = date.getUTCFullYear();
   const month = addLeadingZeroIfNecessary(m);
   const day = addLeadingZeroIfNecessary(d);
   const year = addLeadingZeroIfNecessary(y);
@@ -67,8 +68,8 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
   } = data;
 
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
-  const start = generateDateTimeAsString(start_time, true);
-  const end = generateDateTimeAsString(end_time, true);
+  const start = formatDateTimeAsString(start_time, true);
+  const end = formatDateTimeAsString(end_time, true);
 
   // To have image directly in email template (instead of attachment) - add to last line of text:
   // <img height="200" width="200" style="display: block; object=fit: contain;" src="${qrcodeUrl}" alt="QR Code" title="QR Code" />
@@ -135,6 +136,7 @@ export async function sendEmail(transporter, emailInfo: any): Promise<boolean> {
       // To send emails using nodemailer
       const results = await transporter.sendMail({ to, from, html, text, subject, attachments });
       console.log('email results:', results)
+
       // Check results from email request -> if receiver is found in the accepted array, then email was sent succesfully
       // However if the receiver's email is found in the rejected array, then the email was not sent successfully
       if (results) {
@@ -175,48 +177,17 @@ export async function generateQRCode(QRCode, data): Promise<string> {
 * Generates date as string in format MM/DD/YYYY
 * If addTime equals true, then time is added in 12:00:00 PM format, else just date is returned
 */
-export function generateDateTimeAsString(date, addTime = false) {
+export function formatDateTimeAsString(date: string, addTime = false): string {
   const newDate = new Date(date);
   if (!addTime) { return newDate.toLocaleDateString(); }
   return `${newDate.toLocaleDateString()} ${newDate.toLocaleTimeString()}`;
-} // END generateDateTimeAsString
+} // END formatDateTimeAsString
 
 
 /*
 *
 */
-export async function uploadFileToS3(s3, file) {
-  try {
-    const Body = Buffer.from(file, 'binary');
-    const ContentType = 'application/javascript';
-    const awsResp = await s3.putObject({ Body, Bucket, ContentType, Key }).promise();
-    return awsResp ? true : false;
-  } catch (e) {
-    console.error('error in uploadFileToS3 =>', e);
-    return false;
-  }
-} // END uploadFileToS3
-
-
-/*
-*
-*/
-export async function getHOSFileAsStringFromS3(s3) {
-  try {
-    const params = { Bucket, Key };
-    const { Body } = await s3.getObject(params).promise();
-    const file = Body.toString('utf-8');
-    return file;
-  } catch (e) {
-    console.error('error in getHOSFileAsStringFromS3 =>', e);
-    return null;
-  }
-} // END getHOSFileAsStringFromS3
-
-/*
-*
-*/
-export function generateFileForServer(data): string {
+export function generateFileForServer(data: any): string {
   try {
     const { end_time, first_name, last_name, order_number, start_time } = data;
     const resNum = `ShopQ\\${order_number}`;
@@ -233,12 +204,13 @@ export function generateFileForServer(data): string {
 * Sends data to omni servers with reservation info and unique id
 * The unique id is what is stored in the QR code and used to look up the reservation
 */
-export function sendDataToServer(client, data: string): boolean {
+export function sendDataToServer(client: any, data: string): boolean {
   try {
     client.on('ready', async () => {
       const response = await client.put(data, `${Key}${formatDate('', true)}`);
       console.log('response from server:', response)
       return !response ?  true : false;
+      client.end();
     });
   } catch (e) {
     console.error('error in sendDataToServer =>', e);
