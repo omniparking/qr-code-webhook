@@ -210,28 +210,17 @@ export function generateFileForServer(data: any): string {
 * Sends data to omni servers with reservation info and unique id
 * The unique id is what is stored in the QR code and used to look up the reservation
 */
-export function sendDataToServer(client: any, data: string): Promise<boolean> {
+export function sendDataToServer(client: any, data: string): any {
   try {
     const ftpPut = promisify(client.put.bind(client));
-    let results: any;
-    
+
     client.on('ready', async () => {
-      const response = await ftpPut(data, `${Key}${formatDate('', true)}`);
-      console.log('response:', response)
-      results = response;
+      await ftpPut(data, `${Key}${formatDate('', true)}`);
+      client.end();
     });
 
-    return new Promise(resolve => { 
-      setTimeout(() => {
-        if (!results) {
-          resolve(true);
-        } else {
-          resolve(false);
-        }
-      }, 3000);
-    })
   } catch (e) {
     console.error('error in sendDataToServer =>', e);
-    return new Promise(resolve => resolve(false));
+    return false;
   }
 } // END sendDataToServer

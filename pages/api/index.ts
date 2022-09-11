@@ -116,8 +116,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       try {
         if (fileForServer?.trim()) {
           console.log('fileForServer:', fileForServer)
-          respFromServer = await helpers.sendDataToServer(client, fileForServer);
-          client.end();
+          respFromServer = helpers.sendDataToServer(client, fileForServer);
           console.log('respFromServer:', respFromServer)
         }
       } catch (e) {
