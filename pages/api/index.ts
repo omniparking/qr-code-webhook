@@ -42,21 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const { body, headers, method } = req;
     // return res.status(201).send({ message: 'Webhook turned off!' });
 
-    const requestIsTrusted = headers?.['x-shopify-hmac-sha256'] === SHOPIFY_WEBHOOK_ID;
-    const hash = crypto
-      .createHmac('sha256', SHOPIFY_SECRET)
-      .update(JSON.stringify(req.body), 'utf-8')
-      .digest('base64');
-    
     if (method === 'POST') {
-      console.log('hash:', hash)
-      console.log('SHOPIFY_WEBHOOK_ID:', SHOPIFY_WEBHOOK_ID)
-      // check that request comes from trusted source based on property in header
-      if (hash !== SHOPIFY_WEBHOOK_ID) {
-        return res.status(201).send({ message: 'This is not a trusted resource!' });
-      }
-
-
       // Grab needed data from request object
       // (i.e., line_items property has start/end times & req body has order_number/billing_address & billing info such as price & address)
       const {
