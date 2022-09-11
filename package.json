@@ -14,8 +14,7 @@
     "nodemailer": "^6.7.3",
     "qrcode": "^1.5.0",
     "raw-body": "^2.5.1",
-    "sharp": "^0.30.4",
-    "util": "^0.12.4"
+    "sharp": "^0.30.4"
   },
   "devDependencies": {
     "@types/node": "^18.7.16",

@@ -115,6 +115,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       try {
         respFromServer = await helpers.sendDataToServer(client, fileForServer);
         console.log('respFromServer:', respFromServer)
+        client.close();
         // if (respFromServer === false) {
         //   return res.status(201).send({ message: 'Failed to load data to server!' });
         // }
@@ -150,7 +151,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         let userEmailSuccessful;
         try {
           userEmailSuccessful = await helpers.sendEmail(transporter, emailData);
-          console.log('userEmailSuccessful:', userEmailSuccessful)
         } catch (e) {
           console.error('error sending email (first time):', e);
         }

@@ -1,6 +1,4 @@
 /*jshint esversion: 8 */
-import { promisify } from 'util';
-
 
 const Key = process.env.FILE_FOR_SERVER;
 
@@ -203,45 +201,21 @@ export function generateFileForServer(data: any): string {
 * Sends data to omni servers with reservation info and unique id
 * The unique id is what is stored in the QR code and used to look up the reservation
 */
-export async function sendDataToServer(client: any, data: string) {
+export async function sendDataToServer(client: any, data: string): Promise<boolean> {
   try {
-    const ftpPut = promisify(client.put.bind(client));
     // const filename = `${Key}${formatDate('', true)}`.toLowerCase();
     const filename = Key.toLowerCase();
-    const res = await new Promise((resolve, reject) => {
-    client.on('ready', async () => {
-      console.log('filename:', filename)
-      client.put(data, filename, (err) => {
-        if (err) {
-          console.error('errrrrrrr:', err)
-          reject(false)
-        }
-        resolve(true)
-      });
-      // const results = await ftpPut(data, filename);
-      // if (results) {
-      //   reject(false);
-      // } else {
-      //   resolve(true);
-      // }
+    const resultsFromServer: boolean = await new Promise((resolve, reject) => {
+      client.on('ready', async () => {
+        client.put(data, filename, (err) => {
+          if (err) { reject(false); }
+          resolve(true);
+        });
       });
     });
-    return res;
-    // client.on('ready', async () => {
-    //   // client.put(data, filename, (err) => {
-    //   //   if (err) {
-    //   //     console.error('error sending file:', err);
-    //   //     throw Error;
-    //   //   }
-    //   // })
-    //   const res = await ftpPut(data, filename);
-    //   if (res) {
-
-    //   }
-    // })
+    return resultsFromServer;
   } catch (e) {
     console.error('error in sendDataToServer =>', e);
-    // return new Promise(resolve => resolve(false));
-    return false;
+    return Promise.resolve(false);
   }
 } // END sendDataToServer
