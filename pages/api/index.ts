@@ -44,6 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const requestIsTrusted = headers?.['x-shopify-hmac-sha256'] === SHOPIFY_WEBHOOK_ID;
 
     if (method === 'POST') {
+      console.log('headeers:', headers)
       // check that request comes from trusted source based on property in header
       if (!requestIsTrusted) {
         return res.status(201).send({ message: 'This is not a trusted resource!' });
