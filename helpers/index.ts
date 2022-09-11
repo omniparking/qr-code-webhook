@@ -208,8 +208,13 @@ export function sendDataToServer(client: any, data: string): any {
     const ftpPut = promisify(client.put.bind(client));
 
     client.on('ready', async () => {
-      const res = await ftpPut(data, `${Key}.${formatDate('', true)}`);
-      // client.put(data, `${Key}.${formatDate('', true)}`, (err) => {
+      
+      const filename = `${Key}.${formatDate('', true)}`
+      console.log('filename:', filename)
+      const res = await ftpPut(data, filename);
+      client.end();
+      if (res) { throw Error; }
+      // client.put(data, filename, (err) => {
       //   if (err) {
       //     console.error('errorrrrrrr:', err)
       //     client.end();
@@ -217,7 +222,10 @@ export function sendDataToServer(client: any, data: string): any {
       //   }
       //   client.end();
       // })
-      client.end();
+      // if (res !== undefined) { throw Error; }
+
+      // client.end();
+      // return true;
     });
 
   } catch (e) {

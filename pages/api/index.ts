@@ -10,7 +10,6 @@ import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo/file for server from AWS
 import sharp from 'sharp'; // to shorten text for S3 binary image
 import Client from 'ftp';
-import crypto from 'crypto';
 
 import * as helpers from '../../helpers/index';
 
@@ -116,7 +115,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       try {
         if (fileForServer?.trim()) {
           console.log('fileForServer:', fileForServer)
-          respFromServer = helpers.sendDataToServer(client, fileForServer);
+          respFromServer = await helpers.sendDataToServer(client, fileForServer);
           console.log('respFromServer:', respFromServer)
           if (respFromServer === false) {
             return res.status(201).send({ message: 'Failed to load data to server!' });
