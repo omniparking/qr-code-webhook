@@ -207,7 +207,7 @@ export async function sendDataToServer(client: any, data: string): Promise<any> 
   try {
     // const ftpPut = promisify(client.put.bind(client));
 
-    const res = await new Promise(resolve => {
+    await new Promise(resolve => {
       client.on('ready', async () => {
       
         const filename = `${Key}.${formatDate('', true)}`.toLowerCase();
@@ -224,7 +224,8 @@ export async function sendDataToServer(client: any, data: string): Promise<any> 
     });
   } catch (e) {
     console.error('error in sendDataToServer =>', e);
-    const failure = await new Promise(resolve => resolve(false));
-    return failure;
+    // const failure = await new Promise(resolve => resolve(false));
+    // return failure;
+    return false;
   }
 } // END sendDataToServer
