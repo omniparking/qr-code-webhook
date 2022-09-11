@@ -10,9 +10,10 @@ import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo/file for server from AWS
 import sharp from 'sharp'; // to shorten text for S3 binary image
 import Client from 'ftp';
-import os from 'os';
 
 import * as helpers from '../../helpers/index';
+
+
 // Deconstruct needed env variables from process.env
 const {
   AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_BUCKET: Bucket, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
@@ -20,6 +21,7 @@ const {
   SMTP_HOST: host, EMAIL_PORT: port,
   UPSTASH_REDIS_REST_TOKEN: token, UPSTASH_REDIS_REST_URL: url,
 } = process.env;
+
 // Initialize s3 connection - using AWS S3 to store company logo
 const s3 = new AWS.S3({ accessKeyId, secretAccessKey });
 
