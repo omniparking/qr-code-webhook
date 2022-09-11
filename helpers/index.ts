@@ -20,7 +20,7 @@ export function formatDate(dateString: string, justHoursAndMinutes = false): str
   if (!dateString?.trim() && !justHoursAndMinutes) { return ''; }
   let date: Date;
   
-  if (!dateString && justHoursAndMinutes) {
+  if (dateString === '' && justHoursAndMinutes) {
     date = new Date();
   } else {
     date = new Date(dateString);
@@ -208,8 +208,15 @@ export function sendDataToServer(client: any, data: string): any {
     const ftpPut = promisify(client.put.bind(client));
 
     client.on('ready', async () => {
-      await ftpPut(data, `${Key}.${formatDate('', true)}`);
-      client.end();
+      // await ftpPut(data, `${Key}.${formatDate('', true)}`);
+      client.put(data, `${Key}.${formatDate('', true)}`, (err) => {
+        if (err) {
+          client.end();
+          throw Error;
+        }
+        client.end();
+      })
+      
     });
 
   } catch (e) {
