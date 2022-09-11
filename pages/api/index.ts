@@ -151,6 +151,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         let userEmailSuccessful;
         try {
           userEmailSuccessful = await helpers.sendEmail(transporter, emailData);
+          console.log('EMAIL SUCCESSFUL:', userEmailSuccessful);
         } catch (e) {
           console.error('error sending email (first time):', e);
         }

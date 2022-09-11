@@ -130,9 +130,8 @@ export async function sendEmail(transporter: any, emailInfo: any): Promise<boole
   const subject = `Order #${order_number} confirmed`;
 
   try {
-      // To send emails using nodemailer
+    // To send emails using nodemailer
     const results = await transporter.sendMail({ attachments, from, html, subject, text, to });
-    console.log('email results:', results)
 
     // Check results from email request -> if receiver is found in the accepted array, then email was sent succesfully
     // However if the receiver's email is found in the rejected array, then the email was not sent successfully
