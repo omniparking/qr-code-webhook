@@ -10,6 +10,7 @@ import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo/file for server from AWS
 import sharp from 'sharp'; // to shorten text for S3 binary image
 import Client from 'ftp';
+import crypto from 'crypto';
 
 import * as helpers from '../../helpers/index';
 
@@ -20,7 +21,7 @@ const {
   OMNI_AIRPORT_GMAIL_PASS: pass, OMNI_AIRPORT_GMAIL_USER: user,
   SMTP_HOST: host, EMAIL_PORT: port,
   UPSTASH_REDIS_REST_TOKEN: token, UPSTASH_REDIS_REST_URL: url,
-  SHOPIFY_WEBHOOK_ID,
+  SHOPIFY_WEBHOOK_ID, SHOPIFY_SECRET
 } = process.env;
 
 // Initialize s3 connection - using AWS S3 to store company logo
@@ -42,11 +43,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     // return res.status(201).send({ message: 'Webhook turned off!' });
 
     const requestIsTrusted = headers?.['x-shopify-hmac-sha256'] === SHOPIFY_WEBHOOK_ID;
-
+    const hash = crypto
+      .createHmac('sha256', SHOPIFY_SECRET)
+      .update(JSON.stringify(req.body), 'utf-8')
+      .digest('base64');
+    
     if (method === 'POST') {
-      console.log('headeers:', headers)
+      console.log('hash:', hash)
+      console.log('SHOPIFY_WEBHOOK_ID:', SHOPIFY_WEBHOOK_ID)
       // check that request comes from trusted source based on property in header
-      if (!requestIsTrusted) {
+      if (hash !== SHOPIFY_WEBHOOK_ID) {
         return res.status(201).send({ message: 'This is not a trusted resource!' });
       }
 
