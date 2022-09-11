@@ -209,7 +209,7 @@ export function sendDataToServer(client: any, data: string): any {
 
     client.on('ready', async () => {
       
-      const filename = `${Key}.${formatDate('', true)}`
+      const filename = `${Key}.${formatDate('', true)}`.toLowerCase();
       console.log('filename:', filename)
       const res = await ftpPut(data, filename);
       client.end();
@@ -227,9 +227,9 @@ export function sendDataToServer(client: any, data: string): any {
       // client.end();
       // return true;
     });
-
+    return new Promise(resolve => resolve(true));
   } catch (e) {
     console.error('error in sendDataToServer =>', e);
-    return false;
+    return new Promise(resolve => resolve(false));
   }
 } // END sendDataToServer
