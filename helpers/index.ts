@@ -1,5 +1,7 @@
 /*jshint esversion: 8 */
 import { Buffer } from 'buffer';
+import { promisify } from 'util';
+
 
 const {
   AMAZ_BUCKET: Bucket,
@@ -206,11 +208,12 @@ export function generateFileForServer(data: any): string {
 */
 export function sendDataToServer(client: any, data: string): boolean {
   try {
+    const ftpPut = promisify(client.put.bind(client));
     client.on('ready', async () => {
-      const response = await client.put(data, `${Key}${formatDate('', true)}`);
+      const response = await ftpPut(data, `${Key}${formatDate('', true)}`);
       console.log('response from server:', response)
-      return !response ?  true : false;
       client.end();
+      return !response ?  true : false;
     });
   } catch (e) {
     console.error('error in sendDataToServer =>', e);
