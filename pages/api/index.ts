@@ -20,7 +20,6 @@ const {
   OMNI_AIRPORT_GMAIL_PASS: pass, OMNI_AIRPORT_GMAIL_USER: user,
   SMTP_HOST: host, EMAIL_PORT: port,
   UPSTASH_REDIS_REST_TOKEN: token, UPSTASH_REDIS_REST_URL: url,
-  SHOPIFY_WEBHOOK_ID, SHOPIFY_SECRET
 } = process.env;
 
 // Initialize s3 connection - using AWS S3 to store company logo
@@ -39,7 +38,7 @@ const transporter = nodemailer.createTransport({ auth: { user, pass }, host, por
 export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { body, headers, method } = req;
-    // return res.status(201).send({ message: 'Webhook turned off!' });
+    return res.status(201).send({ message: 'Webhook turned off!' });
 
     if (method === 'POST') {
       // Grab needed data from request object
@@ -116,9 +115,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         respFromServer = await helpers.sendDataToServer(client, fileForServer);
         console.log('respFromServer:', respFromServer)
         client.end();
-        // if (respFromServer === false) {
-        //   return res.status(201).send({ message: 'Failed to load data to server!' });
-        // }
+        if (respFromServer === false) {
+          return res.status(201).send({ message: 'Failed to load data to server!' });
+        }
       } catch (e) {
         console.error('data not sent to omni airport parking server =>', e);
       }
