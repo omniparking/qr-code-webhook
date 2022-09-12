@@ -1,9 +1,10 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 /*jshint esversion: 8 */
 
-// Import needed packages
+// Next types
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+// npm packages
 import QRCode from 'qrcode'; // to generate qr code
 import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
@@ -11,10 +12,10 @@ import AWS from 'aws-sdk'; // to hit S3 to retrieve logo/file for server from AW
 import sharp from 'sharp'; // to shorten text for S3 binary image
 import Client from 'ftp';
 
+// Helpers/Scripts
 import * as helpers from '../../helpers/index';
 
-
-// Deconstruct needed env variables from process.env
+// Deconstruct needed environment variables from process.env
 const {
   AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_BUCKET: Bucket, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
   OMNI_AIRPORT_GMAIL_PASS: pass, OMNI_AIRPORT_GMAIL_USER: user,
@@ -31,6 +32,16 @@ const redis = new Redis({ url, token });
 // Initialize nodemailer (to send emails)
 const transporter = nodemailer.createTransport({ auth: { user, pass }, host, port, secure: true });
 
+// declaring message variables for response
+const dataMissingMessage = 'Webhook event failed. Critical data is missing from request body!';
+const failedToLoadDataToServerMessage = 'Failed to load data to server!';
+const emailNotSentMessage = 'Webhook event not logged but email sent successfully.';
+const missingTimeInfoMessage = 'Webhook Event logged and Email Successfully logged.';
+const webhookAlreadyLoggedMessage = 'Webhook Event failed as it has previously been successfully logged.';
+const requestNotPostMethodMessage = 'Webhook Event failed as request method is not of type "POST".';
+const errorFromMainTryCatchMessage = 'Webhook Event failed. Error from main try/catch.';
+const successMessage = 'Webhook Event logged and Email Successfully logged!';
+
 
 /*
 * Handler function which handles http requests coming in (webhook calls from shopify)
@@ -45,7 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       // (i.e., line_items property has start/end times & req body has order_number/billing_address & billing info such as price & address)
       const {
         billing_address, created_at, current_subtotal_price, current_total_price, current_total_tax,
-        /* email: to, */ id, line_items, order_number, subtotal_price, total_price, total_tax,
+        /* email: to, */ line_items, order_number, subtotal_price, total_price, total_tax,
       } = body;
       const bookingTimes = line_items?.[1]?.properties || [];
       const billingItems = line_items?.[1];
@@ -56,9 +67,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       let logoImageBase64 = '';
       let respFromServer;
 
-      if (!(bookingTimes || bookingTimes?.length) || !billingItems || !(body?.customer)) {
-        const message = 'Webhook event failed. Critical data is missing from request body!';
-        return res.status(201).send({ message });
+      if (!bookingTimes?.length || !billingItems || !body?.customer) {
+        return res.status(201).send({ message: dataMissingMessage });
       }
 
       // Get start and end times of booking
@@ -70,7 +80,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
       // If no start or end times from booking, event failed
       if (!start_time || !end_time) {
-        return res.status(201).send({ message: 'Webhook event failed. No start/end times available. ' });
+        return res.status(201).send({ message: missingTimeInfoMessage });
       }
 
       const bookingStartServer: string = helpers.formatDate(start_time);
@@ -86,8 +96,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       // Make call to AWS S3 bucket where logo image is stored, response in binary format which is then translated to string
       try {
-        const { Body } = await s3.getObject({ Bucket, Key: `${Bucket}-logo.png` }).promise();
-        logoImageBase64 = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
+        const { Body } = await s3?.getObject({ Bucket, Key: `${Bucket}-logo.png` })?.promise();
+        logoImageBase64 = await (await sharp(Body)?.toFormat('png')?.png({ quality: 100, compressionLevel: 6 })?.toBuffer())?.toString('base64') || '';
       } catch (e) {
         console.error('error getting image from aws => ', e);
       }
@@ -96,27 +106,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const new_webhook_id = headers?.['x-shopify-webhook-id'] as string || '';
 
       // Data required in qr code
-      const uniqueIdForQRCode = `1755164${order_number}`;
+      let qrcodeData = `1755164${order_number}`;
+      const zeros = new Array(16 - qrcodeData.length).join('0');
+      qrcodeData += zeros; // add zero placeholders to qrcode data
 
-      // Generate barcode with order information
-      const qrcodeUrl = await helpers.generateQRCode(QRCode, uniqueIdForQRCode);
+      // Generate qrcode with order information
+      const qrcodeUrl = await helpers.generateQRCode(QRCode, qrcodeData);
+
+      // Generate file for server
       const fileForServer: string = helpers.generateFileForServer({ end_time: bookingEndServer, start_time: bookingStartServer, first_name, last_name, order_number });
 
+      // Initiate ftp client
       const client = new Client();
+
+      // Connect to ftp server
       client.connect({
         host: process.env.SERVER_IP_ADDRESS,
+        password: process.env.SERVER_PASSWORD,
         port: 21,
         secure: false,
-        user: process.env.SERVER_USER,
-        password: process.env.SERVER_PASSWORD
+        user: process.env.SERVER_USER
       });
 
       try {
+        // Send data to server
         respFromServer = await helpers.sendDataToServer(client, fileForServer);
         console.log('respFromServer:', respFromServer)
         client.end();
         if (respFromServer === false) {
-          return res.status(201).send({ message: 'Failed to load data to server!' });
+          return res.status(201).send({ message: failedToLoadDataToServerMessage });
         }
       } catch (e) {
         console.error('data not sent to omni airport parking server =>', e);
@@ -127,8 +145,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       // Define object for generating the HTML markup in generateHTMLMarkup function
       const htmlMarkupData = {
-        end_time, logoImageBase64, name, price, qrcodeUrl, createdAt, quantity, start_time,
-        subtotal_price: subtotalPrice, title, total_price: totalPrice, total_tax: totalTax,
+        subtotal_price: subtotalPrice, total_price: totalPrice, total_tax: totalTax, createdAt,
+        end_time, logoImageBase64, name, price, qrcodeUrl, quantity, start_time, title
       };
 
       // Generate HTML markup for email
@@ -136,33 +154,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       // Method to add webhook_id to redis
       const prevWebhook: string = await redis.get(new_webhook_id);
-      console.log('previous webhook id:', prevWebhook)
-      // Define variables for sending email
+
       const to = 'alon.bibring@gmail.com'; // email recipient
       // const cc = ['alon.bibring@gmail.com']; // cc emails
 
-      const attachments = [{ path: qrcodeUrl, filename: 'attachment-1.png', cid: 'unique@omniparking.com' }];
+      const attachments = [{ cid: 'unique@omniairportparking.com', filename: 'attachment-1.png', path: qrcodeUrl }];
 
-      const emailData = { from: 'omniairportparking@gmail.com', attachments, html, order_number, to };
+      const emailData = { from: user, attachments, html, order_number, to };
 
-      // If webhook_id does not already exist in db
-      if (true || !prevWebhook) {
-        let userEmailSuccessful;
+      let userEmailSuccessful;
+      if (!prevWebhook) { // If webhook_id does not already exist in db
         try {
           userEmailSuccessful = await helpers.sendEmail(transporter, emailData);
-          console.log('EMAIL SUCCESSFUL:', userEmailSuccessful);
+          console.log('userEmailSuccessful:', userEmailSuccessful);
         } catch (e) {
           console.error('error sending email (first time):', e);
         }
 
-        // If email is successful, add webhook to redis and send success response
-        if (userEmailSuccessful) {
+        if (userEmailSuccessful) { // If email is successful, add webhook to redis and send success response
           await redis.set(new_webhook_id, new_webhook_id);
-          return res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged.' });
+          return res.status(201).send({ message: successMessage });
         } else {
-          // If the email is not successful, try sending it again
-          try {
-            // Resending email using Nodemailer
+          try { // If email is unsuccessful, try once more
             const userEmailSuccessful = await helpers.sendEmail(transporter, emailData);
 
             // If resent email is successful
@@ -170,34 +183,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               try {
                 // Add webhook_id to redis and send successful response
                 await redis.set(new_webhook_id, new_webhook_id);
-                res.status(201).send({ message: 'Webhook Event logged and Email Successfully logged.' });
+                res.status(201).send({ message: successMessage });
               } catch (e) {
                 // Adding webhook_id to redis failed, so send response indicating email sent successfully but webhook_id not stored in redis
                 console.error('error saving wehook but email send =>', e);
-                return res.status(201).send({ message: 'Webhook event not logged but email sent successfully.' });
+                return res.status(201).send({ message: emailNotSentMessage });
               }
             } else {
               // If retry email is not successful, send response message indicating webhook event logged but email not sent
-              return res.status(201).send({ message: 'Webhook Event logged but email not sent.' });
+              return res.status(201).send({ message: emailNotSentMessage });
             }
           } catch (e) {
-            console.error('error sending email (2nd attempt) => ', e);
+            console.error('error sending email (2nd attempt) =>', e);
             // Sending email or adding data to redis db threw an error somewhere send response message indicating webhook event logged but no email sent
-            res.status(201).send({ message: 'Webhook Event logged but email not sent.' });
+            res.status(201).send({ message: emailNotSentMessage });
           }
         }
       } else {
         console.error('Case where webhook id already exists in database!');
         // Case where webhook_id is already stored, meaning an email has already been sent send response message indicating that webhook failed bc it was already successfully handled
-        res.status(201).send({ message: 'Webhook Event failed as it has previously been successfully logged.' });
+        res.status(201).send({ message: webhookAlreadyLoggedMessage });
       }
     } else {
       // Case where request method is not of type "POST"
-      res.status(201).send({ message: 'Webhook Event failed as request method is not of type "POST".' });
+      res.status(201).send({ message: requestNotPostMethodMessage });
     }
   } catch (e) {
     // Case where something failed in the code above send a response message indicating webhook failed
-    console.error('Error from webhook =>:', e);
-    res.status(201).send({ message: 'Webhook Event failed. Error from main try/catch.' });
+    console.error('Error from main try/catch in handler =>:', e);
+    res.status(201).send({ message: errorFromMainTryCatchMessage });
   }
 }

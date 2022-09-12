@@ -1,6 +1,5 @@
 /*jshint esversion: 8 */
 
-const Key = process.env.FILE_FOR_SERVER;
 
 /*
 *
@@ -70,6 +69,12 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
   // To have image directly in email template (instead of attachment) - add to last line of text:
   // <img height="200" width="200" style="display: block; object=fit: contain;" src="${qrcodeUrl}" alt="QR Code" title="QR Code" />
 
+  const padding0 = 'padding: 0px;';
+  const margin0 = 'margin: 0px;';
+  const margin1000 = 'margin: 1px 0px 0px 0px;';
+  const margin0010 = 'margin: 0px 0px 1px 0px;';
+  const margin8000 = 'margin: 8px 0px 0px 0px;';
+  
   return `
     <html>
     <body>
@@ -77,19 +82,19 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
       <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
       <p>This email is to confirm your recent order.</p>
       <p>Date ${purchaseDate}</p>
-      <p style="font-weight: bold; margin: 0px 0px 1px 0px; padding 0px;">Billing Address:</p>
+      <p style="font-weight: bold; ${margin0010} ${padding0}">Billing Address:</p>
       <p>${billingAddressMarkup}</p>
       <br />
       ${generateIconImageForEmailTemplate(logoImageBase64)}
-      <p style="margin: 0px 0px 1px 0px;">1x Facility Charge for $4.99 each</p>
-      <p style="margin: 1px 0px 0px 0px; padding: 0px;">${quantity}x ${name.toUpperCase()} for $${price} each</p>
-      <p style="margin: 8px 0px 0px 0px; padding: 0px;">Drop off: ${start}</p>
-      <p style="margin: 1px 0px 0px 0px; padding: 0px;">Pick up: ${end}</p>
+      <p style="${margin0010}">1x Facility Charge for $4.99 each</p>
+      <p style="${margin1000} ${padding0}">${quantity}x ${name.toUpperCase()} for $${price} each</p>
+      <p style="${margin8000} ${padding0}">Drop off: ${start}</p>
+      <p style="${margin1000} ${padding0}">Pick up: ${end}</p>
       <br />
-      <p style="margin: 0px; padding: 0px;">Subtotal: $${subtotal_price}</p>
-      <p style="margin: 0px; padding: 0px;">Taxes and Fees: $${total_tax}</p>
-      <p style="margin: 0px; padding: 0px;">Total: $${total_price}</p>
-      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique@omniparking.com" alt="QR Code" title="QR Code" />
+      <p style="${padding0} ${margin0}">Subtotal: $${subtotal_price}</p>
+      <p style="${padding0} ${margin0}">Taxes and Fees: $${total_tax}</p>
+      <p style="${padding0} ${margin0}">Total: $${total_price}</p>
+      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique@omniairportparking.com" alt="QR Code" title="QR Code" />
       <br />
     </body>
     `;
@@ -101,7 +106,7 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
 */
 export function formatBillingAddressForHTMLMarkup(billing_address: any): string {
   try {
-    const { name, address1, address2, city, province, zip, country } = billing_address;
+    const { address1, address2, city, country, name, province, zip } = billing_address;
     const style = 'padding: 0px; margin: 0px;';
     return `
       <section>
@@ -125,7 +130,7 @@ export function formatBillingAddressForHTMLMarkup(billing_address: any): string 
 */
 export async function sendEmail(transporter: any, emailInfo: any): Promise<boolean> {
   // Define variables needed for sending emails
-  const { to, from, html, order_number, attachments } = emailInfo;
+  const { attachments, from, html, order_number, to } = emailInfo;
   const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
   const subject = `Order #${order_number} confirmed`;
 
@@ -140,9 +145,9 @@ export async function sendEmail(transporter: any, emailInfo: any): Promise<boole
         return true;
       } else if (results?.rejected?.indexOf(to) > -1) {
         return false;
-      } else if ((results?.rejected?.length > 0) || results?.accepted?.length === 0) {
+      } else if (results?.rejected?.length || !results?.accepted?.length) {
         return false;
-      } else if (results?.rejected?.length === 0) {
+      } else if (!results?.rejected?.length) {
         return true;
       }
     } else {
@@ -202,12 +207,13 @@ export function generateFileForServer(data: any): string {
 */
 export async function sendDataToServer(client: any, data: string): Promise<boolean> {
   try {
+    const Key = process.env.FILE_FOR_SERVER;
     // const filename = `${Key}${formatDate('', true)}`.toLowerCase();
     const filename = Key.toLowerCase();
-    const resultsFromServer: boolean = await new Promise((resolve, reject) => {
-      client.on('ready', async () => {
+    const resultsFromServer: boolean = await new Promise((resolve) => {
+      client.on('ready', () => {
         client.put(data, filename, (err) => {
-          if (err) { reject(false); }
+          if (err) { resolve(false); }
           resolve(true);
         });
       });
