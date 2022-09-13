@@ -21,6 +21,7 @@ const {
   OMNI_AIRPORT_GMAIL_PASS: pass, OMNI_AIRPORT_GMAIL_USER: user,
   SMTP_HOST: host, EMAIL_PORT: port,
   UPSTASH_REDIS_REST_TOKEN: token, UPSTASH_REDIS_REST_URL: url,
+  SERVER_IP_ADDRESS: IP, SERVER_PASSWORD: SERVER_PASS, SERVER_USER,
 } = process.env;
 
 // Initialize s3 connection - using AWS S3 to store/retrieve company logo
@@ -54,19 +55,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       // Grab needed data from request object
       // (i.e., line_items property has start/end times & req body has order_number/billing_address & billing info such as price & address)
       const {
-        billing_address, created_at, current_subtotal_price, current_total_price, current_total_tax,
-        email: usersEmail, line_items, order_number, subtotal_price, total_price, total_tax,
+        billing_address, customer, created_at, current_subtotal_price, current_total_price,
+        current_total_tax, email, line_items, order_number, subtotal_price, total_price, total_tax,
       } = body;
       const bookingTimes = line_items?.[1]?.properties || [];
-      const billingItems = line_items?.[1];
-      const { first_name, last_name } = body?.customer;
-      const { quantity, price, name, title } = billingItems;
+      const { quantity, price, name } = line_items?.[1];
+      const { first_name, last_name } = customer;
       let start_time: string;
       let end_time: string;
       let logoImageBase64: string;
       let respFromServer;
 
-      if (!bookingTimes?.length || !billingItems || !body?.customer) { return res.status(201).send({ message: dataMissingMessage }); }
+      if (!bookingTimes?.length || !price || !name || !customer) { return res.status(201).send({ message: dataMissingMessage }); }
 
       // Get start and end times of booking
       if (bookingTimes?.length) {
@@ -104,8 +104,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const new_webhook_id = headers?.['x-shopify-webhook-id'] as string || '';
 
       // Format data for QR Code
-      const qrcodeInfo = `1755164${order_number}`;
-      const zeros = new Array(16 - qrcodeInfo.length).join('0');
+      const qrcodeLength = `1755164${order_number}`.length;
+      const zeros = new Array(16 - qrcodeLength).join('0');
       const qrcodeData = `1755164${zeros}${order_number}`; // add zero placeholders to qrcode data
 
       // Generate qrcode with order information
@@ -121,13 +121,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const client = new Client();
 
       // Connect to ftp server
-      client.connect({
-        host: process.env.SERVER_IP_ADDRESS,
-        password: process.env.SERVER_PASSWORD,
-        port: 21,
-        secure: false,
-        user: process.env.SERVER_USER,
-      });
+      client.connect({ host: IP, password: SERVER_PASS, port: 21, secure: false, user: SERVER_USER });
 
       try {
         // Send data to server
