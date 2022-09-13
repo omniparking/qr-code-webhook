@@ -13,7 +13,7 @@ import sharp from 'sharp'; // to shorten text for S3 binary image
 import Client from 'ftp';
 
 // Helpers/Scripts
-import * as helpers from '../../helpers/index';
+import * as h from '../../helpers/index';
 
 // Deconstruct needed environment variables from process.env
 const {
@@ -33,16 +33,6 @@ const redis = new Redis({ url, token });
 // Initialize nodemailer (to send emails)
 const transporter = nodemailer.createTransport({ auth: { user, pass }, host, port, secure: true });
 
-// declaring message variables for server response
-const dataMissingMessage = 'Webhook event failed. Critical data is missing from request body!';
-const failedToLoadDataToServerMessage = 'Failed to load data to server!';
-const emailNotSentMessage = 'Webhook event not logged but email sent successfully.';
-const missingTimeInfoMessage = 'Webhook Event logged and Email Successfully logged.';
-const webhookAlreadyLoggedMessage = 'Webhook Event failed as it has previously been successfully logged.';
-const requestNotPostMethodMessage = 'Webhook Event failed as request method is not of type "POST".';
-const errorFromMainTryCatchMessage = 'Webhook Event failed. Error from main try/catch.';
-const successMessage = 'Webhook Event logged and Email Successfully logged!';
-
 /*
 * Handler function which handles http request coming in (webhook calls from shopify)
 */
@@ -52,21 +42,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return res.status(201).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
 
     if (method === 'POST') {
-      // Grab needed data from request object
-      // (i.e., line_items property has start/end times & req body has order_number/billing_address & billing info such as price & address)
+      // Grab needed data from request object, i.e., start/end times, order_number, billing_address, price & address, etc.
       const {
         billing_address, customer, created_at, current_subtotal_price, current_total_price,
-        current_total_tax, email, line_items, order_number, subtotal_price, total_price, total_tax,
+        current_total_tax, email, line_items, order_number: orderNum, subtotal_price, total_price, total_tax,
       } = body;
       const bookingTimes = line_items?.[1]?.properties || [];
       const { quantity, price, name } = line_items?.[1];
-      const { first_name, last_name } = customer;
+      const { first_name: first, last_name: last } = customer;
       let start_time: string;
       let end_time: string;
       let logoImageBase64: string;
       let respFromServer;
 
-      if (!bookingTimes?.length || !price || !name || !customer) { return res.status(201).send({ message: dataMissingMessage }); }
+      if (!bookingTimes?.length || !price || !name || !customer) { return res.status(201).send({ message: h.dataMissingMessage }); }
 
       // Get start and end times of booking
       if (bookingTimes?.length) {
@@ -77,15 +66,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
 
       // If no start or end times from booking, event failed
-      if (!start_time || !end_time) { return res.status(201).send({ message: missingTimeInfoMessage }); }
+      if (!start_time || !end_time) { return res.status(201).send({ message: h.missingTimeInfoMessage }); }
 
-      const startTimeFormatted: string = helpers.formatDate(start_time);
-      const endTimeFormatted: string = helpers.formatDate(end_time);
+      const startTimeFormatted: string = h.formatDate(start_time);
+      const endTimeFormatted: string = h.formatDate(end_time);
       // const startTimeFormatted = '13.09.202207:00:00';
       // const endTimeFormatted = '16.09.202223:00:00';
 
       // Generate date in MM/DD/YYYY format for email
-      const createdAt: string = helpers.formatDateTimeAsString(created_at);
+      const createdAt: string = h.formatDateTimeAsString(created_at);
 
       // Get subtotal, taxes, and total price for email template
       const subtotalPrice: string = subtotal_price || current_subtotal_price || '';
@@ -104,18 +93,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const new_webhook_id = headers?.['x-shopify-webhook-id'] as string || '';
 
       // Format data for QR Code
-      const qrcodeLength = `1755164${order_number}`.length;
+      const qrcodeLength = `1755164${orderNum}`.length;
       const zeros = new Array(16 - qrcodeLength).join('0');
-      const qrcodeData = `1755164${zeros}${order_number}`; // add zero placeholders to qrcode data
+      const qrcodeData = `1755164${zeros}${orderNum}`; // add zero placeholders to qrcode data
 
       // Generate qrcode with order information
-      const qrcodeUrl = await helpers.generateQRCode(QRCode, qrcodeData);
+      const qrcodeUrl = await h.generateQRCode(QRCode, qrcodeData);
 
       // Generate file for server
-      const fileForServer: string = helpers.generateDataForServer({
-        end_time: endTimeFormatted, start_time: startTimeFormatted,
-        first_name, last_name, order_number,
-      });
+      const fileForServer: string = h.generateDataForServer({ end_time: endTimeFormatted, start_time: startTimeFormatted, first, last, orderNum });
 
       // Initiate ftp client
       const client = new Client();
@@ -125,15 +111,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       try {
         // Send data to server
-        respFromServer = await helpers.sendDataToServer(client, fileForServer, order_number);
+        respFromServer = await h.sendDataToServer(client, fileForServer, orderNum);
         client.end();
-        if (!respFromServer) { return res.status(201).send({ message: failedToLoadDataToServerMessage }); }
+        if (!respFromServer) { return res.status(201).send({ message: h.failedToLoadDataToServerMessage }); }
       } catch (e) {
         console.error('Error -- sending data to server =>', e);
       }
 
       // Generate markup for user's billing address to display in email
-      const billingAddressMarkup: string = helpers.formatBillingInfoForEmail(billing_address);
+      const billingAddressMarkup: string = h.formatBillingInfoForEmail(billing_address);
 
       // Define object for generating the HTML markup in generateHTMLMarkup function
       const htmlMarkupData = {
@@ -142,7 +128,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       };
 
       // Generate HTML markup for email
-      const html = helpers.generateHTMLMarkup(htmlMarkupData, billingAddressMarkup);
+      const html = h.generateHTMLMarkup(htmlMarkupData, billingAddressMarkup);
 
       // Method to add webhook_id to redis
       const prevWebhook: string = await redis.get(new_webhook_id);
@@ -152,12 +138,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       const attachments = [{ cid: 'unique@omniairportparking.com', filename: 'attachment-1.png', path: qrcodeUrl }];
 
-      const emailData = { from: user, attachments, html, order_number, to };
+      const emailData = { from: user, attachments, html, orderNum, to };
 
       let userEmailSuccessful;
       if (!prevWebhook) { // If webhook_id does not already exist in db
         try {
-          userEmailSuccessful = await helpers.sendEmail(transporter, emailData);
+          userEmailSuccessful = await h.sendEmail(transporter, emailData);
           console.log('userEmailSuccessful:', userEmailSuccessful);
         } catch (e) {
           console.error('Error -- sending email (first time):', e);
@@ -165,44 +151,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
         if (userEmailSuccessful) { // If email is successful, add webhook to redis and send success response
           await redis.set(new_webhook_id, new_webhook_id);
-          return res.status(201).send({ message: successMessage });
+          return res.status(201).send({ message: h.successMessage });
         } else {
           try { // If email is unsuccessful, try once more
-            const userEmailSuccessful = await helpers.sendEmail(transporter, emailData);
+            const userEmailSuccessful = await h.sendEmail(transporter, emailData);
 
             // If resent email is successful
             if (userEmailSuccessful) {
               try {
                 // Add webhook_id to redis and send successful response
                 await redis.set(new_webhook_id, new_webhook_id);
-                res.status(201).send({ message: successMessage });
+                res.status(201).send({ message: h.successMessage });
               } catch (e) {
                 // Adding webhook_id to redis failed, so send response indicating email sent successfully but webhook_id not stored in redis
                 console.error('Error -- saving wehook but email send =>', e);
-                return res.status(201).send({ message: emailNotSentMessage });
+                return res.status(201).send({ message: h.emailNotSentMessage });
               }
             } else {
               // If retry email is not successful, send response message indicating webhook event logged but email not sent
-              return res.status(201).send({ message: emailNotSentMessage });
+              return res.status(201).send({ message: h.emailNotSentMessage });
             }
           } catch (e) {
             console.error('Error -- sending email (2nd attempt) =>', e);
             // Sending email or adding data to redis db threw an error somewhere send response message indicating webhook event logged but no email sent
-            res.status(201).send({ message: emailNotSentMessage });
+            res.status(201).send({ message: h.emailNotSentMessage });
           }
         }
       } else {
         console.error('Hit case where webhook id already exists in database');
         // Case where webhook_id is already stored, meaning an email has already been sent send response message indicating that webhook failed bc it was already successfully handled
-        res.status(201).send({ message: webhookAlreadyLoggedMessage });
+        res.status(201).send({ message: h.webhookAlreadyLoggedMessage });
       }
     } else {
       // Case where request method is not of type "POST"
-      res.status(201).send({ message: requestNotPostMethodMessage });
+      res.status(201).send({ message: h.requestNotPostMethodMessage });
     }
   } catch (e) {
     // Case where something failed in the code above send a response message indicating webhook failed
     console.error('Error -- main try/catch in handler =>', e);
-    res.status(201).send({ message: errorFromMainTryCatchMessage });
+    res.status(201).send({ message: h.errorFromMainTryCatchMessage });
   }
 }

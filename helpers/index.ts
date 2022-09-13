@@ -6,6 +6,17 @@ const margin1000 = 'margin: 1px 0px 0px 0px;';
 const margin0010 = 'margin: 0px 0px 1px 0px;';
 const margin8000 = 'margin: 8px 0px 0px 0px;';
 
+
+// declaring message variables for server response
+export const dataMissingMessage = 'Webhook event failed. Critical data is missing from request body!';
+export const failedToLoadDataToServerMessage = 'Failed to load data to server!';
+export const emailNotSentMessage = 'Webhook event not logged but email sent successfully.';
+export const missingTimeInfoMessage = 'Webhook Event logged and Email Successfully logged.';
+export const webhookAlreadyLoggedMessage = 'Webhook Event failed as it has previously been successfully logged.';
+export const requestNotPostMethodMessage = 'Webhook Event failed as request method is not of type "POST".';
+export const errorFromMainTryCatchMessage = 'Webhook Event failed. Error from main try/catch.';
+export const successMessage = 'Webhook Event logged and Email Successfully logged!';
+
 /**
  * @param {number} value - Represents either day, month, year, hour, minute, or second
  */
@@ -122,10 +133,9 @@ export async function sendEmail(transporter: any, emailInfo: any): Promise<boole
   try {
     if (!emailInfo) { return false; }
     // Define variables needed for sending emails
-    const { attachments, from, html, order_number, to } = emailInfo;
+    const { attachments, from, html, orderNum, to } = emailInfo;
     const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
-    const subject = `Order #${order_number} confirmed`;
-
+    const subject = `Order #${orderNum} confirmed`;
     const emailResponse = await transporter.sendMail({ attachments, from, html, subject, text, to });
 
     // Check results from email request -> if receiver is found in the accepted array, then email was sent succesfully
@@ -178,7 +188,7 @@ export function formatDateTimeAsString(date: string, addTime = false): string {
 */
 export function generateDataForServer(data: any): string {
   try {
-    const { end_time: end, first_name: first, last_name: last, order_number: num, start_time: start } = data;
+    const { end_time: end, first, last, orderNum: num, start_time: start } = data;
     const intro = '250000;1755164;13.07.2022;63;"USD"\n0;5;';
     const zeros = ';0;0;0;0;0;0;;;';
     const quotes = '"";"";"";"";"";""';
