@@ -1,80 +1,67 @@
 /*jshint esversion: 8 */
 
+const padding0 = 'padding: 0px;';
+const margin0 = 'margin: 0px;';
+const margin1000 = 'margin: 1px 0px 0px 0px;';
+const margin0010 = 'margin: 0px 0px 1px 0px;';
+const margin8000 = 'margin: 8px 0px 0px 0px;';
 
-/*
-*
-*/
-const addLeadingZeroIfNecessary = (time: number): string => {
-  if (+time < 10) { return `0${time}`; }
-  return `${time}`;
+/**
+ * @param {number} value - Represents either day, month, year, hour, minute, or second
+ */
+const addLeadingZeroIfNecessary = (value: number): string => {
+  if (+value < 10) { return `0${value}`; }
+  return `${value}`;
 } // END addLeadingZeroIfNecessary
 
 
-/*
-*
-*/
-export function formatDate(dateString: string, justHoursAndMinutes = false): string {
-  if (!dateString?.trim() && !justHoursAndMinutes) { return ''; }
-  let date: Date;
-  
-  if (dateString === '' && justHoursAndMinutes) {
-    date = new Date();
-  } else {
-    date = new Date(dateString);
-  }
-  const h = date.getHours();
-  const mi = date.getMinutes();
-  const s = date.getSeconds();
-  const seconds = addLeadingZeroIfNecessary(s);
-  const minutes = addLeadingZeroIfNecessary(mi);
-  const hours = addLeadingZeroIfNecessary(h);
-  const m = date.getUTCMonth() + 1; // months from 1-12
-  const d = date.getUTCDate();
-  const y = date.getUTCFullYear();
-  const month = addLeadingZeroIfNecessary(m);
-  const day = addLeadingZeroIfNecessary(d);
-  const year = addLeadingZeroIfNecessary(y);
+/**
+ * Returns date as dd.mm.yyyyhour:minute:second format i.e., 01.01.202216:14:14
+ * @param {string} dateString - date in string form
+ */
+export function formatDate(dateString: string): string {
+  if (!dateString?.trim()) { return ''; }
 
-  if (justHoursAndMinutes) { return `${hours}:${minutes}`; }
+  const date = new Date(dateString);
+  const day = addLeadingZeroIfNecessary(date.getUTCDate());
+  const month = addLeadingZeroIfNecessary(date.getUTCMonth() + 1); // months from 1-12
+  const year = addLeadingZeroIfNecessary(date.getUTCFullYear());
+  const hours = addLeadingZeroIfNecessary(date.getHours());
+  const minutes = addLeadingZeroIfNecessary(date.getMinutes());
+  const seconds = addLeadingZeroIfNecessary(date.getSeconds());
+
   return `${day}.${month}.${year}${hours}:${minutes}:${seconds}`;
 } // END formatDate
 
 
-/*
-*
-*/
+/**
+ * Returns date as dd.mm.yyyyhour:minute:second format i.e., 01.01.202216:14:14
+ * @param {string} logoImageBase64 - omni logo in base64
+ */
 function generateIconImageForEmailTemplate(logoImageBase64: string): string {
-  const styles = 'display: block; margin-right: 2px; margin-left: 4px;';
-  const heightAndWidth = 'width="100" height="50"';
+  const style = 'display: block; margin-right: 2px; margin-left: 4px;';
   const alt = 'Omni Airport Parking logo';
-  const title = 'Omni Airport Parking logo';
   const src = `data:image/png;base64, ${logoImageBase64}`;
-  return `<img ${heightAndWidth} style="${styles}" src="${src}" alt="${alt}" title="${title}" />`;
+  return `<img width="100" height="50" style="${style}" src="${src}" alt="${alt}" title="${alt}" />`;
 } // END generateIconImageForEmailTemplate
 
 
-/*
-* Generates HTML markup for email
-*/
+/**
+ * Generates HTML markup for email
+ * Returns date as dd.mm.yyyyhour:minute:second format i.e., 01.01.202216:14:14
+ * @param {any} data - object containing properties needed for email
+ * @param {string} billingAddressMarkup - billing address info in html format as string
+ */
 export function generateHTMLMarkup(data: any, billingAddressMarkup: string): string {
   const {
-    createdAt: purchaseDate, end_time, logoImageBase64, price, name, quantity,
-    start_time, subtotal_price, total_price, total_tax, title, qrcodeUrl,
+    createdAt: purchaseDate, end_time, logoImageBase64, price,
+    name, quantity, start_time, subtotal_price, total_price, total_tax
   } = data;
 
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
   const start = formatDateTimeAsString(start_time, true);
   const end = formatDateTimeAsString(end_time, true);
 
-  // To have image directly in email template (instead of attachment) - add to last line of text:
-  // <img height="200" width="200" style="display: block; object=fit: contain;" src="${qrcodeUrl}" alt="QR Code" title="QR Code" />
-
-  const padding0 = 'padding: 0px;';
-  const margin0 = 'margin: 0px;';
-  const margin1000 = 'margin: 1px 0px 0px 0px;';
-  const margin0010 = 'margin: 0px 0px 1px 0px;';
-  const margin8000 = 'margin: 8px 0px 0px 0px;';
-  
   return `
     <html>
     <body>
@@ -100,72 +87,73 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
     `;
 } // END generateHTMLMarkup
 
-
-/*
+/**
 * Generates billing address HTML markup for email
+* @param {any} billing_address - Object containing properties needed for billing address
 */
-export function formatBillingAddressForHTMLMarkup(billing_address: any): string {
+export function formatBillingInfoForEmail(billing_address: any): string {
   try {
     const { address1, address2, city, country, name, province, zip } = billing_address;
-    const style = 'padding: 0px; margin: 0px;';
     return `
       <section>
-        <p style="${style}">${name}</p>
-        <p style="${style}">${address1}</p>
-        ${address2 ? `<p style="${style}">${address2}</p>` : ''}
-        <p style="${style}">${city}</p>
-        <p style="${style}">${province} ${zip}</p>
-        <p style="${style}">${country}</p>
+        <p style="${margin0} ${padding0}">${name}</p>
+        <p style="${margin0} ${padding0}">${address1}</p>
+        ${address2 ? `<p style="${margin0} ${padding0}">${address2}</p>` : ''}
+        <p style="${margin0} ${padding0}">${city}</p>
+        <p style="${margin0} ${padding0}">${province} ${zip}</p>
+        <p style="${margin0} ${padding0}">${country}</p>
       </section>
     `;
   } catch (e) {
-    console.error('Error in formatBillingAddressForHTMLMarkup: => ', e);
+    console.error('Error in formatBillingInfoForEmail: => ', e);
     return '';
   }
-} // END formatBillingAddressForHTMLMarkup
+} // END formatBillingInfoForEmail
 
-
-/*
+/**
 * Sends email to user - returns true if email was sent and false if not
+* @param {any} transporter - nodemailer sdk
+* @param {any} emailInfo - object containing properties needed for email
 */
 export async function sendEmail(transporter: any, emailInfo: any): Promise<boolean> {
-  // Define variables needed for sending emails
-  const { attachments, from, html, order_number, to } = emailInfo;
-  const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
-  const subject = `Order #${order_number} confirmed`;
-
   try {
-    // To send emails using nodemailer
-    const results = await transporter.sendMail({ attachments, from, html, subject, text, to });
+    // Define variables needed for sending emails
+    const { attachments, from, html, order_number, to } = emailInfo;
+    const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
+    const subject = `Order #${order_number} confirmed`;
+
+    const emailResponse = await transporter.sendMail({ attachments, from, html, subject, text, to });
 
     // Check results from email request -> if receiver is found in the accepted array, then email was sent succesfully
     // However if the receiver's email is found in the rejected array, then the email was not sent successfully
-    if (results) {
-      if (results?.accepted?.indexOf(to) > -1) {
+    if (emailResponse) {
+      const { accepted, rejected } = emailResponse;
+      if (accepted?.indexOf(to) > -1) {
         return true;
-      } else if (results?.rejected?.indexOf(to) > -1) {
+      } else if (rejected?.indexOf(to) > -1) {
         return false;
-      } else if (results?.rejected?.length || !results?.accepted?.length) {
+      } else if (rejected?.length || !accepted?.length) {
         return false;
-      } else if (!results?.rejected?.length) {
+      } else if (!rejected?.length) {
         return true;
       }
     } else {
       return false;
     }
   } catch (e) {
-    console.error('Error in sendEmail (using nodemailer) =>', e);
+    console.error('Error in sendEmail =>', e);
     return false;
   }
 } // END sendEmail
 
-
-/*
-* Generates qr code with order id
+/**
+* Generates qr code with order number
+* @param {any} QRCode - qrcode sdk
+* @param {string} data - data for qr code (order number, default numbers, & trailing zeros)
 */
-export async function generateQRCode(QRCode: any, data: any): Promise<string> {
+export async function generateQRCode(QRCode: any, data: string): Promise<string> {
   try {
-    const qrcodeUrl = await QRCode.toDataURL(data, { errorCorrectionLevel: 'L', version: 9 });
+    const qrcodeUrl: string = await QRCode.toDataURL(data, { errorCorrectionLevel: 'L', version: 9 });
     return qrcodeUrl;
   } catch (e) {
     console.error('Error in generateQRCode => ', e);
@@ -173,54 +161,60 @@ export async function generateQRCode(QRCode: any, data: any): Promise<string> {
   }
 } // END generateQRCode
 
-
-/*
+/**
 * Generates date as string in format MM/DD/YYYY
-* If addTime equals true, then time is added in 12:00:00 PM format, else just date is returned
+* If addTime equals true, then result is MM/DD/YYYY 12:00:00 PM format
+* @param {string} date - date in string format
+* @param {boolean} addTime - determines whether date should include time or not
 */
 export function formatDateTimeAsString(date: string, addTime = false): string {
-  const newDate = new Date(date);
-  if (!addTime) { return newDate.toLocaleDateString(); }
-  return `${newDate.toLocaleDateString()} ${newDate.toLocaleTimeString()}`;
+  const newDate: Date = new Date(date);
+  if (!addTime) { return newDate?.toLocaleDateString() || ''; }
+  return `${newDate?.toLocaleDateString() || ''} ${newDate?.toLocaleTimeString() || ''}`;
 } // END formatDateTimeAsString
 
-
-/*
-*
+/**
+* @param {any} data - object containing properties needed for server
 */
-export function generateFileForServer(data: any): string {
+export function generateDataForServer(data: any): string {
   try {
-    const { end_time, first_name, last_name, order_number, start_time } = data;
-    const resNum = `ShopQ\\${order_number}`;
-    const dataForFile = `250000;1755164;13.07.2022;63;"USD"\n0;5;${resNum};${start_time};${end_time};0;0;0;0;0;0;;;"${first_name}";"${last_name}";"";"${order_number}";"";${start_time};1;0;${end_time};0;"";"";"";"";"";""`;
-    return dataForFile;
+    const { end_time: end, first_name: first, last_name: last, order_number: num, start_time: start } = data;
+    const intro = '250000;1755164;13.07.2022;63;"USD"\n0;5;';
+    const zeros = ';0;0;0;0;0;0;;;';
+    const quotes = '"";"";"";"";"";""';
+    const resNum = `ShopQ\\${num}`;
+    let serverData = `${intro}${resNum};${start};${end}${zeros}"${first}";"`;
+    serverData += `${last}";"";"${num}";"";${start};1;0;${end};0;${quotes}`;
+    return serverData;
   } catch (e) {
-    console.error('Error in generateFileForServer =>', e);
+    console.error('Error in generateDataForServer =>', e);
     return '';
   }
-} // END generateFileForServer
+} // END generateDataForServer
 
-
-/*
+/**
 * Sends data to omni servers with reservation info and unique id
 * The unique id is what is stored in the QR code and used to look up the reservation
+* @param {any} client - ftp client sdk
+* @param {string} data - data sent to server 
+* @param {string} orderNumber - the order number for this purchase
 */
-export async function sendDataToServer(client: any, data: string): Promise<boolean> {
+export async function sendDataToServer(client: any, data: string, orderNumber: string): Promise<boolean> {
   try {
-    const Key = process.env.FILE_FOR_SERVER;
-    // const filename = `${Key}${formatDate('', true)}`.toLowerCase();
-    const filename = Key.toLowerCase();
-    const resultsFromServer: boolean = await new Promise((resolve) => {
+    const filename = `${process.env.FILE_FOR_SERVER}.${orderNumber}`.toLowerCase();
+    const resultsFromServer: boolean = await new Promise(resolve => {
       client.on('ready', () => {
-        client.put(data, filename, (err) => {
-          if (err) { resolve(false); }
+        client.put(data, filename, err => {
+          if (err) { return resolve(false); }
           resolve(true);
         });
       });
     });
+    console.log('resultsFromServer:', resultsFromServer);
     return resultsFromServer;
   } catch (e) {
     console.error('error in sendDataToServer =>', e);
-    return Promise.resolve(false);
+    const falsePromise: boolean = await Promise.resolve(false);
+    return falsePromise;
   }
 } // END sendDataToServer

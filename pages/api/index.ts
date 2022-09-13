@@ -23,7 +23,7 @@ const {
   UPSTASH_REDIS_REST_TOKEN: token, UPSTASH_REDIS_REST_URL: url,
 } = process.env;
 
-// Initialize s3 connection - using AWS S3 to store company logo
+// Initialize s3 connection - using AWS S3 to store/retrieve company logo
 const s3 = new AWS.S3({ accessKeyId, secretAccessKey });
 
 // Initialize redis (to store webhook ids)
@@ -32,7 +32,7 @@ const redis = new Redis({ url, token });
 // Initialize nodemailer (to send emails)
 const transporter = nodemailer.createTransport({ auth: { user, pass }, host, port, secure: true });
 
-// declaring message variables for response
+// declaring message variables for server response
 const dataMissingMessage = 'Webhook event failed. Critical data is missing from request body!';
 const failedToLoadDataToServerMessage = 'Failed to load data to server!';
 const emailNotSentMessage = 'Webhook event not logged but email sent successfully.';
@@ -42,14 +42,13 @@ const requestNotPostMethodMessage = 'Webhook Event failed as request method is n
 const errorFromMainTryCatchMessage = 'Webhook Event failed. Error from main try/catch.';
 const successMessage = 'Webhook Event logged and Email Successfully logged!';
 
-
 /*
-* Handler function which handles http requests coming in (webhook calls from shopify)
+* Handler function which handles http request coming in (webhook calls from shopify)
 */
 export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { body, headers, method } = req;
-    return res.status(201).send({ message: 'Webhook turned off!' });
+    // return res.status(201).send({ message: 'Webhook turned off!' });
 
     if (method === 'POST') {
       // Grab needed data from request object
@@ -64,12 +63,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const { quantity, price, name, title } = billingItems;
       let start_time: string;
       let end_time: string;
-      let logoImageBase64 = '';
+      let logoImageBase64: string;
       let respFromServer;
 
-      if (!bookingTimes?.length || !billingItems || !body?.customer) {
-        return res.status(201).send({ message: dataMissingMessage });
-      }
+      if (!bookingTimes?.length || !billingItems || !body?.customer) { return res.status(201).send({ message: dataMissingMessage }); }
 
       // Get start and end times of booking
       if (bookingTimes?.length) {
@@ -78,10 +75,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           if (name === 'booking-finish') { end_time = value; }
         });
       }
+
       // If no start or end times from booking, event failed
-      if (!start_time || !end_time) {
-        return res.status(201).send({ message: missingTimeInfoMessage });
-      }
+      if (!start_time || !end_time) { return res.status(201).send({ message: missingTimeInfoMessage }); }
 
       const bookingStartServer: string = helpers.formatDate(start_time);
       const bookingEndServer: string = helpers.formatDate(end_time);
@@ -99,13 +95,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         const { Body } = await s3?.getObject({ Bucket, Key: `${Bucket}-logo.png` })?.promise();
         logoImageBase64 = await (await sharp(Body)?.toFormat('png')?.png({ quality: 100, compressionLevel: 6 })?.toBuffer())?.toString('base64') || '';
       } catch (e) {
-        console.error('error getting image from aws => ', e);
+        console.error('error getting icon from aws s3 => ', e);
       }
 
       // Grab unique webhook_id
       const new_webhook_id = headers?.['x-shopify-webhook-id'] as string || '';
 
-      // Data required in qr code
+      // Format data for QR Code
       let qrcodeData = `1755164${order_number}`;
       const zeros = new Array(16 - qrcodeData.length).join('0');
       qrcodeData += zeros; // add zero placeholders to qrcode data
@@ -114,7 +110,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const qrcodeUrl = await helpers.generateQRCode(QRCode, qrcodeData);
 
       // Generate file for server
-      const fileForServer: string = helpers.generateFileForServer({ end_time: bookingEndServer, start_time: bookingStartServer, first_name, last_name, order_number });
+      const fileForServer: string = helpers.generateDataForServer({ end_time: bookingEndServer, start_time: bookingStartServer, first_name, last_name, order_number });
 
       // Initiate ftp client
       const client = new Client();
@@ -130,18 +126,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       try {
         // Send data to server
-        respFromServer = await helpers.sendDataToServer(client, fileForServer);
-        console.log('respFromServer:', respFromServer)
+        respFromServer = await helpers.sendDataToServer(client, fileForServer, order_number);
         client.end();
-        if (respFromServer === false) {
-          return res.status(201).send({ message: failedToLoadDataToServerMessage });
-        }
+        if (!respFromServer) { return res.status(201).send({ message: failedToLoadDataToServerMessage }); }
       } catch (e) {
         console.error('data not sent to omni airport parking server =>', e);
       }
 
       // Generate markup for user's billing address to display in email
-      const billingAddressMarkup: string = helpers.formatBillingAddressForHTMLMarkup(billing_address);
+      const billingAddressMarkup: string = helpers.formatBillingInfoForEmail(billing_address);
 
       // Define object for generating the HTML markup in generateHTMLMarkup function
       const htmlMarkupData = {
