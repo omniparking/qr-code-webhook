@@ -61,6 +61,8 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
   const start = formatDateTimeAsString(start_time, true);
   const end = formatDateTimeAsString(end_time, true);
+  // const start = '13/09/2022 at 07:00:00 AM';
+  // const end = '16/09/2022 at 11:00:00 PM';
 
   return `
     <html>
@@ -93,6 +95,7 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
 */
 export function formatBillingInfoForEmail(billing_address: any): string {
   try {
+    if (!billing_address) { return ''; }
     const { address1, address2, city, country, name, province, zip } = billing_address;
     return `
       <section>
@@ -105,7 +108,7 @@ export function formatBillingInfoForEmail(billing_address: any): string {
       </section>
     `;
   } catch (e) {
-    console.error('Error in formatBillingInfoForEmail: => ', e);
+    console.error('Error -- formatBillingInfoForEmail: => ', e);
     return '';
   }
 } // END formatBillingInfoForEmail
@@ -117,6 +120,7 @@ export function formatBillingInfoForEmail(billing_address: any): string {
 */
 export async function sendEmail(transporter: any, emailInfo: any): Promise<boolean> {
   try {
+    if (!emailInfo) { return false; }
     // Define variables needed for sending emails
     const { attachments, from, html, order_number, to } = emailInfo;
     const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
@@ -128,20 +132,16 @@ export async function sendEmail(transporter: any, emailInfo: any): Promise<boole
     // However if the receiver's email is found in the rejected array, then the email was not sent successfully
     if (emailResponse) {
       const { accepted, rejected } = emailResponse;
-      if (accepted?.indexOf(to) > -1) {
+      if (accepted?.indexOf(to) > -1 || !rejected?.length) {
         return true;
-      } else if (rejected?.indexOf(to) > -1) {
+      } else if (rejected?.indexOf(to) > -1 || rejected?.length || !accepted?.length) {
         return false;
-      } else if (rejected?.length || !accepted?.length) {
-        return false;
-      } else if (!rejected?.length) {
-        return true;
       }
     } else {
       return false;
     }
   } catch (e) {
-    console.error('Error in sendEmail =>', e);
+    console.error('Error -- sendEmail =>', e);
     return false;
   }
 } // END sendEmail
@@ -156,7 +156,7 @@ export async function generateQRCode(QRCode: any, data: string): Promise<string>
     const qrcodeUrl: string = await QRCode.toDataURL(data, { errorCorrectionLevel: 'L', version: 9 });
     return qrcodeUrl;
   } catch (e) {
-    console.error('Error in generateQRCode => ', e);
+    console.error('Error -- generateQRCode => ', e);
     return '';
   }
 } // END generateQRCode
@@ -187,7 +187,7 @@ export function generateDataForServer(data: any): string {
     serverData += `${last}";"";"${num}";"";${start};1;0;${end};0;${quotes}`;
     return serverData;
   } catch (e) {
-    console.error('Error in generateDataForServer =>', e);
+    console.error('Error -- generateDataForServer =>', e);
     return '';
   }
 } // END generateDataForServer
@@ -213,7 +213,7 @@ export async function sendDataToServer(client: any, data: string, orderNumber: s
     console.log('resultsFromServer:', resultsFromServer);
     return resultsFromServer;
   } catch (e) {
-    console.error('error in sendDataToServer =>', e);
+    console.error('Error -- sendDataToServer =>', e);
     const falsePromise: boolean = await Promise.resolve(false);
     return falsePromise;
   }

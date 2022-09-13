@@ -55,7 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       // (i.e., line_items property has start/end times & req body has order_number/billing_address & billing info such as price & address)
       const {
         billing_address, created_at, current_subtotal_price, current_total_price, current_total_tax,
-        /* email: to, */ line_items, order_number, subtotal_price, total_price, total_tax,
+        email: usersEmail, line_items, order_number, subtotal_price, total_price, total_tax,
       } = body;
       const bookingTimes = line_items?.[1]?.properties || [];
       const billingItems = line_items?.[1];
@@ -79,8 +79,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       // If no start or end times from booking, event failed
       if (!start_time || !end_time) { return res.status(201).send({ message: missingTimeInfoMessage }); }
 
-      const bookingStartServer: string = helpers.formatDate(start_time);
-      const bookingEndServer: string = helpers.formatDate(end_time);
+      const startTimeFormatted: string = helpers.formatDate(start_time);
+      const endTimeFormatted: string = helpers.formatDate(end_time);
+      // const startTimeFormatted = '13.09.202207:00:00';
+      // const endTimeFormatted = '16.09.202223:00:00';
 
       // Generate date in MM/DD/YYYY format for email
       const createdAt: string = helpers.formatDateTimeAsString(created_at);
@@ -92,25 +94,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       // Make call to AWS S3 bucket where logo image is stored, response in binary format which is then translated to string
       try {
-        const { Body } = await s3?.getObject({ Bucket, Key: `${Bucket}-logo.png` })?.promise();
-        logoImageBase64 = await (await sharp(Body)?.toFormat('png')?.png({ quality: 100, compressionLevel: 6 })?.toBuffer())?.toString('base64') || '';
+        const { Body } = await s3.getObject({ Bucket, Key: `${Bucket}-logo.png` }).promise();
+        logoImageBase64 = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
       } catch (e) {
-        console.error('error getting icon from aws s3 => ', e);
+        console.error('Error -- getting omni airport parking icon from aws s3 => ', e);
       }
 
       // Grab unique webhook_id
       const new_webhook_id = headers?.['x-shopify-webhook-id'] as string || '';
 
       // Format data for QR Code
-      let qrcodeData = `1755164${order_number}`;
-      const zeros = new Array(16 - qrcodeData.length).join('0');
-      qrcodeData += zeros; // add zero placeholders to qrcode data
+      const qrcodeInfo = `1755164${order_number}`;
+      const zeros = new Array(16 - qrcodeInfo.length).join('0');
+      const qrcodeData = `1755164${zeros}${order_number}`; // add zero placeholders to qrcode data
 
       // Generate qrcode with order information
       const qrcodeUrl = await helpers.generateQRCode(QRCode, qrcodeData);
 
       // Generate file for server
-      const fileForServer: string = helpers.generateDataForServer({ end_time: bookingEndServer, start_time: bookingStartServer, first_name, last_name, order_number });
+      const fileForServer: string = helpers.generateDataForServer({
+        end_time: endTimeFormatted, start_time: startTimeFormatted,
+        first_name, last_name, order_number,
+      });
 
       // Initiate ftp client
       const client = new Client();
@@ -121,7 +126,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         password: process.env.SERVER_PASSWORD,
         port: 21,
         secure: false,
-        user: process.env.SERVER_USER
+        user: process.env.SERVER_USER,
       });
 
       try {
@@ -130,7 +135,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         client.end();
         if (!respFromServer) { return res.status(201).send({ message: failedToLoadDataToServerMessage }); }
       } catch (e) {
-        console.error('data not sent to omni airport parking server =>', e);
+        console.error('Error -- sending data to server =>', e);
       }
 
       // Generate markup for user's billing address to display in email
@@ -139,7 +144,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       // Define object for generating the HTML markup in generateHTMLMarkup function
       const htmlMarkupData = {
         subtotal_price: subtotalPrice, total_price: totalPrice, total_tax: totalTax, createdAt,
-        end_time, logoImageBase64, name, price, qrcodeUrl, quantity, start_time, title
+        end_time, logoImageBase64, name, price, quantity, start_time,
       };
 
       // Generate HTML markup for email
@@ -161,7 +166,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           userEmailSuccessful = await helpers.sendEmail(transporter, emailData);
           console.log('userEmailSuccessful:', userEmailSuccessful);
         } catch (e) {
-          console.error('error sending email (first time):', e);
+          console.error('Error -- sending email (first time):', e);
         }
 
         if (userEmailSuccessful) { // If email is successful, add webhook to redis and send success response
@@ -179,7 +184,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                 res.status(201).send({ message: successMessage });
               } catch (e) {
                 // Adding webhook_id to redis failed, so send response indicating email sent successfully but webhook_id not stored in redis
-                console.error('error saving wehook but email send =>', e);
+                console.error('Error -- saving wehook but email send =>', e);
                 return res.status(201).send({ message: emailNotSentMessage });
               }
             } else {
@@ -187,13 +192,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               return res.status(201).send({ message: emailNotSentMessage });
             }
           } catch (e) {
-            console.error('error sending email (2nd attempt) =>', e);
+            console.error('Error -- sending email (2nd attempt) =>', e);
             // Sending email or adding data to redis db threw an error somewhere send response message indicating webhook event logged but no email sent
             res.status(201).send({ message: emailNotSentMessage });
           }
         }
       } else {
-        console.error('Case where webhook id already exists in database!');
+        console.error('Hit case where webhook id already exists in database');
         // Case where webhook_id is already stored, meaning an email has already been sent send response message indicating that webhook failed bc it was already successfully handled
         res.status(201).send({ message: webhookAlreadyLoggedMessage });
       }
@@ -203,7 +208,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
   } catch (e) {
     // Case where something failed in the code above send a response message indicating webhook failed
-    console.error('Error from main try/catch in handler =>:', e);
+    console.error('Error -- main try/catch in handler =>', e);
     res.status(201).send({ message: errorFromMainTryCatchMessage });
   }
 }
