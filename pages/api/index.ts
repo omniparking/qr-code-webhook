@@ -48,7 +48,7 @@ const successMessage = 'Webhook Event logged and Email Successfully logged!';
 export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { body, headers, method } = req;
-    // return res.status(201).send({ message: 'Webhook turned off!' });
+    return res.status(201).send({ message: 'Webhook turned off!' });
 
     if (method === 'POST') {
       // Grab needed data from request object
