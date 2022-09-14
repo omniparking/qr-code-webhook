@@ -5,29 +5,23 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 // npm packages
-import QRCode from 'qrcode'; // to generate qr code
-import nodemailer from 'nodemailer'; // to send emails
 import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
-import AWS from 'aws-sdk'; // to hit S3 to retrieve logo/file for server from AWS
-import sharp from 'sharp'; // to shorten text for S3 binary image
-import Client from 'ftp';
 import { promises as fs } from 'fs';
+import Client from 'ftp';
+import nodemailer from 'nodemailer'; // to send emails
 import path from 'path';
+import QRCode from 'qrcode'; // to generate qr code
 
 // Helpers/Scripts
 import * as h from '../../helpers/index';
 
 // Deconstruct needed environment variables from process.env
 const {
-  AMAZ_ACCESS_KEY_ID: accessKeyId, AMAZ_BUCKET: Bucket, AMAZ_SECRET_ACCESS_KEY: secretAccessKey,
   OMNI_AIRPORT_GMAIL_PASS: pass, OMNI_AIRPORT_GMAIL_USER: user,
   SMTP_HOST: host, EMAIL_PORT: port,
   UPSTASH_REDIS_REST_TOKEN: token, UPSTASH_REDIS_REST_URL: url,
   SERVER_IP_ADDRESS: IP, SERVER_PASSWORD: SERVER_PASS, SERVER_USER,
 } = process.env;
-
-// Initialize s3 connection - using AWS S3 to store/retrieve company logo
-const s3 = new AWS.S3({ accessKeyId, secretAccessKey });
 
 // Initialize redis (to store webhook ids)
 const redis = new Redis({ url, token });
@@ -42,9 +36,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   try {
     const { body, headers, method } = req;
     // return res.status(201).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
-    const iconPath = path.join(process.cwd(), 'public/img/omni-parking-logo.png');
-    const iconBase64 = await fs.readFile(iconPath, { encoding: 'base64' });
-    console.log('fileContents:', iconBase64)
+
+    // console.log('fileContents:', iconBase64)
     if (method === 'POST') {
       // Grab needed data from request object, i.e., start/end times, order_number, billing_address, price & address, etc.
       const {
@@ -56,7 +49,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const { first_name: first, last_name: last } = customer;
       let start_time: string;
       let end_time: string;
-      let logoImageBase64: string;
       let respFromServer;
 
       if (!bookingTimes?.length || !price || !name || !customer) { return res.status(201).send({ message: h.dataMissingMessage }); }
@@ -72,10 +64,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       // If no start or end times from booking, event failed
       if (!start_time || !end_time) { return res.status(201).send({ message: h.missingTimeInfoMessage }); }
 
-      const startTimeFormatted: string = h.formatDate(start_time);
-      const endTimeFormatted: string = h.formatDate(end_time);
-      // const startTimeFormatted = '13.09.202207:00:00';
-      // const endTimeFormatted = '16.09.202223:00:00';
+      // const startTimeFormatted: string = h.formatDate(start_time);
+      // const endTimeFormatted: string = h.formatDate(end_time);
+      const startTimeFormatted = '13.09.202207:00:00';
+      const endTimeFormatted = '16.09.202223:00:00';
 
       // Generate date in MM/DD/YYYY format for email
       const createdAt: string = h.formatDateTimeAsString(created_at);
@@ -85,14 +77,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const totalTax: string = total_tax || current_total_tax || '';
       const totalPrice: string = total_price || current_total_price || '';
 
-      // Make call to AWS S3 bucket where logo image is stored, response in binary format which is then translated to string
-      try {
-        // const { Body } = await s3.getObject({ Bucket, Key: `${Bucket}-logo.png` }).promise();
-        // logoImageBase64 = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
-      } catch (e) {
-        console.error('Error -- getting omni airport parking icon from aws s3 => ', e);
-      }
-      logoImageBase64 = iconBase64;
       // Grab unique webhook_id
       const new_webhook_id = headers?.['x-shopify-webhook-id'] as string || '';
 
@@ -115,13 +99,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       try {
         // Send data to server
-        // respFromServer = await h.sendDataToServer(client, fileForServer, orderNum);
-        respFromServer = true;
+        respFromServer = await h.sendDataToServer(client, fileForServer, orderNum);
         client.end();
         if (!respFromServer) { return res.status(201).send({ message: h.failedToLoadDataToServerMessage }); }
       } catch (e) {
         console.error('Error -- sending data to server =>', e);
       }
+
+      // Get icon for email template
+      const iconPath = path.join(process.cwd(), 'public/img/omni-parking-logo.png');
+      const logoImageBase64 = await fs.readFile(iconPath, { encoding: 'base64' });
 
       // Generate markup for user's billing address to display in email
       const billingAddressMarkup: string = h.formatBillingInfoForEmail(billing_address);
