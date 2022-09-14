@@ -132,14 +132,17 @@ export function formatBillingInfoForEmail(billing_address: any): string {
 export async function sendEmail(transporter: any, emailInfo: any): Promise<boolean> {
   try {
     if (!emailInfo) { return false; }
-    // Define variables needed for sending emails
+
+    // Define variables
     const { attachments, from, html, orderNum, to } = emailInfo;
     const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
     const subject = `Order #${orderNum} confirmed`;
+
+    // send email
     const emailResponse = await transporter.sendMail({ attachments, from, html, subject, text, to });
 
-    // Check results from email request -> if receiver is found in the accepted array, then email was sent succesfully
-    // However if the receiver's email is found in the rejected array, then the email was not sent successfully
+    // Check results from request; if email address is found in the 'accepted' array, then email was sent succesfully
+    // But if the receiver's email is found in the 'rejected' array, then the email failed to send
     if (emailResponse) {
       const { accepted, rejected } = emailResponse;
       if (accepted?.indexOf(to) > -1 || !rejected?.length) {
@@ -157,7 +160,7 @@ export async function sendEmail(transporter: any, emailInfo: any): Promise<boole
 } // END sendEmail
 
 /**
-* Generates qr code with order number
+* Generates QR code with order number
 * @param {any} QRCode - qrcode sdk
 * @param {string} data - data for qr code (order number, default numbers, & trailing zeros)
 */

@@ -11,6 +11,8 @@ import { Redis } from '@upstash/redis'; // to store webhook_ids to databsae
 import AWS from 'aws-sdk'; // to hit S3 to retrieve logo/file for server from AWS
 import sharp from 'sharp'; // to shorten text for S3 binary image
 import Client from 'ftp';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 // Helpers/Scripts
 import * as h from '../../helpers/index';
@@ -39,8 +41,10 @@ const transporter = nodemailer.createTransport({ auth: { user, pass }, host, por
 export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { body, headers, method } = req;
-    return res.status(201).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
-
+    // return res.status(201).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
+    const iconPath = path.join(process.cwd(), 'public/img/omni-parking-logo.png');
+    const iconBase64 = await fs.readFile(iconPath, { encoding: 'base64' });
+    console.log('fileContents:', iconBase64)
     if (method === 'POST') {
       // Grab needed data from request object, i.e., start/end times, order_number, billing_address, price & address, etc.
       const {
@@ -83,12 +87,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       // Make call to AWS S3 bucket where logo image is stored, response in binary format which is then translated to string
       try {
-        const { Body } = await s3.getObject({ Bucket, Key: `${Bucket}-logo.png` }).promise();
-        logoImageBase64 = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
+        // const { Body } = await s3.getObject({ Bucket, Key: `${Bucket}-logo.png` }).promise();
+        // logoImageBase64 = await (await sharp(Body).toFormat('png').png({ quality: 100, compressionLevel: 6 }).toBuffer()).toString('base64');
       } catch (e) {
         console.error('Error -- getting omni airport parking icon from aws s3 => ', e);
       }
-
+      logoImageBase64 = iconBase64;
       // Grab unique webhook_id
       const new_webhook_id = headers?.['x-shopify-webhook-id'] as string || '';
 
@@ -111,7 +115,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       try {
         // Send data to server
-        respFromServer = await h.sendDataToServer(client, fileForServer, orderNum);
+        // respFromServer = await h.sendDataToServer(client, fileForServer, orderNum);
+        respFromServer = true;
         client.end();
         if (!respFromServer) { return res.status(201).send({ message: h.failedToLoadDataToServerMessage }); }
       } catch (e) {
