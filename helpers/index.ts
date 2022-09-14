@@ -72,8 +72,8 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
   const start = formatDateTimeAsString(start_time, true);
   const end = formatDateTimeAsString(end_time, true);
-  // const start = '13/09/2022 at 07:00:00 AM';
-  // const end = '16/09/2022 at 11:00:00 PM';
+  // const start = '09/13/2022 at 07:00:00 AM';
+  // const end = '09/16/2022 at 11:00:00 PM';
 
   return `
     <html>
@@ -81,21 +81,20 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
       <b>Parking Confirmation Details:</b>
       <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
       <p>This email is to confirm your recent order.</p>
-      <p>Date ${purchaseDate}</p>
+      <p><b>Date:</b> ${purchaseDate}</p>
       <p style="font-weight: bold; ${margin0010} ${padding0}">Billing Address:</p>
-      <p>${billingAddressMarkup}</p>
-      <br />
+      <p style="${padding0} margin: 2px 0;">${billingAddressMarkup}</p>
       ${generateIconImageForEmailTemplate(logoImageBase64)}
       <p style="${margin0010}">1x Facility Charge for $4.99 each</p>
       <p style="${margin1000} ${padding0}">${quantity}x ${name.toUpperCase()} for $${price} each</p>
-      <p style="${margin8000} ${padding0}">Drop off: ${start}</p>
-      <p style="${margin1000} ${padding0}">Pick up: ${end}</p>
+      <p style="${margin8000} ${padding0}"><b>Drop off:</b> ${start}</p>
+      <p style="${margin1000} ${padding0}"><b>Pick up:</b> ${end}</p>
       <br />
       <p style="${padding0} ${margin0}">Subtotal: $${subtotal_price}</p>
       <p style="${padding0} ${margin0}">Taxes and Fees: $${total_tax}</p>
       <p style="${padding0} ${margin0}">Total: $${total_price}</p>
-      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique@omniairportparking.com" alt="QR Code" title="QR Code" />
       <br />
+      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique@omniairportparking.com" alt="QR Code" title="QR Code" />
     </body>
     `;
 } // END generateHTMLMarkup

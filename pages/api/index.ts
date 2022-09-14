@@ -100,11 +100,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       try {
         // Send data to server
         respFromServer = await h.sendDataToServer(client, fileForServer, orderNum);
-        client.end();
-        if (!respFromServer) { return res.status(201).send({ message: h.failedToLoadDataToServerMessage }); }
       } catch (e) {
         console.error('Error -- sending data to server =>', e);
       }
+
+      // Close connection to ftp server
+      client.end();
+
+      // if sending data to server fails, end request
+      if (!respFromServer) { return res.status(201).send({ message: h.failedToLoadDataToServerMessage }); }
 
       // Get icon for email template
       const iconPath = path.join(process.cwd(), 'public/img/omni-parking-logo.png');
@@ -145,7 +149,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           await redis.set(new_webhook_id, new_webhook_id);
           return res.status(201).send({ message: h.successMessage });
         } else {
-          try { // If email is unsuccessful, try once more
+          // If email is unsuccessful, try once more
+          try {
             const userEmailSuccessful = await h.sendEmail(transporter, emailData);
 
             // If resent email is successful
