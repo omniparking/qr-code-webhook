@@ -75,6 +75,8 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
   // const start = '09/13/2022 at 07:00:00 AM';
   // const end = '09/16/2022 at 11:00:00 PM';
 
+  const alt = 'QR Code';
+
   return `
     <html>
     <body>
@@ -94,7 +96,7 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
       <p style="${padding0} ${margin0}">Taxes and Fees: $${total_tax}</p>
       <p style="${padding0} ${margin0}">Total: $${total_price}</p>
       <br />
-      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique@omniairportparking.com" alt="QR Code" title="QR Code" />
+      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique-qrcode" alt="${alt}" title="${alt}" />
     </body>
     `;
 } // END generateHTMLMarkup
