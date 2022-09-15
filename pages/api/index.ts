@@ -14,6 +14,8 @@ import path from 'path'; // to get path for icon file
 // Helpers/Scripts
 import * as h from '../../helpers/index';
 
+const errorCode = 500;
+const successCode = 201;
 
 // Deconstruct environment variables from process.env
 const {
@@ -43,9 +45,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     console.log('shopifyTopic:', shopifyTopic)
     console.log('host:', host)
-    // return res.status(201).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
+    return res.status(successCode).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
 
-    if (method === 'POST' && shopifyTopic === SHOPIFY_TOPIC && host === SHOPIFY_HOST) {
+    if (method === 'POST' /* && shopifyTopic === SHOPIFY_TOPIC && host === SHOPIFY_HOST*/) {
       // Grab needed data from request object, i.e., start/end times, order num, address, price, etc.
       const {
         billing_address, customer, created_at, current_subtotal_price, current_total_price,
@@ -57,7 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       let start_time: string;
       let end_time: string;
       console.log('headers:', headers)
-      if (!bookingTimes?.length || !price || !name || !customer) { return res.status(201).send({ message: h.dataMissingMessage }); }
+      if (!bookingTimes?.length || !price || !name || !customer) { return res.status(errorCode).send({ message: h.dataMissingMessage }); }
 
       // Get start and end times of booking
       if (bookingTimes?.length) {
@@ -68,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
 
       // If no start or end times from booking, event failed
-      if (!start_time || !end_time) { return res.status(201).send({ message: h.missingTimeInfoMessage }); }
+      if (!start_time || !end_time) { return res.status(errorCode).send({ message: h.missingTimeInfoMessage }); }
 
       // const startTimeFormatted: string = h.formatDate(start_time);
       // const endTimeFormatted: string = h.formatDate(end_time);
@@ -102,16 +104,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       // Connect to ftp server
       client.connect({ host: IP, password: S_PASS, port: 21, secure: false, user: S_USER, connTimeout: 5000 });
+      let serverResponse;
+      try {
+        // Send data to server
+        serverResponse = await h.sendDataToServer(client, fileForServer, orderNum);
+        console.log('Response from server:', serverResponse);
 
-      // Send data to server
-      const serverResponse = await h.sendDataToServer(client, fileForServer, orderNum);
-      console.log('Response from server:', serverResponse);
+      } catch (e) {
+        console.error('error sending data to server =>', e)
+      }
 
       // Close connection to ftp server
       client.end();
 
       // if sending data to server fails, end request
-      if (!serverResponse) { return res.status(201).send({ message: h.failedToLoadDataToServerMessage }); }
+      if (!serverResponse) { return res.status(errorCode).send({ message: h.failedToLoadDataToServerMessage }); }
 
       // Get icon for email template
       const iconPath = path.join(process.cwd(), 'public/img/omni-parking-logo.png');
@@ -146,9 +153,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         if (emailResponse) { // If email is successful, add webhook to redis and send success response
           try {
             await redis.set(newWebhookId, newWebhookId);
-            return res.status(201).send({ message: h.successMessage });
+            return res.status(successCode).send({ message: h.successMessage });
           } catch (e) {
-            return res.status(201).send({ message: h.emailNotSentMessage });
+            return res.status(errorCode).send({ message: h.webhookNotLoggedAndEmailSentMessage });
           }
         } else {
           // If email is unsuccessful, try once more
@@ -159,29 +166,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             try {
               // Add webhook_id to redis and send successful response
               await redis.set(newWebhookId, newWebhookId);
-              res.status(201).send({ message: h.successMessage });
+              res.status(successCode).send({ message: h.successMessage });
             } catch (e) {
               // Adding webhook_id to redis failed, so send response indicating email sent successfully but webhook_id not stored in redis
               console.error('Error -- saving wehook but email send =>', e);
-              return res.status(201).send({ message: h.emailNotSentMessage });
+              return res.status(errorCode).send({ message: h.webhookNotLoggedAndEmailSentMessage });
             }
           } else {
             // If retry email is not successful, send response message indicating webhook event logged but email not sent
-            return res.status(201).send({ message: h.emailNotSentMessage });
+            return res.status(errorCode).send({ message: h.webhookNotLoggedAndEmailNotSentMessage });
           }
         }
       } else {
         console.error('Hit case where webhook id already exists in database');
         // Case where webhook_id is already stored, meaning an email has already been sent send response message indicating that webhook failed bc it was already successfully handled
-        res.status(201).send({ message: h.webhookAlreadyLoggedMessage });
+        res.status(errorCode).send({ message: h.webhookAlreadyLoggedMessage });
       }
     } else {
       // Case where request method is not of type "POST"
-      res.status(201).send({ message: h.requestNotPostMethodMessage });
+      res.status(errorCode).send({ message: h.requestNotPostMethodMessage });
     }
   } catch (e) {
     // Case where something failed in the code above send a response message indicating webhook failed
     console.error('Error -- main try/catch in handler =>', e);
-    res.status(201).send({ message: h.errorFromMainTryCatchMessage });
+    res.status(errorCode).send({ message: h.errorFromMainTryCatchMessage });
   }
 }

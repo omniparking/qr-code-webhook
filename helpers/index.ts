@@ -10,10 +10,11 @@ const margin8000 = 'margin: 8px 0px 0px 0px;';
 // declaring message variables for server response
 export const dataMissingMessage = 'Webhook event failed. Critical data is missing from request body!';
 export const failedToLoadDataToServerMessage = 'Failed to load data to server!';
-export const emailNotSentMessage = 'Webhook event not logged but email sent successfully.';
+export const webhookNotLoggedAndEmailSentMessage = 'Webhook event not logged but email sent successfully.';
+export const webhookNotLoggedAndEmailNotSentMessage = 'Webhook event not logged and email not sent!';
 export const missingTimeInfoMessage = 'Webhook Event logged and Email Successfully logged.';
 export const webhookAlreadyLoggedMessage = 'Webhook Event failed as it has previously been successfully logged.';
-export const requestNotPostMethodMessage = 'Webhook Event failed as request method is not of type "POST".';
+export const requestNotPostMethodMessage = 'Webhook Event failed as request not coming from trusted source.';
 export const errorFromMainTryCatchMessage = 'Webhook Event failed. Error from main try/catch.';
 export const successMessage = 'Webhook Event logged and Email Successfully logged!';
 
