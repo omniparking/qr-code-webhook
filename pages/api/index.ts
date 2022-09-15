@@ -65,10 +65,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       // If no start or end times from booking, event failed
       if (!start_time || !end_time) { return res.status(201).send({ message: h.missingTimeInfoMessage }); }
 
-      // const startTimeFormatted: string = h.formatDate(start_time);
-      // const endTimeFormatted: string = h.formatDate(end_time);
-      const startTimeFormatted = '13.09.202207:00:00';
-      const endTimeFormatted = '17.09.202223:00:00';
+      const startTimeFormatted: string = h.formatDate(start_time);
+      const endTimeFormatted: string = h.formatDate(end_time);
+      // const startTimeFormatted = '13.09.202207:00:00';
+      // const endTimeFormatted = '17.09.202223:00:00';
 
       // Generate date in MM/DD/YYYY format for email
       const createdAt: string = h.formatDateTimeAsString(created_at);
