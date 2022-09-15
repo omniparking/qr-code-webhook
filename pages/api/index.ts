@@ -38,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   try {
     const { body, headers, method } = req;
 
-    return res.status(201).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
+    // return res.status(201).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
 
     if (method === 'POST') {
       // Grab needed data from request object, i.e., start/end times, order num, address, price, etc.
@@ -51,7 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const { first_name: first, last_name: last } = customer;
       let start_time: string;
       let end_time: string;
-
+      console.log('headers:', headers)
       if (!bookingTimes?.length || !price || !name || !customer) { return res.status(201).send({ message: h.dataMissingMessage }); }
 
       // Get start and end times of booking
@@ -65,10 +65,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       // If no start or end times from booking, event failed
       if (!start_time || !end_time) { return res.status(201).send({ message: h.missingTimeInfoMessage }); }
 
-      const startTimeFormatted: string = h.formatDate(start_time);
-      const endTimeFormatted: string = h.formatDate(end_time);
-      // const startTimeFormatted = '13.09.202207:00:00';
-      // const endTimeFormatted = '17.09.202223:00:00';
+      // const startTimeFormatted: string = h.formatDate(start_time);
+      // const endTimeFormatted: string = h.formatDate(end_time);
+      const startTimeFormatted = '13.09.202207:00:00';
+      const endTimeFormatted = '17.09.202223:00:00';
 
       // Generate date in MM/DD/YYYY format for email
       const createdAt: string = h.formatDateTimeAsString(created_at);

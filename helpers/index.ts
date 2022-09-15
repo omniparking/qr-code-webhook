@@ -70,10 +70,10 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
   } = data;
 
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
-  const start = formatDateTimeAsString(start_time, true);
-  const end = formatDateTimeAsString(end_time, true);
-  // const start = '09/13/2022 at 07:00:00 AM';
-  // const end = '09/17/2022 at 11:00:00 PM';
+  // const start = formatDateTimeAsString(start_time, true);
+  // const end = formatDateTimeAsString(end_time, true);
+  const start = '09/13/2022 at 07:00:00 AM';
+  const end = '09/17/2022 at 11:00:00 PM';
 
   return `
     <html>
