@@ -21,6 +21,7 @@ const {
   SMTP_HOST: host, EMAIL_PORT: port,
   UPSTASH_REDIS_REST_TOKEN: token, UPSTASH_REDIS_REST_URL: url,
   SERVER_IP_ADDRESS: IP, SERVER_PASSWORD: S_PASS, SERVER_USER: S_USER,
+  SHOPIFY_TOPIC, SHOPIFY_HOST
 } = process.env;
 
 // Initialize redis (to store webhook ids)
@@ -37,14 +38,14 @@ const transporter = nodemailer.createTransport({ auth: { user, pass }, host, por
 export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { body, headers, method } = req;
-    const shopifyTopic = headers?.['x-shopify-topic'];
-    const host = headers?.host;
+    const shopifyTopic = (headers?.['x-shopify-topic'] as string)?.trim();
+    const host = headers?.host?.trim();
 
     console.log('shopifyTopic:', shopifyTopic)
     console.log('host:', host)
     // return res.status(201).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
 
-    if (method === 'POST') {
+    if (method === 'POST' && shopifyTopic === SHOPIFY_TOPIC && host === SHOPIFY_HOST) {
       // Grab needed data from request object, i.e., start/end times, order num, address, price, etc.
       const {
         billing_address, customer, created_at, current_subtotal_price, current_total_price,

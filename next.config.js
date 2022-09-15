@@ -21,6 +21,8 @@ const nextConfig = {
     SMTP_HOST: process.env.SMTP_HOST,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+    SHOPIFY_TOPIC: process.env.SHOPIFY_TOPIC,
+    SHOPIFY_HOST: process.env.SHOPIFY_HOST,
   }
 };
 
