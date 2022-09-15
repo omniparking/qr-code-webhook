@@ -38,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   try {
     const { body, headers, method } = req;
 
-    // return res.status(201).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
+    return res.status(201).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
 
     if (method === 'POST') {
       // Grab needed data from request object, i.e., start/end times, order num, address, price, etc.
@@ -79,7 +79,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const totalPrice: string = total_price || current_total_price || '';
 
       // Grab unique webhook_id
-      const new_webhook_id = headers?.['x-shopify-webhook-id'] as string || '';
+      const newWebhookId = headers?.['x-shopify-webhook-id'] as string || '';
 
       // Format data for QR Code
       const qrcodeLength = `1755164${orderNum}`.length;
@@ -99,13 +99,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       client.connect({ host: IP, password: S_PASS, port: 21, secure: false, user: S_USER });
 
       // Send data to server
-      const respFromServer = await h.sendDataToServer(client, fileForServer, orderNum);
+      const serverResponse = await h.sendDataToServer(client, fileForServer, orderNum);
+      console.log('Response from server:', serverResponse);
 
       // Close connection to ftp server
       client.end();
 
       // if sending data to server fails, end request
-      if (!respFromServer) { return res.status(201).send({ message: h.failedToLoadDataToServerMessage }); }
+      if (!serverResponse) { return res.status(201).send({ message: h.failedToLoadDataToServerMessage }); }
 
       // Get icon for email template
       const iconPath = path.join(process.cwd(), 'public/img/omni-parking-logo.png');
@@ -121,34 +122,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       };
 
       // Generate HTML markup for email
-      const html = h.generateHTMLMarkup(htmlMarkupData, billingAddressMarkup);
+      const htmlMarkup = h.generateHTMLMarkup(htmlMarkupData, billingAddressMarkup);
 
       // Method to add webhook_id to redis
-      const prevWebhook: string = await redis.get(new_webhook_id);
+      const storedWebhook: string = await redis.get(newWebhookId);
 
       const to = 'alon.bibring@gmail.com'; // email recipient
       // const cc = ['alon.bibring@gmail.com']; // cc emails
 
       const attachments = [{ cid: 'unique-qrcode', filename: 'qrcode.png', path: qrcodeUrl }];
 
-      const emailData = { from: user, attachments, html, orderNum, to };
+      const emailData = { from: user, html: htmlMarkup, attachments, orderNum, to };
 
-      if (true || !prevWebhook) { // If webhook_id does not already exist in db
-        const emailSuccessful = await h.sendEmail(transporter, emailData);
-        console.log('emailSuccessful:', emailSuccessful);
+      if (true || !storedWebhook) { // If webhook_id does not already exist in db
+        const emailResponse = await h.sendEmail(transporter, emailData);
+        console.log('emailResponse:', emailResponse);
 
-        if (emailSuccessful) { // If email is successful, add webhook to redis and send success response
-          await redis.set(new_webhook_id, new_webhook_id);
-          return res.status(201).send({ message: h.successMessage });
+        if (emailResponse) { // If email is successful, add webhook to redis and send success response
+          try {
+            await redis.set(newWebhookId, newWebhookId);
+            return res.status(201).send({ message: h.successMessage });
+          } catch (e) {
+            return res.status(201).send({ message: h.emailNotSentMessage });
+          }
         } else {
           // If email is unsuccessful, try once more
-          const emailRetrySuccessful = await h.sendEmail(transporter, emailData);
+          const emailRetryResponse = await h.sendEmail(transporter, emailData);
 
           // If resent email is successful
-          if (emailRetrySuccessful) {
+          if (emailRetryResponse) {
             try {
               // Add webhook_id to redis and send successful response
-              await redis.set(new_webhook_id, new_webhook_id);
+              await redis.set(newWebhookId, newWebhookId);
               res.status(201).send({ message: h.successMessage });
             } catch (e) {
               // Adding webhook_id to redis failed, so send response indicating email sent successfully but webhook_id not stored in redis

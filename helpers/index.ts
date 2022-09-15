@@ -223,7 +223,6 @@ export async function sendDataToServer(client: any, data: string, orderNumber: s
         });
       });
     });
-    console.log('resultsFromServer:', resultsFromServer);
     return resultsFromServer;
   } catch (e) {
     console.error('Error -- sendDataToServer =>', e);
