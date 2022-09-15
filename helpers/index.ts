@@ -70,12 +70,10 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
   } = data;
 
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
-  const start = formatDateTimeAsString(start_time, true);
-  const end = formatDateTimeAsString(end_time, true);
-  // const start = '09/13/2022 at 07:00:00 AM';
-  // const end = '09/16/2022 at 11:00:00 PM';
-
-  const alt = 'QR Code';
+  // const start = formatDateTimeAsString(start_time, true);
+  // const end = formatDateTimeAsString(end_time, true);
+  const start = '09/13/2022 at 07:00:00 AM';
+  const end = '09/17/2022 at 11:00:00 PM';
 
   return `
     <html>
@@ -96,7 +94,7 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
       <p style="${padding0} ${margin0}">Taxes and Fees: $${total_tax}</p>
       <p style="${padding0} ${margin0}">Total: $${total_price}</p>
       <br />
-      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique-qrcode" alt="${alt}" title="${alt}" />
+      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique-qrcode" alt="QR Code" title="QR Code" />
     </body>
     `;
 } // END generateHTMLMarkup
@@ -181,10 +179,10 @@ export async function generateQRCode(QRCode: any, data: string): Promise<string>
 * @param {string} date - date in string format
 * @param {boolean} addTime - determines whether date should include time or not
 */
-export function formatDateTimeAsString(date: string, addTime = false): string {
+export function formatDateTimeAsString(date: string, includeTime = false): string {
   const newDate: Date = new Date(date);
-  if (!addTime) { return newDate?.toLocaleDateString() || ''; }
-  return `${newDate?.toLocaleDateString() || ''} ${newDate?.toLocaleTimeString() || ''}`;
+  if (!includeTime) { return newDate?.toLocaleDateString() || ''; }
+  return `${newDate?.toLocaleDateString() || ''} at ${newDate?.toLocaleTimeString() || ''}`;
 } // END formatDateTimeAsString
 
 /**
@@ -192,14 +190,15 @@ export function formatDateTimeAsString(date: string, addTime = false): string {
 */
 export function generateDataForServer(data: any): string {
   try {
-    const { end_time: end, first, last, orderNum: num, start_time: start } = data;
-    const intro = '250000;1755164;13.07.2022;63;"USD"\n0;5;';
+    const { end_time: e, first: f, last: l, orderNum: n, start_time: s } = data;
+    const a = '250000;1755164;13.07.2022;63;"USD"\n0;5;';
     const zeros = ';0;0;0;0;0;0;;;';
-    const quotes = '"";"";"";"";"";""';
-    const resNum = `ShopQ\\${num}`;
-    let serverData = `${intro}${resNum};${start};${end}${zeros}"${first}";"`;
-    serverData += `${last}";"";"${num}";"";${start};1;0;${end};0;${quotes}`;
-    return serverData;
+    const q = '"";"";"";"";"";""';
+    const paddingZeros = new Array(9 - `${n}`.length).join('0');
+    const orderNoPadded = `${paddingZeros}${n}`;
+    const b = `ShopQ\\${orderNoPadded}`;
+
+    return `${a}${b};${s};${e}${zeros}"${f}";"${l}";"";"${orderNoPadded}";"";${s};1;0;${e};0;${q}`;
   } catch (e) {
     console.error('Error -- generateDataForServer =>', e);
     return '';

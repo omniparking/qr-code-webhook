@@ -14,6 +14,7 @@ import path from 'path'; // to get path for icon file
 // Helpers/Scripts
 import * as h from '../../helpers/index';
 
+
 // Deconstruct environment variables from process.env
 const {
   OMNI_AIRPORT_GMAIL_PASS: pass, OMNI_AIRPORT_GMAIL_USER: user,
@@ -37,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   try {
     const { body, headers, method } = req;
 
-    return res.status(201).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
+    // return res.status(201).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
 
     if (method === 'POST') {
       // Grab needed data from request object, i.e., start/end times, order num, address, price, etc.
@@ -64,10 +65,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       // If no start or end times from booking, event failed
       if (!start_time || !end_time) { return res.status(201).send({ message: h.missingTimeInfoMessage }); }
 
-      const startTimeFormatted: string = h.formatDate(start_time);
-      const endTimeFormatted: string = h.formatDate(end_time);
-      // const startTimeFormatted = '13.09.202207:00:00';
-      // const endTimeFormatted = '16.09.202223:00:00';
+      // const startTimeFormatted: string = h.formatDate(start_time);
+      // const endTimeFormatted: string = h.formatDate(end_time);
+      const startTimeFormatted = '13.09.202207:00:00';
+      const endTimeFormatted = '17.09.202223:00:00';
 
       // Generate date in MM/DD/YYYY format for email
       const createdAt: string = h.formatDateTimeAsString(created_at);
@@ -132,7 +133,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       const emailData = { from: user, attachments, html, orderNum, to };
 
-      if (!prevWebhook) { // If webhook_id does not already exist in db
+      if (true || !prevWebhook) { // If webhook_id does not already exist in db
         const emailSuccessful = await h.sendEmail(transporter, emailData);
         console.log('emailSuccessful:', emailSuccessful);
 
