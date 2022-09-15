@@ -37,7 +37,11 @@ const transporter = nodemailer.createTransport({ auth: { user, pass }, host, por
 export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
   try {
     const { body, headers, method } = req;
+    const shopifyTopic = headers?.['x-shopify-topic'];
+    const host = headers?.host;
 
+    console.log('shopifyTopic:', shopifyTopic)
+    console.log('host:', host)
     // return res.status(201).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
 
     if (method === 'POST') {
@@ -96,7 +100,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const client = new Client();
 
       // Connect to ftp server
-      client.connect({ host: IP, password: S_PASS, port: 21, secure: false, user: S_USER });
+      client.connect({ host: IP, password: S_PASS, port: 21, secure: false, user: S_USER, connTimeout: 5000 });
 
       // Send data to server
       const serverResponse = await h.sendDataToServer(client, fileForServer, orderNum);
