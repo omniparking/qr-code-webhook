@@ -3,13 +3,13 @@
 // Next types
 import type { NextApiRequest, NextApiResponse } from 'next'; // for request/response types
 
-// npm packages
-import nodemailer from 'nodemailer'; // to send emails
-import QRCode from 'qrcode'; // to generate qr code
-import Client from 'ftp'; // to connect to ftp server
+// npm/node imports
 import { Redis } from '@upstash/redis'; // to store webhook_ids to database
-import { promises as fs } from 'fs'; // to read icon file as promise
+import nodemailer from 'nodemailer'; // to send emails
 import path from 'path'; // to get path for icon file
+import PromiseFtp from 'promise-ftp';
+import { promises as fs } from 'fs'; // to read icon file as promise
+import QRCode from 'qrcode'; // to generate qr code
 
 // Helpers/Scripts
 import * as h from '../../helpers/index';
@@ -35,17 +35,15 @@ const transporter = nodemailer.createTransport({ auth: { user, pass }, host, por
 /**
 * Handler function which handles http request coming in (webhook calls from shopify)
 * @param {NextApiRequest} req - request object
-* @param {NextApiResponse<any>} res - response object
+* @param {NextApiResponse} res - response object
 */
-export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { body, headers, method } = req;
     const shopifyTopic = (headers?.['x-shopify-topic'] as string)?.trim();
     const host = headers?.host?.trim();
 
-    console.log('shopifyTopic:', shopifyTopic)
-    console.log('host:', host)
-    return res.status(successCode).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
+    // return res.status(successCode).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
 
     if (method === 'POST' /* && shopifyTopic === SHOPIFY_TOPIC && host === SHOPIFY_HOST*/) {
       // Grab needed data from request object, i.e., start/end times, order num, address, price, etc.
@@ -58,7 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const { first_name: first, last_name: last } = customer;
       let start_time: string;
       let end_time: string;
-      console.log('headers:', headers)
+
       if (!bookingTimes?.length || !price || !name || !customer) { return res.status(errorCode).send({ message: h.dataMissingMessage }); }
 
       // Get start and end times of booking
@@ -75,7 +73,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       // const startTimeFormatted: string = h.formatDate(start_time);
       // const endTimeFormatted: string = h.formatDate(end_time);
       const startTimeFormatted = '13.09.202207:00:00';
-      const endTimeFormatted = '17.09.202223:00:00';
+      const endTimeFormatted = '28.09.202223:00:00';
 
       // Generate date in MM/DD/YYYY format for email
       const createdAt: string = h.formatDateTimeAsString(created_at);
@@ -97,38 +95,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const qrcodeUrl = await h.generateQRCode(QRCode, qrcodeData);
 
       // Generate file for server
-      const fileForServer: string = h.generateDataForServer({ end_time: endTimeFormatted, start_time: startTimeFormatted, first, last, orderNum });
+      const dataForServer: DataForServer = { end_time: endTimeFormatted, start_time: startTimeFormatted, first, last, orderNum };
+      const fileForServer: string = h.generateDataForServer(dataForServer);
 
       // Initiate ftp client
-      const client = new Client();
+      const ftpClient = new PromiseFtp();
 
-      // Connect to ftp server
-      client.connect({ host: IP, password: S_PASS, port: 21, secure: false, user: S_USER, connTimeout: 5000 });
-      let serverResponse;
       try {
-        // Send data to server
-        serverResponse = await h.sendDataToServer(client, fileForServer, orderNum);
-        console.log('Response from server:', serverResponse);
-
+        await ftpClient.connect({ host: IP, user: S_USER, password: S_PASS, port: 21, secure: false });
       } catch (e) {
-        console.error('error sending data to server =>', e)
+        // If we fail to connect to ftp server, send error response
+        console.error('error connecting to ftp server:', e);
+        return res.status(errorCode).send({ message: h.failedToConnectToServerMessage });
       }
 
-      // Close connection to ftp server
-      client.end();
+      let serverResponse: boolean;
+      try {
+        // Send data to server
+        serverResponse = await h.sendDataToServer(ftpClient, fileForServer, orderNum);
+        console.log('Response from server:', serverResponse);
+      } catch (e) {
+        // If sending data to server fails, send error response
+        console.error('error sending data to server =>', e)
+        res.status(errorCode).send({ message: h.failedToLoadDataToServerMessage })
+      }
 
       // if sending data to server fails, end request
       if (!serverResponse) { return res.status(errorCode).send({ message: h.failedToLoadDataToServerMessage }); }
 
       // Get icon for email template
-      const iconPath = path.join(process.cwd(), 'public/img/omni-parking-logo.png');
-      const logoImageBase64 = await fs.readFile(iconPath, { encoding: 'base64' });
+      const iconPath: string = path.join(process.cwd(), 'public/img/omni-parking-logo.png');
+      const logoImageBase64: string = await fs.readFile(iconPath, { encoding: 'base64' });
 
       // Generate markup for user's billing address to display in email
       const billingAddressMarkup: string = h.formatBillingInfoForEmail(billing_address);
 
       // Define object for generating the HTML markup in generateHTMLMarkup function
-      const htmlMarkupData = {
+      const htmlMarkupData: HTMLMarkupData = {
         subtotal_price: subtotalPrice, total_price: totalPrice, total_tax: totalTax, createdAt,
         end_time, logoImageBase64, name, price, quantity, start_time,
       };
@@ -142,15 +145,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const to = 'alon.bibring@gmail.com'; // email recipient
       // const cc = ['alon.bibring@gmail.com']; // cc emails
 
-      const attachments = [{ cid: 'unique-qrcode', filename: 'qrcode.png', path: qrcodeUrl }];
+      const attachments = [
+        { cid: 'unique-qrcode', filename: 'qrcode.png', path: qrcodeUrl },
+        { cid: 'unique-omnilogo', filename: 'logo.png', path: `data:text/plain;base64, ${logoImageBase64}` }
+      ];
 
-      const emailData = { from: user, html: htmlMarkup, attachments, orderNum, to };
+      const emailData: EmailInfo = { from: user, html: htmlMarkup, attachments, orderNum, to };
 
-      if (true || !storedWebhook) { // If webhook_id does not already exist in db
-        const emailResponse = await h.sendEmail(transporter, emailData);
+      // If webhook_id does not already exist in db
+      if (true || !storedWebhook) {
+        const emailResponse: boolean = await h.sendEmail(transporter, emailData);
         console.log('emailResponse:', emailResponse);
 
-        if (emailResponse) { // If email is successful, add webhook to redis and send success response
+        // If email is successful, add webhook to redis and send success response
+        if (emailResponse) {
           try {
             await redis.set(newWebhookId, newWebhookId);
             return res.status(successCode).send({ message: h.successMessage });
@@ -159,7 +167,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           }
         } else {
           // If email is unsuccessful, try once more
-          const emailRetryResponse = await h.sendEmail(transporter, emailData);
+          const emailRetryResponse: boolean = await h.sendEmail(transporter, emailData);
 
           // If resent email is successful
           if (emailRetryResponse) {

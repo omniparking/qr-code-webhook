@@ -17,6 +17,7 @@ export const webhookAlreadyLoggedMessage = 'Webhook Event failed as it has previ
 export const requestNotPostMethodMessage = 'Webhook Event failed as request not coming from trusted source.';
 export const errorFromMainTryCatchMessage = 'Webhook Event failed. Error from main try/catch.';
 export const successMessage = 'Webhook Event logged and Email Successfully logged!';
+export const failedToConnectToServerMessage = 'Failed to connect to ftp server.';
 
 /**
  * @param {number} value - Represents either day, month, year, hour, minute, or second
@@ -48,33 +49,31 @@ export function formatDate(dateString: string): string {
 
 /**
  * Returns date as dd.mm.yyyyhour:minute:second format i.e., 01.01.202216:14:14
- * @param {string} logoImageBase64 - omni logo in base64
+ *
  */
-function generateIconImageForEmailTemplate(logoImageBase64: string): string {
-  const style = 'display: block; margin-right: 2px; margin-left: 4px;';
+function generateIconImageForEmailTemplate(): string {
+  const style = 'display: block; margin: 0px 2px 8px 4px;"';
   const alt = 'Omni Airport Parking logo';
-  const src = `data:image/png;base64, ${logoImageBase64}`;
-  return `<img width="100" height="50" style="${style}" src="${src}" alt="${alt}" title="${alt}" />`;
+  return `<img width="100" height="50" style="${style}" src="cid:unique-omnilogo" alt="${alt}" title="${alt}" />`;
 } // END generateIconImageForEmailTemplate
-
 
 /**
  * Generates HTML markup for email
  * Returns date as dd.mm.yyyyhour:minute:second format i.e., 01.01.202216:14:14
- * @param {any} data - object containing properties needed for email
+ * @param {HTMLMarkupData} data - object containing properties needed for email
  * @param {string} billingAddressMarkup - billing address info in html format as string
  */
-export function generateHTMLMarkup(data: any, billingAddressMarkup: string): string {
+export function generateHTMLMarkup(data: HTMLMarkupData, billingAddressMarkup: string): string {
   const {
     createdAt: purchaseDate, end_time, logoImageBase64, price,
     name, quantity, start_time, subtotal_price, total_price, total_tax
   } = data;
 
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
-  // const start = formatDateTimeAsString(start_time, true);
-  // const end = formatDateTimeAsString(end_time, true);
-  const start = '09/13/2022 at 07:00:00 AM';
-  const end = '09/17/2022 at 11:00:00 PM';
+  const start = formatDateTimeAsString(start_time, true);
+  const end = formatDateTimeAsString(end_time, true);
+  // const start = '09/13/2022 at 07:00:00 AM';
+  // const end = '09/17/2022 at 11:00:00 PM';
 
   return `
     <html>
@@ -85,7 +84,7 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
       <p><b>Date:</b> ${purchaseDate}</p>
       <p style="font-weight: bold; ${margin0010} ${padding0}">Billing Address:</p>
       <p style="${padding0} margin: 2px 0;">${billingAddressMarkup}</p>
-      ${generateIconImageForEmailTemplate(logoImageBase64)}
+      ${generateIconImageForEmailTemplate()}
       <p style="${margin0010}">1x Facility Charge for $4.99 each</p>
       <p style="${margin1000} ${padding0}">${quantity}x ${name.toUpperCase()} for $${price} each</p>
       <p style="${margin8000} ${padding0}"><b>Drop off:</b> ${start}</p>
@@ -102,9 +101,9 @@ export function generateHTMLMarkup(data: any, billingAddressMarkup: string): str
 
 /**
 * Generates billing address HTML markup for email
-* @param {any} billing_address - Object containing properties needed for billing address
+* @param {BillingAddress} billing_address - Object containing properties needed for billing address
 */
-export function formatBillingInfoForEmail(billing_address: any): string {
+export function formatBillingInfoForEmail(billing_address: BillingAddress): string {
   try {
     if (!billing_address) { return ''; }
     const { address1, address2, city, country, name, province, zip } = billing_address;
@@ -127,13 +126,12 @@ export function formatBillingInfoForEmail(billing_address: any): string {
 /**
 * Sends email to user - returns true if email was sent and false if not
 * @param {any} transporter - nodemailer sdk
-* @param {any} emailInfo - object containing properties needed for email
+* @param {EmailInfo} emailInfo - object containing properties needed for email
 */
-export async function sendEmail(transporter: any, emailInfo: any): Promise<boolean> {
+export async function sendEmail(transporter: any, emailInfo: EmailInfo): Promise<boolean> {
   try {
     if (!emailInfo) { return false; }
 
-    // Define variables
     const { attachments, from, html, orderNum, to } = emailInfo;
     const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
     const subject = `Order #${orderNum} confirmed`;
@@ -187,19 +185,19 @@ export function formatDateTimeAsString(date: string, includeTime = false): strin
 } // END formatDateTimeAsString
 
 /**
-* @param {any} data - object containing properties needed for server
+* @param {DataForServer} data - object containing properties needed for server
 */
-export function generateDataForServer(data: any): string {
+export function generateDataForServer(data: DataForServer): string {
   try {
     const { end_time: e, first: f, last: l, orderNum: n, start_time: s } = data;
     const a = '250000;1755164;13.07.2022;63;"USD"\n0;5;';
     const zeros = ';0;0;0;0;0;0;;;';
     const q = '"";"";"";"";"";""';
-    const paddingZeros = new Array(9 - `${n}`.length).join('0');
-    const orderNoPadded = `${paddingZeros}${n}`;
-    const b = `ShopQ\\${orderNoPadded}`;
+    const padding = new Array(9 - `${n}`.length).join('0');
+    const orderNoFormated = `${padding}${n}`;
+    const b = `ShopQ\\${orderNoFormated}`;
 
-    return `${a}${b};${s};${e}${zeros}"${f}";"${l}";"";"${orderNoPadded}";"";${s};1;0;${e};0;${q}`;
+    return `${a}${b};${s};${e}${zeros}"${f}";"${l}";"";"${orderNoFormated}";"";${s};1;0;${e};0;${q}`;
   } catch (e) {
     console.error('Error -- generateDataForServer =>', e);
     return '';
@@ -213,21 +211,26 @@ export function generateDataForServer(data: any): string {
 * @param {string} data - data sent to server 
 * @param {string} orderNumber - the order number for this purchase
 */
-export async function sendDataToServer(client: any, data: string, orderNumber: string): Promise<boolean> {
+export async function sendDataToServer(ftpClient: any, data: string, orderNumber: string): Promise<boolean> {
+  let serverResponse: any;
   try {
     const filename = `${process.env.FILE_FOR_SERVER}.${orderNumber}`.toLowerCase();
-    const resultsFromServer: boolean = await new Promise(resolve => {
-      client.on('ready', () => {
-        client.put(data, filename, err => {
-          if (err) { return resolve(false); }
-          resolve(true);
-        });
-      });
-    });
-    return resultsFromServer;
+    // const serverResponse: boolean = await new Promise(resolve => {
+    //   ftpClient.on('ready', () => {
+    //     ftpClient.put(data, filename, err => {
+    //       if (err) { return resolve(false); }
+    //       resolve(true);
+    //     });
+    //   });
+    // });
+    const resp = await ftpClient.put(data, filename);
+    serverResponse = !resp ? true : false;
   } catch (e) {
     console.error('Error -- sendDataToServer =>', e);
-    const falsePromise: boolean = await Promise.resolve(false);
-    return falsePromise;
+    serverResponse = false;
+  } finally {
+    // end connection to ftp server
+    ftpClient.end();
+    return serverResponse;
   }
 } // END sendDataToServer
