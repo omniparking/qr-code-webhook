@@ -43,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const shopifyTopic = (headers?.['x-shopify-topic'] as string)?.trim();
     const host = headers?.host?.trim();
 
-    // return res.status(successCode).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
+    return res.status(successCode).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
 
     if (method === 'POST' /* && shopifyTopic === SHOPIFY_TOPIC && host === SHOPIFY_HOST*/) {
       // Grab needed data from request object, i.e., start/end times, order num, address, price, etc.
