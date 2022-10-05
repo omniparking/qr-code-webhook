@@ -40,18 +40,28 @@ const transporter = nodemailer.createTransport({ auth: { user, pass }, host, por
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { body, headers, method } = req;
-    const shopifyTopic = (headers?.['x-shopify-topic'] as string)?.trim();
-    const host = headers?.host?.trim();
+    const shopifyTopic = (headers?.['x-shopify-topic'] as string)?.trim() || '';
+    const host = headers?.host?.trim() || '';
 
-    return res.status(successCode).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
+    // return res.status(successCode).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
 
-    if (method === 'POST' /* && shopifyTopic === SHOPIFY_TOPIC && host === SHOPIFY_HOST*/) {
+    if (method === 'POST' && shopifyTopic === SHOPIFY_TOPIC && host === SHOPIFY_HOST) {
       // Grab needed data from request object, i.e., start/end times, order num, address, price, etc.
       const {
-        billing_address, customer, created_at, current_subtotal_price, current_total_price,
-        current_total_tax, email, line_items, order_number: orderNum, subtotal_price, total_price, total_tax,
+        billing_address,
+        customer,
+        created_at,
+        current_subtotal_price,
+        current_total_price,
+        current_total_tax,
+        email,
+        line_items,
+        order_number: orderNum,
+        subtotal_price,
+        total_price,
+        total_tax,
       } = body;
-      const bookingTimes = line_items?.[1]?.properties || [];
+      const bookingTimes: BookingTime[] = line_items?.[1]?.properties || [];
       const { quantity, price, name } = line_items?.[1];
       const { first_name: first, last_name: last } = customer;
       let start_time: string;
@@ -61,7 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Get start and end times of booking
       if (bookingTimes?.length) {
-        bookingTimes.forEach(({ name, value }: { name: string, value: string }) => {
+        bookingTimes.forEach(({ name, value }: BookingTime) => {
           if (name === 'booking-start') { start_time = value; }
           if (name === 'booking-finish') { end_time = value; }
         });
@@ -70,10 +80,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // If no start or end times from booking, event failed
       if (!start_time || !end_time) { return res.status(errorCode).send({ message: h.missingTimeInfoMessage }); }
 
-      // const startTimeFormatted: string = h.formatDate(start_time);
-      // const endTimeFormatted: string = h.formatDate(end_time);
-      const startTimeFormatted = '13.09.202207:00:00';
-      const endTimeFormatted = '28.09.202223:00:00';
+      const startTimeFormatted: string = h.formatDate(start_time);
+      const endTimeFormatted: string = h.formatDate(end_time);
+      // const startTimeFormatted = '02.10.202207:00:00';
+      // const endTimeFormatted = '12.10.202223:00:00';
 
       // Generate date in MM/DD/YYYY format for email
       const createdAt: string = h.formatDateTimeAsString(created_at);
@@ -133,7 +143,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Define object for generating the HTML markup in generateHTMLMarkup function
       const htmlMarkupData: HTMLMarkupData = {
         subtotal_price: subtotalPrice, total_price: totalPrice, total_tax: totalTax, createdAt,
-        end_time, logoImageBase64, name, price, quantity, start_time,
+        end_time, name, price, quantity, start_time,
       };
 
       // Generate HTML markup for email
@@ -142,15 +152,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Method to add webhook_id to redis
       const storedWebhook: string = await redis.get(newWebhookId);
 
-      const to = 'alon.bibring@gmail.com'; // email recipient
-      // const cc = ['alon.bibring@gmail.com']; // cc emails
+      const to = email;// 'alon.bibring@gmail.com'; // email recipient
+      const cc = ['alon.bibring@gmail.com']; // cc emails
 
       const attachments = [
         { cid: 'unique-qrcode', filename: 'qrcode.png', path: qrcodeUrl },
         { cid: 'unique-omnilogo', filename: 'logo.png', path: `data:text/plain;base64, ${logoImageBase64}` }
       ];
 
-      const emailData: EmailInfo = { from: user, html: htmlMarkup, attachments, orderNum, to };
+      const emailData: EmailData = { /*cc,*/ from: user, html: htmlMarkup, attachments, orderNum, to };
 
       // If webhook_id does not already exist in db
       if (true || !storedWebhook) {

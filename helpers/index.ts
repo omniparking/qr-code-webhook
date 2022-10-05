@@ -1,5 +1,6 @@
 /*jshint esversion: 8 */
 
+// declaring variables for styling HTML markup
 const padding0 = 'padding: 0px;';
 const margin0 = 'margin: 0px;';
 const margin1000 = 'margin: 1px 0px 0px 0px;';
@@ -18,6 +19,7 @@ export const requestNotPostMethodMessage = 'Webhook Event failed as request not 
 export const errorFromMainTryCatchMessage = 'Webhook Event failed. Error from main try/catch.';
 export const successMessage = 'Webhook Event logged and Email Successfully logged!';
 export const failedToConnectToServerMessage = 'Failed to connect to ftp server.';
+
 
 /**
  * @param {number} value - Represents either day, month, year, hour, minute, or second
@@ -48,7 +50,7 @@ export function formatDate(dateString: string): string {
 
 
 /**
- * Returns date as dd.mm.yyyyhour:minute:second format i.e., 01.01.202216:14:14
+ * Returns date as dd.mm.yyyyhour:minute:second format
  *
  */
 function generateIconImageForEmailTemplate(): string {
@@ -57,23 +59,31 @@ function generateIconImageForEmailTemplate(): string {
   return `<img width="100" height="50" style="${style}" src="cid:unique-omnilogo" alt="${alt}" title="${alt}" />`;
 } // END generateIconImageForEmailTemplate
 
+
 /**
  * Generates HTML markup for email
- * Returns date as dd.mm.yyyyhour:minute:second format i.e., 01.01.202216:14:14
+ * Returns date as dd.mm.yyyyhour:minute:second format
  * @param {HTMLMarkupData} data - object containing properties needed for email
  * @param {string} billingAddressMarkup - billing address info in html format as string
  */
 export function generateHTMLMarkup(data: HTMLMarkupData, billingAddressMarkup: string): string {
   const {
-    createdAt: purchaseDate, end_time, logoImageBase64, price,
-    name, quantity, start_time, subtotal_price, total_price, total_tax
+    createdAt: purchaseDate,
+    end_time,
+    price,
+    name,
+    quantity,
+    start_time,
+    subtotal_price,
+    total_price,
+    total_tax
   } = data;
 
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
   const start = formatDateTimeAsString(start_time, true);
   const end = formatDateTimeAsString(end_time, true);
-  // const start = '09/13/2022 at 07:00:00 AM';
-  // const end = '09/17/2022 at 11:00:00 PM';
+  // const start = '10/02/2022 at 07:00:00 AM';
+  // const end = '10/12/2022 at 11:00:00 PM';
 
   return `
     <html>
@@ -99,6 +109,7 @@ export function generateHTMLMarkup(data: HTMLMarkupData, billingAddressMarkup: s
     `;
 } // END generateHTMLMarkup
 
+
 /**
 * Generates billing address HTML markup for email
 * @param {BillingAddress} billing_address - Object containing properties needed for billing address
@@ -106,7 +117,17 @@ export function generateHTMLMarkup(data: HTMLMarkupData, billingAddressMarkup: s
 export function formatBillingInfoForEmail(billing_address: BillingAddress): string {
   try {
     if (!billing_address) { return ''; }
-    const { address1, address2, city, country, name, province, zip } = billing_address;
+
+    const {
+      address1,
+      address2,
+      city,
+      country,
+      name,
+      province,
+      zip
+    } = billing_address;
+
     return `
       <section>
         <p style="${margin0} ${padding0}">${name}</p>
@@ -123,16 +144,24 @@ export function formatBillingInfoForEmail(billing_address: BillingAddress): stri
   }
 } // END formatBillingInfoForEmail
 
+
 /**
 * Sends email to user - returns true if email was sent and false if not
 * @param {any} transporter - nodemailer sdk
-* @param {EmailInfo} emailInfo - object containing properties needed for email
+* @param {EmailData} emailInfo - object containing properties needed for email
 */
-export async function sendEmail(transporter: any, emailInfo: EmailInfo): Promise<boolean> {
+export async function sendEmail(transporter: any, emailInfo: EmailData): Promise<boolean> {
   try {
     if (!emailInfo) { return false; }
 
-    const { attachments, from, html, orderNum, to } = emailInfo;
+    const {
+      attachments,
+      from: frm,
+      html,
+      orderNum,
+      to
+    } = emailInfo;
+    const from = `"Omni Airport Parking" ${frm}`;
     const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
     const subject = `Order #${orderNum} confirmed`;
 
@@ -157,6 +186,7 @@ export async function sendEmail(transporter: any, emailInfo: EmailInfo): Promise
   }
 } // END sendEmail
 
+
 /**
 * Generates QR code with order number
 * @param {any} QRCode - qrcode sdk
@@ -172,6 +202,7 @@ export async function generateQRCode(QRCode: any, data: string): Promise<string>
   }
 } // END generateQRCode
 
+
 /**
 * Generates date as string in format MM/DD/YYYY
 * If addTime equals true, then result is MM/DD/YYYY 12:00:00 PM format
@@ -184,25 +215,33 @@ export function formatDateTimeAsString(date: string, includeTime = false): strin
   return `${newDate?.toLocaleDateString() || ''} at ${newDate?.toLocaleTimeString() || ''}`;
 } // END formatDateTimeAsString
 
+
 /**
 * @param {DataForServer} data - object containing properties needed for server
 */
 export function generateDataForServer(data: DataForServer): string {
   try {
-    const { end_time: e, first: f, last: l, orderNum: n, start_time: s } = data;
-    const a = '250000;1755164;13.07.2022;63;"USD"\n0;5;';
-    const zeros = ';0;0;0;0;0;0;;;';
-    const q = '"";"";"";"";"";""';
+    const {
+      end_time: e,
+      first: f,
+      last: l,
+      orderNum: n,
+      start_time: s
+    } = data;
+    const a = '250000;1755164;13.07.2022;63;"USD"\n\r0;5;';
+    const zeros = '0;1;0;7;0;0;0;;;';
+    const q = ';0;"";"";"";"";"";""';
     const padding = new Array(9 - `${n}`.length).join('0');
     const orderNoFormated = `${padding}${n}`;
     const b = `ShopQ\\${orderNoFormated}`;
 
-    return `${a}${b};${s};${e}${zeros}"${f}";"${l}";"";"${orderNoFormated}";"";${s};1;0;${e};0;${q}`;
+    return `${a}${b};${s};${e}${zeros}"${f}";"${l}";"";"${orderNoFormated}";"";${s};1;0;${e}${q}`;
   } catch (e) {
     console.error('Error -- generateDataForServer =>', e);
     return '';
   }
 } // END generateDataForServer
+
 
 /**
 * Sends data to omni servers with reservation info and unique id
@@ -215,14 +254,6 @@ export async function sendDataToServer(ftpClient: any, data: string, orderNumber
   let serverResponse: any;
   try {
     const filename = `${process.env.FILE_FOR_SERVER}.${orderNumber}`.toLowerCase();
-    // const serverResponse: boolean = await new Promise(resolve => {
-    //   ftpClient.on('ready', () => {
-    //     ftpClient.put(data, filename, err => {
-    //       if (err) { return resolve(false); }
-    //       resolve(true);
-    //     });
-    //   });
-    // });
     const resp = await ftpClient.put(data, filename);
     serverResponse = !resp ? true : false;
   } catch (e) {
