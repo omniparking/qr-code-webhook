@@ -48,6 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (method === 'POST' && shopifyTopic === SHOPIFY_TOPIC && host === SHOPIFY_HOST) {
       // Grab needed data from request object, i.e., start/end times, order num, address, price, etc.
       const {
+        order_number: orderNum,
         billing_address,
         customer,
         created_at,
@@ -56,7 +57,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         current_total_tax,
         email,
         line_items,
-        order_number: orderNum,
         subtotal_price,
         total_price,
         total_tax,
@@ -153,14 +153,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const storedWebhook: string = await redis.get(newWebhookId);
 
       const to = email;// 'alon.bibring@gmail.com'; // email recipient
-      const cc = ['alon.bibring@gmail.com']; // cc emails
+      const cc = ['info@omniairportparking.com']; // cc emails
 
       const attachments = [
         { cid: 'unique-qrcode', filename: 'qrcode.png', path: qrcodeUrl },
         { cid: 'unique-omnilogo', filename: 'logo.png', path: `data:text/plain;base64, ${logoImageBase64}` }
       ];
 
-      const emailData: EmailData = { /*cc,*/ from: user, html: htmlMarkup, attachments, orderNum, to };
+      const emailData: EmailData = { cc, from: user, html: htmlMarkup, attachments, orderNum, to };
 
       // If webhook_id does not already exist in db
       if (true || !storedWebhook) {
