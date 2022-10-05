@@ -152,7 +152,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Method to add webhook_id to redis
       const storedWebhook: string = await redis.get(newWebhookId);
 
-      const to = email;// 'alon.bibring@gmail.com'; // email recipient
+      const to = email; // email recipient
       const cc = ['info@omniairportparking.com']; // cc emails
 
       const attachments = [
