@@ -14,8 +14,8 @@ import QRCode from 'qrcode'; // to generate qr code
 // Helpers/Scripts
 import * as h from '../../helpers/index';
 
-const errorCode = 500;
-const successCode = 201;
+const errorCode: number = 500;
+const successCode: number = 201;
 
 // Deconstruct environment variables from process.env
 const {
@@ -27,10 +27,10 @@ const {
 } = process.env;
 
 // Initialize redis (to store webhook ids)
-const redis = new Redis({ url, token });
+const redis: Redis = new Redis({ url, token });
 
 // Initialize nodemailer (to send emails)
-const transporter = nodemailer.createTransport({ auth: { user, pass }, host, port, secure: true });
+const transporter: any = nodemailer.createTransport({ auth: { user, pass }, host, port, secure: true });
 
 /**
 * Handler function which handles http request coming in (webhook calls from shopify)
@@ -40,10 +40,10 @@ const transporter = nodemailer.createTransport({ auth: { user, pass }, host, por
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { body, headers, method } = req;
-    const shopifyTopic = (headers?.['x-shopify-topic'] as string)?.trim() || '';
-    const host = headers?.host?.trim() || '';
+    const shopifyTopic: string = (headers?.['x-shopify-topic'] as string)?.trim() || '';
+    const host: string = headers?.host?.trim() || '';
 
-    // return res.status(successCode).send({ message: 'Webhook turned off!' }); // REMOVE WHEN READY FOR PROD
+    // return res.status(successCode).send({ message: 'Webhook turned off!' }); // UNCOMMENT LINE TO TURN WEBHOOK OFF
 
     if (method === 'POST' && shopifyTopic === SHOPIFY_TOPIC && host === SHOPIFY_HOST) {
       // Grab needed data from request object, i.e., start/end times, order num, address, price, etc.
@@ -61,6 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         total_price,
         total_tax,
       } = body;
+      
       const bookingTimes: BookingTime[] = line_items?.[1]?.properties || [];
       const { quantity, price, name } = line_items?.[1];
       const { first_name: first, last_name: last } = customer;
@@ -94,22 +95,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const totalPrice: string = total_price || current_total_price || '';
 
       // Grab unique webhook_id
-      const newWebhookId = headers?.['x-shopify-webhook-id'] as string || '';
+      const newWebhookId: string = headers?.['x-shopify-webhook-id'] as string || '';
 
       // Format data for QR Code
-      const qrcodeLength = `1755164${orderNum}`.length;
-      const zeros = new Array(16 - qrcodeLength).join('0');
-      const qrcodeData = `1755164${zeros}${orderNum}`; // add zero placeholders to qrcode data
+      const qrcodeLength: number = `1755164${orderNum}`.length;
+      const zeros: string = new Array(16 - qrcodeLength).join('0');
+      const qrcodeData: string = `1755164${zeros}${orderNum}`; // add zero placeholders to qrcode data
 
       // Generate qrcode with order information
-      const qrcodeUrl = await h.generateQRCode(QRCode, qrcodeData);
+      const qrcodeUrl: string = await h.generateQRCode(QRCode, qrcodeData);
 
       // Generate file for server
       const dataForServer: DataForServer = { end_time: endTimeFormatted, start_time: startTimeFormatted, first, last, orderNum };
       const fileForServer: string = h.generateDataForServer(dataForServer);
 
       // Initiate ftp client
-      const ftpClient = new PromiseFtp();
+      const ftpClient: PromiseFtp = new PromiseFtp();
 
       try {
         await ftpClient.connect({ host: IP, user: S_USER, password: S_PASS, port: 21, secure: false });
@@ -119,7 +120,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(errorCode).send({ message: h.failedToConnectToServerMessage });
       }
 
-      let serverResponse: boolean;
+      let serverResponse = false;
       try {
         // Send data to server
         serverResponse = await h.sendDataToServer(ftpClient, fileForServer, orderNum);
@@ -154,20 +155,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
 
       // Generate HTML markup for email
-      const htmlMarkup = h.generateHTMLMarkup(htmlMarkupData, billingAddressMarkup);
+      const htmlMarkup: string = h.generateHTMLMarkup(htmlMarkupData, billingAddressMarkup);
 
       // Method to add webhook_id to redis
       const storedWebhook: string = await redis.get(newWebhookId);
 
-      const to = email; // email recipient
-      const cc = ['info@omniairportparking.com']; // cc emails
+      const to: string = email; // email recipient
+      const cc: string[] = ['info@omniairportparking.com']; // cc emails
 
-      const attachments = [
-        { cid: 'unique-qrcode', filename: 'qrcode.png', path: qrcodeUrl },
-        { cid: 'unique-omnilogo', filename: 'logo.png', path: `data:text/plain;base64, ${logoImageBase64}` }
+      const attachments: MailAttachments[] = [
+        {
+          cid: 'unique-qrcode',
+          filename: 'qrcode.png',
+          path: qrcodeUrl
+        },
+        {
+          cid: 'unique-omnilogo',
+          filename: 'logo.png',
+          path: `data:text/plain;base64, ${logoImageBase64}`
+        }
       ];
 
-      const emailData: EmailData = { cc, from: user, html: htmlMarkup, attachments, orderNum, to };
+      const emailData: EmailData = {
+        from: user,
+        html: htmlMarkup,
+        attachments,
+        cc,
+        orderNum,
+        to,
+      };
 
       // If webhook_id does not already exist in db
       if (!storedWebhook) {

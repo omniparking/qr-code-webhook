@@ -1,3 +1,9 @@
+interface MailAttachments {
+  cid: string;
+  filename: string;
+  path: string;
+}
+
 interface BillingAddress {
   address1: string;
   address2: string;

@@ -1,24 +1,24 @@
 /*jshint esversion: 8 */
 
 // declaring variables for styling HTML markup
-const padding0 = 'padding: 0px;';
-const margin0 = 'margin: 0px;';
-const margin1000 = 'margin: 1px 0px 0px 0px;';
-const margin0010 = 'margin: 0px 0px 1px 0px;';
-const margin8000 = 'margin: 8px 0px 0px 0px;';
+const padding0: string = 'padding: 0px;';
+const margin0: string = 'margin: 0px;';
+const margin1000: string = 'margin: 1px 0px 0px 0px;';
+const margin0010: string = 'margin: 0px 0px 1px 0px;';
+const margin8000: string = 'margin: 8px 0px 0px 0px;';
 
 
 // declaring message variables for server response
-export const dataMissingMessage = 'Webhook event failed. Critical data is missing from request body!';
-export const failedToLoadDataToServerMessage = 'Failed to load data to server!';
-export const webhookNotLoggedAndEmailSentMessage = 'Webhook event not logged but email sent successfully.';
-export const webhookNotLoggedAndEmailNotSentMessage = 'Webhook event not logged and email not sent!';
-export const missingTimeInfoMessage = 'Webhook Event logged and Email Successfully logged.';
-export const webhookAlreadyLoggedMessage = 'Webhook Event failed as it has previously been successfully logged.';
-export const requestNotPostMethodMessage = 'Webhook Event failed as request not coming from trusted source.';
-export const errorFromMainTryCatchMessage = 'Webhook Event failed. Error from main try/catch.';
-export const successMessage = 'Webhook Event logged and Email Successfully logged!';
-export const failedToConnectToServerMessage = 'Failed to connect to ftp server.';
+export const dataMissingMessage: string = 'Webhook event failed. Critical data is missing from request body!';
+export const failedToLoadDataToServerMessage: string = 'Failed to load data to server!';
+export const webhookNotLoggedAndEmailSentMessage: string = 'Webhook event not logged but email sent successfully.';
+export const webhookNotLoggedAndEmailNotSentMessage: string = 'Webhook event not logged and email not sent!';
+export const missingTimeInfoMessage: string = 'Webhook Event logged and Email Successfully logged.';
+export const webhookAlreadyLoggedMessage: string = 'Webhook Event failed as it has previously been successfully logged.';
+export const requestNotPostMethodMessage: string = 'Webhook Event failed as request not coming from trusted source.';
+export const errorFromMainTryCatchMessage: string = 'Webhook Event failed. Error from main try/catch.';
+export const successMessage: string = 'Webhook Event logged and Email Successfully logged!';
+export const failedToConnectToServerMessage: string = 'Failed to connect to ftp server.';
 
 
 /**
@@ -37,13 +37,13 @@ const addLeadingZeroIfNecessary = (value: number): string => {
 export function formatDate(dateString: string): string {
   if (!dateString?.trim()) { return ''; }
 
-  const date = new Date(dateString);
-  const day = addLeadingZeroIfNecessary(date.getUTCDate());
-  const month = addLeadingZeroIfNecessary(date.getUTCMonth() + 1); // months from 1-12
-  const year = addLeadingZeroIfNecessary(date.getUTCFullYear());
-  const hours = addLeadingZeroIfNecessary(date.getHours());
-  const minutes = addLeadingZeroIfNecessary(date.getMinutes());
-  const seconds = addLeadingZeroIfNecessary(date.getSeconds());
+  const date: Date = new Date(dateString);
+  const day: string = addLeadingZeroIfNecessary(date.getUTCDate());
+  const month: string = addLeadingZeroIfNecessary(date.getUTCMonth() + 1); // months from 1-12
+  const year: string = addLeadingZeroIfNecessary(date.getUTCFullYear());
+  const hours: string = addLeadingZeroIfNecessary(date.getHours());
+  const minutes: string = addLeadingZeroIfNecessary(date.getMinutes());
+  const seconds: string = addLeadingZeroIfNecessary(date.getSeconds());
 
   return `${day}.${month}.${year}${hours}:${minutes}:${seconds}`;
 } // END formatDate
@@ -54,8 +54,8 @@ export function formatDate(dateString: string): string {
  *
  */
 function generateIconImageForEmailTemplate(): string {
-  const style = 'display: block; margin: 0px 2px 8px 4px;"';
-  const alt = 'Omni Airport Parking logo';
+  const style: string = 'display: block; margin: 0px 2px 8px 4px;"';
+  const alt: string = 'Omni Airport Parking logo';
   return `<img width="100" height="50" style="${style}" src="cid:unique-omnilogo" alt="${alt}" title="${alt}" />`;
 } // END generateIconImageForEmailTemplate
 
@@ -67,6 +67,7 @@ function generateIconImageForEmailTemplate(): string {
  * @param {string} billingAddressMarkup - billing address info in html format as string
  */
 export function generateHTMLMarkup(data: HTMLMarkupData, billingAddressMarkup: string): string {
+  
   const {
     createdAt: purchaseDate,
     end_time,
@@ -77,13 +78,13 @@ export function generateHTMLMarkup(data: HTMLMarkupData, billingAddressMarkup: s
     subtotal_price,
     total_price,
     total_tax
-  } = data;
+  }: HTMLMarkupData = data;
 
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
-  const start = formatDateTimeAsString(start_time, true);
-  const end = formatDateTimeAsString(end_time, true);
-  // const start = '10/02/2022 at 07:00:00 AM'; // FOR TESTING ONLY
-  // const end = '10/12/2022 at 11:00:00 PM'; // FOR TESTING ONLY
+  const start: string = formatDateTimeAsString(start_time, true);
+  const end: string = formatDateTimeAsString(end_time, true);
+  // const start: string = '10/02/2022 at 07:00:00 AM'; // FOR TESTING ONLY
+  // const end: string = '10/12/2022 at 11:00:00 PM'; // FOR TESTING ONLY
 
   return `
     <html>
@@ -106,7 +107,7 @@ export function generateHTMLMarkup(data: HTMLMarkupData, billingAddressMarkup: s
       <br />
       <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique-qrcode" alt="QR Code" title="QR Code" />
     </body>
-    `;
+  `;
 } // END generateHTMLMarkup
 
 
@@ -126,7 +127,7 @@ export function formatBillingInfoForEmail(billing_address: BillingAddress): stri
       name,
       province,
       zip
-    } = billing_address;
+    }: BillingAddress = billing_address;
 
     return `
       <section>
@@ -155,19 +156,28 @@ export async function sendEmail(transporter: any, emailInfo: EmailData): Promise
     if (!emailInfo) { return false; }
 
     const {
+      from,
       attachments,
-      from: frm,
       cc,
       html,
       orderNum,
       to,
-    } = emailInfo;
-    const from = `"Omni Airport Parking" ${frm}`;
-    const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
-    const subject = `Order #${orderNum} confirmed`;
+    }: EmailData = emailInfo;
+
+    const f: string = `"Omni Airport Parking" ${from}`;
+    const text: string = 'Your order has been confirmed for Omni Parking. The QR code is attached';
+    const subject: string = `Order #${orderNum} confirmed`;
 
     // send email
-    const emailResponse = await transporter.sendMail({ attachments, from, html, subject, text, to, cc });
+    const emailResponse = await transporter.sendMail({
+      from: f,
+      attachments,
+      cc,
+      html,
+      subject,
+      text,
+      to,
+    });
 
     // Check results from request; if email address is found in the 'accepted' array, then email was sent succesfully
     // But if the receiver's email is found in the 'rejected' array, then the email failed to send
@@ -195,6 +205,7 @@ export async function sendEmail(transporter: any, emailInfo: EmailData): Promise
 */
 export async function generateQRCode(QRCode: any, data: string): Promise<string> {
   try {
+    // converts data into QR Code
     const qrcodeUrl: string = await QRCode.toDataURL(data, { errorCorrectionLevel: 'L', version: 9 });
     return qrcodeUrl;
   } catch (e) {
@@ -222,21 +233,25 @@ export function formatDateTimeAsString(date: string, includeTime = false): strin
 */
 export function generateDataForServer(data: DataForServer): string {
   try {
+
     const {
       end_time: e,
       first: f,
       last: l,
       orderNum: n,
-      start_time: s
+      start_time: s,
     } = data;
-    const a = '250000;1755164;13.07.2022;63;"USD"\r\n0;5;';
-    const zeros = ';0;1;07;0;0;0;;;';
-    const q = ';0;"";"";"";"";"";""';
-    const padding = new Array(9 - `${n}`.length).join('0');
-    const orderNoFormated = `${padding}${n}`;
-    const b = `ShopQ\\${orderNoFormated}`;
 
-    return `${a}${b};${s};${e}${zeros}"${f}";"${l}";"";"${orderNoFormated}";"";${s};1;0;${e}${q}`;
+    const a: string = '250000;1755164;13.07.2022;63;"USD"\r\n0;5;';
+    const zeros: string = ';0;1;07;0;0;0;;;';
+    const q: string = ';"";"";"";"";"";""';
+    const padding: string = new Array(9 - `${n}`.length).join('0');
+    const orderNoFormated: string = `${padding}${n}`;
+    const b: string = `ShopQ\\${orderNoFormated}`;
+    const st: string = '06.10.202013:00:00;';
+
+    // generate string as data for file for ftp server
+    return `${a}${b};${s};${e}${zeros}"${f}";"${l}";"";"${orderNoFormated}";"";${st};1;04;${e};200${q}`;
   } catch (e) {
     console.error('Error -- generateDataForServer =>', e);
     return '';
@@ -248,13 +263,15 @@ export function generateDataForServer(data: DataForServer): string {
 * Sends data to omni servers with reservation info and unique id
 * The unique id is what is stored in the QR code and used to look up the reservation
 * @param {any} client - ftp client sdk
-* @param {string} data - data sent to server 
+* @param {string} data - data sent to server
 * @param {string} orderNumber - the order number for this purchase
 */
 export async function sendDataToServer(ftpClient: any, data: string, orderNumber: string): Promise<boolean> {
-  let serverResponse: any;
+  let serverResponse: boolean;
   try {
+    // generate filename
     const filename = `${process.env.FILE_FOR_SERVER}.${orderNumber}`.toLowerCase();
+    // add file to ftp server
     const resp = await ftpClient.put(data, filename);
     serverResponse = !resp ? true : false;
   } catch (e) {
