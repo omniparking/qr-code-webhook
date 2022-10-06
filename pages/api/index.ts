@@ -4,11 +4,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next'; // for request/response types
 
 // npm/node imports
+import { promises as fs } from 'fs'; // to read icon file as promise
 import { Redis } from '@upstash/redis'; // to store webhook_ids to database
 import nodemailer from 'nodemailer'; // to send emails
 import path from 'path'; // to get path for icon file
 import PromiseFtp from 'promise-ftp';
-import { promises as fs } from 'fs'; // to read icon file as promise
 import QRCode from 'qrcode'; // to generate qr code
 
 // Helpers/Scripts
@@ -61,7 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         total_price,
         total_tax,
       } = body;
-      
+
       const bookingTimes: BookingTime[] = line_items?.[1]?.properties || [];
       const { quantity, price, name } = line_items?.[1];
       const { first_name: first, last_name: last } = customer;
@@ -95,7 +95,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const totalPrice: string = total_price || current_total_price || '';
 
       // Grab unique webhook_id
-      const newWebhookId: string = headers?.['x-shopify-webhook-id'] as string || '';
+      const newWebhookId: string = headers?.["x-shopify-webhook-id"] as string || '';
 
       // Format data for QR Code
       const qrcodeLength: number = `1755164${orderNum}`.length;
