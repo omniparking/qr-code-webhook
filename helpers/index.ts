@@ -157,16 +157,17 @@ export async function sendEmail(transporter: any, emailInfo: EmailData): Promise
     const {
       attachments,
       from: frm,
+      cc,
       html,
       orderNum,
-      to
+      to,
     } = emailInfo;
     const from = `"Omni Airport Parking" ${frm}`;
     const text = 'Your order has been confirmed for Omni Parking. The QR code is attached';
     const subject = `Order #${orderNum} confirmed`;
 
     // send email
-    const emailResponse = await transporter.sendMail({ attachments, from, html, subject, text, to });
+    const emailResponse = await transporter.sendMail({ attachments, from, html, subject, text, to, cc });
 
     // Check results from request; if email address is found in the 'accepted' array, then email was sent succesfully
     // But if the receiver's email is found in the 'rejected' array, then the email failed to send
