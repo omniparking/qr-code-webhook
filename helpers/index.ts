@@ -230,7 +230,7 @@ export function generateDataForServer(data: DataForServer): string {
       start_time: s
     } = data;
     const a = '250000;1755164;13.07.2022;63;"USD"\r\n0;5;';
-    const zeros = '0;1;07;0;0;0;;;';
+    const zeros = ';0;1;07;0;0;0;;;';
     const q = ';0;"";"";"";"";"";""';
     const padding = new Array(9 - `${n}`.length).join('0');
     const orderNoFormated = `${padding}${n}`;
