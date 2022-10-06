@@ -82,8 +82,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const startTimeFormatted: string = h.formatDate(start_time);
       const endTimeFormatted: string = h.formatDate(end_time);
-      // const startTimeFormatted = '02.10.202207:00:00';
-      // const endTimeFormatted = '12.10.202223:00:00';
+      // const startTimeFormatted = '02.10.202207:00:00'; // FOR TESTING ONLY
+      // const endTimeFormatted = '12.10.202223:00:00'; // FOR TESTING ONLY
 
       // Generate date in MM/DD/YYYY format for email
       const createdAt: string = h.formatDateTimeAsString(created_at);
@@ -142,8 +142,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Define object for generating the HTML markup in generateHTMLMarkup function
       const htmlMarkupData: HTMLMarkupData = {
-        subtotal_price: subtotalPrice, total_price: totalPrice, total_tax: totalTax, createdAt,
-        end_time, name, price, quantity, start_time,
+        subtotal_price: subtotalPrice,
+        total_price: totalPrice,
+        total_tax: totalTax,
+        createdAt,
+        end_time,
+        name,
+        price,
+        quantity,
+        start_time,
       };
 
       // Generate HTML markup for email
@@ -163,7 +170,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const emailData: EmailData = { cc, from: user, html: htmlMarkup, attachments, orderNum, to };
 
       // If webhook_id does not already exist in db
-      if (true || !storedWebhook) {
+      if (!storedWebhook) {
         const emailResponse: boolean = await h.sendEmail(transporter, emailData);
         console.log('emailResponse:', emailResponse);
 

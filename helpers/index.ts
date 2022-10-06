@@ -82,8 +82,8 @@ export function generateHTMLMarkup(data: HTMLMarkupData, billingAddressMarkup: s
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
   const start = formatDateTimeAsString(start_time, true);
   const end = formatDateTimeAsString(end_time, true);
-  // const start = '10/02/2022 at 07:00:00 AM';
-  // const end = '10/12/2022 at 11:00:00 PM';
+  // const start = '10/02/2022 at 07:00:00 AM'; // FOR TESTING ONLY
+  // const end = '10/12/2022 at 11:00:00 PM'; // FOR TESTING ONLY
 
   return `
     <html>
@@ -228,8 +228,8 @@ export function generateDataForServer(data: DataForServer): string {
       orderNum: n,
       start_time: s
     } = data;
-    const a = '250000;1755164;13.07.2022;63;"USD"\n\r0;5;';
-    const zeros = '0;1;0;7;0;0;0;;;';
+    const a = '250000;1755164;13.07.2022;63;"USD"\r\n0;5;';
+    const zeros = '0;0;1;07;0;0;0;;;';
     const q = ';0;"";"";"";"";"";""';
     const padding = new Array(9 - `${n}`.length).join('0');
     const orderNoFormated = `${padding}${n}`;
