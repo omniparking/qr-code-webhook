@@ -68,7 +68,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       let start_time: string;
       let end_time: string;
 
-      if (!bookingTimes?.length || !price || !name || !customer) { return res.status(errorCode).send({ message: h.dataMissingMessage }); }
+      if (!bookingTimes?.length || !price || !name || !customer) { return res.status(successCode).send({ message: h.dataMissingMessage }); }
 
       // Get start and end times of booking
       if (bookingTimes?.length) {
