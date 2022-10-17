@@ -45,7 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // return res.status(successCode).send({ message: 'Webhook turned off!' }); // UNCOMMENT LINE TO TURN WEBHOOK OFF
 
-    if (method === 'POST' && shopifyTopic === SHOPIFY_TOPIC && host === SHOPIFY_HOST) {
+    if (method === 'POST' /*&& shopifyTopic === SHOPIFY_TOPIC && host === SHOPIFY_HOST*/) {
       // Grab needed data from request object, i.e., start/end times, order num, address, price, etc.
       const {
         order_number: orderNum,
