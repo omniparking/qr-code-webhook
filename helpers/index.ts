@@ -251,7 +251,7 @@ export function generateDataForServer(data: DataForServer): string {
     const st: string = '06.10.202013:00:00';
 
     // generate string as data for file for ftp server
-    return `${a}${b};${s};${e}${zeros}"${f}";"${l}";"";"${orderNoFormated}";"";${st}1;04;${e};200${q}`;
+    return `${a}${b};${s};${e}${zeros}"${f}";"${l}";"";"${orderNoFormated}";"";${st};1;04;${e};200${q}`;
   } catch (e) {
     console.error('Error -- generateDataForServer =>', e);
     return '';
