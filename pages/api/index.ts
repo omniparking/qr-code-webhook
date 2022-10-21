@@ -82,13 +82,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // If no start or end times from booking, event failed
       if (!start_time || !end_time) { return res.status(errorCode).send({ message: h.missingTimeInfoMessage }); }
 
-      start_time = h.formatStartTime(moment, start_time);
-      end_time = moment(end_time).format('DD.MM.YYYYhh:mm:ss');
+      const startTime = h.formatTime(start_time);
+      const endTime = h.formatTime(end_time, false);
       // const startTime = '02.02.202202:00:00'; // FOR TESTING ONLY
       // const endTime = '02.03.202203:00:00'; // FOR TESTING ONLY
 
       // Generate date in MM/DD/YYYY format for email
-      const createdAt: string = h.formatDateTimeAsString(created_at);
+      const createdAt: string = moment(created_at).format('MM/DD/YYYY');
 
       // Get subtotal, taxes, and total price for email template
       const subtotalPrice: string = subtotal_price || current_subtotal_price || '';
@@ -107,7 +107,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const qrcodeUrl: string = await h.generateQRCode(QRCode, qrcodeData);
 
       // Generate file for server
-      const dataForServer: DataForServer = { end_time, first, last, order_num, start_time };
+      const dataForServer: DataForServer = { end_time: endTime, first, last, order_num, start_time: startTime };
       const fileForServer: string = h.generateDataForServer(dataForServer);
 
       // Initiate ftp client

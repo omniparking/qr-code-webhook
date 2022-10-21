@@ -1,5 +1,7 @@
 /*jshint esversion: 8 */
 
+import moment from 'moment';
+
 // declaring variables for styling HTML markup
 const padding0: string = 'padding: 0px;';
 const margin0: string = 'margin: 0px;';
@@ -31,27 +33,22 @@ export function subtractHours(date: Date, hours: number): Date {
 
 
 /**
- * @param {number} value - Represents either day, month, year, hour, minute, or second
- */
-const addLeadingZeroIfNecessary = (value: number): string => {
-  if (+value < 10) { return `0${value}`; }
-  return `${value}`;
-} // END addLeadingZeroIfNecessary
-
-
-/**
  * Returns date as dd.mm.yyyyhour:minute:second format i.e., 01.01.202216:14:14
- * @param {any} moment - moment js
  * @param {string} dateString - date in string form
  */
-export function formatStartTime(moment: any, dateString: string): string {
+export function formatTime(dateString: string, shouldHaveGracePeriod = true): string {
   if (!dateString?.trim()) { return ''; }
+  if (shouldHaveGracePeriod) {
+    const time = moment(dateString);
+    const gracePeriod = moment.duration('01:00:00');
+    time.subtract(gracePeriod);
+    const newStartTime = moment(time).format('DD.MM.YYYYhh:mm:ss');
+    return newStartTime;
+  }
 
-  const startTime = moment(dateString);
-  const gracePeriod = moment.duration('01:00:00');
-  startTime.subtract(gracePeriod);
-  return moment(startTime).format('DD.MM.YYYYhh:mm:ss');
-} // END formatDate
+  const time = moment(dateString).format('DD.MM.YYYhh:mm:ss');
+  return time;
+} // END formatTime
 
 
 /**
@@ -86,9 +83,9 @@ export function generateHTMLMarkup(data: HTMLMarkupData, billingAddressMarkup: s
   }: HTMLMarkupData = data;
 
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
-  const start: string = formatDateTimeAsString(start_time, true);
-  const end: string = formatDateTimeAsString(end_time, true);
-  // const start: string = '10/02/2022 at 07:00:00 AM'; // FOR TESTING ONLY
+  const start = moment(start_time).format('MM/DD/YYYY hh:mm:ss a')?.toUpperCase();
+  const end = moment(end_time).format('MM/DD/YYYY hh:mm:ss a')?.toUpperCase();
+  // const start1: string = '10/02/2022 at 07:00:00 AM'; // FOR TESTING ONLY
   // const end: string = '10/12/2022 at 11:00:00 PM'; // FOR TESTING ONLY
 
   return `
@@ -210,19 +207,6 @@ export async function generateQRCode(QRCode: any, data: string): Promise<string>
     return '';
   }
 } // END generateQRCode
-
-
-/**
-* Generates date as string in format MM/DD/YYYY
-* If addTime equals true, then result is MM/DD/YYYY 12:00:00 PM format
-* @param {string} date - date in string format
-* @param {boolean} addTime - determines whether date should include time or not
-*/
-export function formatDateTimeAsString(date: string, includeTime = false): string {
-  const newDate: Date = new Date(date);
-  if (!includeTime) { return newDate?.toLocaleDateString() || ''; }
-  return `${newDate?.toLocaleDateString() || ''} at ${newDate?.toLocaleTimeString() || ''}`;
-} // END formatDateTimeAsString
 
 
 /**
