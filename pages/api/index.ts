@@ -10,6 +10,7 @@ import nodemailer from 'nodemailer'; // to send emails
 import path from 'path'; // to get path for icon file
 import PromiseFtp from 'promise-ftp';
 import QRCode from 'qrcode'; // to generate qr code
+import moment from 'moment';
 
 // Helpers/Scripts
 import * as h from '../../helpers/index';
@@ -49,13 +50,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Grab needed data from request object, i.e., start/end times, order num, address, price, etc.
       const {
         order_number: orderNum,
+        email: to,
         billing_address,
         customer,
         created_at,
         current_subtotal_price,
         current_total_price,
         current_total_tax,
-        email,
         line_items,
         subtotal_price,
         total_price,
@@ -81,10 +82,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // If no start or end times from booking, event failed
       if (!start_time || !end_time) { return res.status(errorCode).send({ message: h.missingTimeInfoMessage }); }
 
-      const startTimeFormatted: string = h.formatDate(start_time);
-      const endTimeFormatted: string = h.formatDate(end_time);
-      // const startTimeFormatted = '02.10.202207:00:00'; // FOR TESTING ONLY
-      // const endTimeFormatted = '12.10.202223:00:00'; // FOR TESTING ONLY
+      // const startTimeFormatted: string = h.formatDate(start_time);
+      // const endTimeFormatted: string = h.formatDate(end_time);
+      const startTime = moment(start_time);
+      const gracePeriod = moment.duration('01:00:00');
+      startTime.subtract(gracePeriod);
+      const startTimeFormattedWithGracePeriod: string = moment(startTime).format('MM.DD.YYYYhh:mm:ss');
+      const endTimeFormatted = moment(end_time).format('MM.DD.YYYYhh:mm:ss');
+      // const startTimeFormatted = '02.02.202202:00:00'; // FOR TESTING ONLY
+      // const endTimeFormatted = '02.03.202203:00:00'; // FOR TESTING ONLY
 
       // Generate date in MM/DD/YYYY format for email
       const createdAt: string = h.formatDateTimeAsString(created_at);
@@ -106,7 +112,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const qrcodeUrl: string = await h.generateQRCode(QRCode, qrcodeData);
 
       // Generate file for server
-      const dataForServer: DataForServer = { end_time: endTimeFormatted, start_time: startTimeFormatted, first, last, orderNum };
+      const dataForServer: DataForServer = { end_time: endTimeFormatted, start_time: startTimeFormattedWithGracePeriod, first, last, orderNum };
       const fileForServer: string = h.generateDataForServer(dataForServer);
 
       // Initiate ftp client
@@ -160,7 +166,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Method to add webhook_id to redis
       const storedWebhook: string = await redis.get(newWebhookId);
 
-      const to: string = email; // email recipient
       const cc: string[] = ['info@omniairportparking.com']; // cc emails
 
       const attachments: MailAttachments[] = [

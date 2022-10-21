@@ -22,6 +22,15 @@ export const failedToConnectToServerMessage: string = 'Failed to connect to ftp 
 
 
 /**
+ * 
+ */
+export function subtractHours(date: Date, hours: number): Date {
+  date.setHours(date.getHours() - hours);
+  return date;
+} // END subtractHours
+
+
+/**
  * @param {number} value - Represents either day, month, year, hour, minute, or second
  */
 const addLeadingZeroIfNecessary = (value: number): string => {
@@ -41,7 +50,7 @@ export function formatDate(dateString: string): string {
   const day: string = addLeadingZeroIfNecessary(date.getUTCDate());
   const month: string = addLeadingZeroIfNecessary(date.getUTCMonth() + 1); // months from 1-12
   const year: string = addLeadingZeroIfNecessary(date.getUTCFullYear());
-  const hours: string = addLeadingZeroIfNecessary(date.getHours());
+  const hours: string = addLeadingZeroIfNecessary(date.setHours(date.getHours() - 1));
   const minutes: string = addLeadingZeroIfNecessary(date.getMinutes());
   const seconds: string = addLeadingZeroIfNecessary(date.getSeconds());
 
@@ -119,15 +128,7 @@ export function formatBillingInfoForEmail(billing_address: BillingAddress): stri
   try {
     if (!billing_address) { return ''; }
 
-    const {
-      address1,
-      address2,
-      city,
-      country,
-      name,
-      province,
-      zip
-    }: BillingAddress = billing_address;
+    const { address1, address2, city, country, name, province, zip }: BillingAddress = billing_address;
 
     return `
       <section>
@@ -233,14 +234,7 @@ export function formatDateTimeAsString(date: string, includeTime = false): strin
 */
 export function generateDataForServer(data: DataForServer): string {
   try {
-
-    const {
-      end_time: e,
-      first: f,
-      last: l,
-      orderNum: n,
-      start_time: s,
-    } = data;
+    const { end_time: e, first: f, last: l, orderNum: n, start_time: s } = data;
 
     const a: string = '250000;1755164;13.07.2022;63;"USD"\r\n0;5;';
     const zeros: string = ';0;1;07;0;0;0;;;';
