@@ -41,20 +41,16 @@ const addLeadingZeroIfNecessary = (value: number): string => {
 
 /**
  * Returns date as dd.mm.yyyyhour:minute:second format i.e., 01.01.202216:14:14
+ * @param {any} moment - moment js
  * @param {string} dateString - date in string form
  */
-export function formatDate(dateString: string): string {
+export function formatStartTime(moment: any, dateString: string): string {
   if (!dateString?.trim()) { return ''; }
 
-  const date: Date = new Date(dateString);
-  const day: string = addLeadingZeroIfNecessary(date.getUTCDate());
-  const month: string = addLeadingZeroIfNecessary(date.getUTCMonth() + 1); // months from 1-12
-  const year: string = addLeadingZeroIfNecessary(date.getUTCFullYear());
-  const hours: string = addLeadingZeroIfNecessary(date.setHours(date.getHours() - 1));
-  const minutes: string = addLeadingZeroIfNecessary(date.getMinutes());
-  const seconds: string = addLeadingZeroIfNecessary(date.getSeconds());
-
-  return `${day}.${month}.${year}${hours}:${minutes}:${seconds}`;
+  const startTime = moment(dateString);
+  const gracePeriod = moment.duration('01:00:00');
+  startTime.subtract(gracePeriod);
+  return moment(startTime).format('DD.MM.YYYYhh:mm:ss');
 } // END formatDate
 
 
@@ -234,7 +230,7 @@ export function formatDateTimeAsString(date: string, includeTime = false): strin
 */
 export function generateDataForServer(data: DataForServer): string {
   try {
-    const { end_time: e, first: f, last: l, orderNum: n, start_time: s } = data;
+    const { end_time: e, first: f, last: l, order_num: n, start_time: s } = data;
 
     const a: string = '250000;1755164;13.07.2022;63;"USD"\r\n0;5;';
     const zeros: string = ';0;1;07;0;0;0;;;';

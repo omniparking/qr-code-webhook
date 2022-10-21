@@ -49,7 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (method === 'POST' && shopifyTopic === SHOPIFY_TOPIC && host === SHOPIFY_HOST) {
       // Grab needed data from request object, i.e., start/end times, order num, address, price, etc.
       const {
-        order_number: orderNum,
+        order_number: order_num,
         email: to,
         billing_address,
         customer,
@@ -82,15 +82,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // If no start or end times from booking, event failed
       if (!start_time || !end_time) { return res.status(errorCode).send({ message: h.missingTimeInfoMessage }); }
 
-      // const startTimeFormatted: string = h.formatDate(start_time);
-      // const endTimeFormatted: string = h.formatDate(end_time);
-      const startTime = moment(start_time);
-      const gracePeriod = moment.duration('01:00:00');
-      startTime.subtract(gracePeriod);
-      const startTimeFormattedWithGracePeriod: string = moment(startTime).format('MM.DD.YYYYhh:mm:ss');
-      const endTimeFormatted = moment(end_time).format('MM.DD.YYYYhh:mm:ss');
-      // const startTimeFormatted = '02.02.202202:00:00'; // FOR TESTING ONLY
-      // const endTimeFormatted = '02.03.202203:00:00'; // FOR TESTING ONLY
+      start_time = h.formatStartTime(moment, start_time);
+      end_time = moment(end_time).format('DD.MM.YYYYhh:mm:ss');
+      // const startTime = '02.02.202202:00:00'; // FOR TESTING ONLY
+      // const endTime = '02.03.202203:00:00'; // FOR TESTING ONLY
 
       // Generate date in MM/DD/YYYY format for email
       const createdAt: string = h.formatDateTimeAsString(created_at);
@@ -104,15 +99,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const newWebhookId: string = headers?.["x-shopify-webhook-id"] as string || '';
 
       // Format data for QR Code
-      const qrcodeLength: number = `1755164${orderNum}`.length;
+      const qrcodeLength: number = `1755164${order_num}`.length;
       const zeros: string = new Array(16 - qrcodeLength).join('0');
-      const qrcodeData: string = `1755164${zeros}${orderNum}`; // add zero placeholders to qrcode data
+      const qrcodeData: string = `1755164${zeros}${order_num}`; // add zero placeholders to qrcode data
 
       // Generate qrcode with order information
       const qrcodeUrl: string = await h.generateQRCode(QRCode, qrcodeData);
 
       // Generate file for server
-      const dataForServer: DataForServer = { end_time: endTimeFormatted, start_time: startTimeFormattedWithGracePeriod, first, last, orderNum };
+      const dataForServer: DataForServer = { end_time, first, last, order_num, start_time };
       const fileForServer: string = h.generateDataForServer(dataForServer);
 
       // Initiate ftp client
@@ -129,7 +124,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       let serverResponse = false;
       try {
         // Send data to server
-        serverResponse = await h.sendDataToServer(ftpClient, fileForServer, orderNum);
+        serverResponse = await h.sendDataToServer(ftpClient, fileForServer, order_num);
         console.log('Response from server:', serverResponse);
       } catch (e) {
         // If sending data to server fails, send error response
@@ -186,7 +181,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         html: htmlMarkup,
         attachments,
         cc,
-        orderNum,
+        orderNum: order_num,
         to,
       };
 

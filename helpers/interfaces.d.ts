@@ -23,7 +23,7 @@ interface DataForServer {
   end_time: string;
   first: string
   last: string;
-  orderNum: string;
+  order_num: string;
   start_time: string;
 }
 
