@@ -24,30 +24,21 @@ export const failedToConnectToServerMessage: string = 'Failed to connect to ftp 
 
 
 /**
- * 
- */
-export function subtractHours(date: Date, hours: number): Date {
-  date.setHours(date.getHours() - hours);
-  return date;
-} // END subtractHours
-
-
-/**
  * Returns date as dd.mm.yyyyhour:minute:second format i.e., 01.01.202216:14:14
  * @param {string} dateString - date in string form
  */
 export function formatTime(dateString: string, shouldHaveGracePeriod = true): string {
   if (!dateString?.trim()) { return ''; }
+
+  const timeFormat = 'DD.MM.YYYYhh:mm:ss';
+
   if (shouldHaveGracePeriod) {
     const time = moment(dateString);
-    const gracePeriod = moment.duration('01:00:00');
-    time.subtract(gracePeriod);
-    const newStartTime = moment(time).format('DD.MM.YYYYhh:mm:ss');
-    return newStartTime;
+    time.subtract(moment.duration('01:00:00'));
+    return moment(time).format(timeFormat);
   }
 
-  const time = moment(dateString).format('DD.MM.YYYhh:mm:ss');
-  return time;
+  return moment(dateString).format(timeFormat);
 } // END formatTime
 
 
@@ -72,21 +63,23 @@ export function generateHTMLMarkup(data: HTMLMarkupData, billingAddressMarkup: s
   
   const {
     createdAt: purchaseDate,
-    end_time,
+    end_time: reservationEndTime,
     price,
-    name,
+    name: type,
     quantity,
-    start_time,
-    subtotal_price,
-    total_price,
-    total_tax
+    start_time: reservationStartTime,
+    subtotal_price: subtotal,
+    total_price: total,
+    total_tax: taxes
   }: HTMLMarkupData = data;
 
+  const timeFormat: string = 'MM/DD/YYYY hh:mm:ss a';
+
   // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
-  const start = moment(start_time).format('MM/DD/YYYY hh:mm:ss a')?.toUpperCase();
-  const end = moment(end_time).format('MM/DD/YYYY hh:mm:ss a')?.toUpperCase();
-  // const start1: string = '10/02/2022 at 07:00:00 AM'; // FOR TESTING ONLY
-  // const end: string = '10/12/2022 at 11:00:00 PM'; // FOR TESTING ONLY
+  const dropoffTime: string = moment(reservationStartTime).format(timeFormat)?.toUpperCase();
+  const pickupTime: string = moment(reservationEndTime).format(timeFormat)?.toUpperCase();
+  // const dropoffTime: string = '10/02/2022 at 07:00:00 AM'; // FOR TESTING ONLY
+  // const pickupTime: string = '10/12/2022 at 11:00:00 PM'; // FOR TESTING ONLY
 
   return `
     <html>
@@ -99,13 +92,13 @@ export function generateHTMLMarkup(data: HTMLMarkupData, billingAddressMarkup: s
       <p style="${padding0} margin: 2px 0;">${billingAddressMarkup}</p>
       ${generateIconImageForEmailTemplate()}
       <p style="${margin0010}">1x Facility Charge for $4.99 each</p>
-      <p style="${margin1000} ${padding0}">${quantity}x ${name.toUpperCase()} for $${price} each</p>
-      <p style="${margin8000} ${padding0}"><b>Drop off:</b> ${start}</p>
-      <p style="${margin1000} ${padding0}"><b>Pick up:</b> ${end}</p>
+      <p style="${margin1000} ${padding0}">${quantity}x ${type.toUpperCase()} for $${price} each</p>
+      <p style="${margin8000} ${padding0}"><b>Drop off:</b> ${dropoffTime}</p>
+      <p style="${margin1000} ${padding0}"><b>Pick up:</b> ${pickupTime}</p>
       <br />
-      <p style="${padding0} ${margin0}">Subtotal: $${subtotal_price}</p>
-      <p style="${padding0} ${margin0}">Taxes and Fees: $${total_tax}</p>
-      <p style="${padding0} ${margin0}">Total: $${total_price}</p>
+      <p style="${padding0} ${margin0}">Subtotal: $${subtotal}</p>
+      <p style="${padding0} ${margin0}">Taxes and Fees: $${taxes}</p>
+      <p style="${padding0} ${margin0}">Total: $${total}</p>
       <br />
       <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique-qrcode" alt="QR Code" title="QR Code" />
     </body>
@@ -147,10 +140,10 @@ export function formatBillingInfoForEmail(billing_address: BillingAddress): stri
 */
 export async function sendEmail(transporter: any, emailInfo: EmailData): Promise<boolean> {
   try {
-    if (!emailInfo) { return false; }
+    if (!emailInfo || !emailInfo?.to) { return false; }
 
     const {
-      from,
+      from: f,
       attachments,
       cc,
       html,
@@ -158,20 +151,13 @@ export async function sendEmail(transporter: any, emailInfo: EmailData): Promise
       to,
     }: EmailData = emailInfo;
 
-    const f: string = `"Omni Airport Parking" ${from}`;
+    const from: string = `"Omni Airport Parking" ${f}`;
     const text: string = 'Your order has been confirmed for Omni Parking. The QR code is attached';
     const subject: string = `Order #${orderNum} confirmed`;
+    const emailData = { from, attachments, cc, html, subject, text, to };
 
     // send email
-    const emailResponse = await transporter.sendMail({
-      from: f,
-      attachments,
-      cc,
-      html,
-      subject,
-      text,
-      to,
-    });
+    const emailResponse = await transporter.sendMail(emailData);
 
     // Check results from request; if email address is found in the 'accepted' array, then email was sent succesfully
     // But if the receiver's email is found in the 'rejected' array, then the email failed to send
