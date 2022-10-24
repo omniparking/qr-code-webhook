@@ -34,7 +34,7 @@ export function formatTime(dateString: string, shouldHaveGracePeriod = true): st
 
   if (shouldHaveGracePeriod) {
     const time = moment(dateString);
-    time.subtract(moment.duration('01:00:00'));
+    time.subtract(moment.duration('02:00:00'));
     return moment(time).format(timeFormat);
   }
 
@@ -60,7 +60,7 @@ function generateIconImageForEmailTemplate(): string {
  * @param {string} billingAddressMarkup - billing address info in html format as string
  */
 export function generateHTMLMarkup(data: HTMLMarkupData, billingAddressMarkup: string): string {
-  
+
   const {
     createdAt: purchaseDate,
     end_time: reservationEndTime,
