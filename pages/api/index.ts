@@ -1,19 +1,21 @@
 /*jshint esversion: 8 */
 
-// Next types
+// Types
 import type { NextApiRequest, NextApiResponse } from 'next'; // for request/response types
+import { IncomingHttpHeaders } from 'http';
 
 // npm/node imports
 import { promises as fs } from 'fs'; // to read icon file as promise
 import { Redis } from '@upstash/redis'; // to store webhook_ids to database
+import moment from 'moment';
 import nodemailer from 'nodemailer'; // to send emails
 import path from 'path'; // to get path for icon file
 import PromiseFtp from 'promise-ftp';
 import QRCode from 'qrcode'; // to generate qr code
-import moment from 'moment';
 
-// Helpers/Scripts
+// Helpers
 import * as h from '../../helpers/index';
+
 
 const errorCode: number = 500;
 const successCode: number = 201;
@@ -40,7 +42,7 @@ const transporter: any = nodemailer.createTransport({ auth: { user, pass }, host
 */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { body, headers, method } = req;
+    const { body, headers, method }: { body: any, headers: IncomingHttpHeaders, method?: string | undefined } = req;
     const shopifyTopic: string = (headers?.['x-shopify-topic'] as string)?.trim() || '';
     const host: string = headers?.host?.trim() || '';
 
