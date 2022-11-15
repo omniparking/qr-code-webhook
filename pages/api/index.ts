@@ -46,10 +46,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const shopifyTopic: string = (headers?.['x-shopify-topic'] as string)?.trim() || '';
     const host: string = headers?.host?.trim() || '';
 
-    // return res.status(successCode).send({ message: 'Webhook turned off!' }); // UNCOMMENT LINE TO TURN WEBHOOK OFF
+    // return res.status(successCode).send({ message: 'Webhook turned off!' }); // TO TURN OFF WEBHOOK
 
     if (method === 'POST' && shopifyTopic === SHOPIFY_TOPIC && host === SHOPIFY_HOST) {
-      // Grab needed data from request object, i.e., start/end times, order num, address, price, etc.
+      // Grab needed data from request object (i.e., start/end times, order num, address, price, etc.)
       const {
         order_number: order_num,
         email: to,
@@ -65,8 +65,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         total_tax,
       } = body;
 
-      const bookingTimes: BookingTime[] = line_items?.[1]?.properties || [];
-      const { quantity, price, name } = line_items?.[1];
+      const lineItems = line_items?.[1] || { quantity: '00.00', price: '00.00', name: 'NA' };
+      const { quantity, price, name } = lineItems;
+      const bookingTimes: BookingTime[] = lineItems?.properties || [];
       const { first_name: first, last_name: last } = customer;
       let start_time: string;
       let end_time: string;
@@ -74,12 +75,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!bookingTimes?.length || !price || !name || !customer) { return res.status(successCode).send({ message: h.dataMissingMessage }); }
 
       // Get start and end times of booking
-      if (bookingTimes?.length) {
-        bookingTimes.forEach(({ name, value }: BookingTime) => {
-          if (name === 'booking-start') { start_time = value; }
-          if (name === 'booking-finish') { end_time = value; }
-        });
-      }
+      bookingTimes?.forEach(({ name, value }: BookingTime) => {
+        if (name === 'booking-start') {
+          start_time = value;
+        } else if (name === 'booking-finish') {
+          end_time = value;
+        }
+      });
 
       // If no start or end times from booking, event failed
       if (!start_time || !end_time) { return res.status(errorCode).send({ message: h.missingTimeInfoMessage }); }
@@ -116,7 +118,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const ftpClient: PromiseFtp = new PromiseFtp();
 
       try {
-        await ftpClient.connect({ host: IP, user: S_USER, password: S_PASS, port: 21, secure: false });
+        await ftpClient.connect({
+          host: IP,
+          user: S_USER,
+          password: S_PASS,
+          port: 21,
+          secure: false,
+        });
       } catch (e) {
         // If we fail to connect to ftp server, send error response
         console.error('error connecting to ftp server:', e);
@@ -181,9 +189,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const emailData: EmailData = {
         from: user,
         html: htmlMarkup,
+        orderNum: order_num,
         attachments,
         cc,
-        orderNum: order_num,
         to,
       };
 

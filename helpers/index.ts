@@ -1,5 +1,5 @@
 /*jshint esversion: 8 */
-
+// npm
 import moment from 'moment';
 
 // declaring variables for styling HTML markup
@@ -64,13 +64,13 @@ export function generateHTMLMarkup(data: HTMLMarkupData, billingAddressMarkup: s
   const {
     createdAt: purchaseDate,
     end_time: reservationEndTime,
-    price,
     name: type,
-    quantity,
     start_time: reservationStartTime,
     subtotal_price: subtotal,
     total_price: total,
-    total_tax: taxes
+    total_tax: taxes,
+    price,
+    quantity,
   }: HTMLMarkupData = data;
 
   const timeFormat: string = 'MM/DD/YYYY hh:mm:ss a';
@@ -114,7 +114,15 @@ export function formatBillingInfoForEmail(billing_address: BillingAddress): stri
   try {
     if (!billing_address) { return ''; }
 
-    const { address1, address2, city, country, name, province, zip }: BillingAddress = billing_address;
+    const {
+      address1,
+      address2,
+      city,
+      country,
+      name,
+      province,
+      zip,
+    }: BillingAddress = billing_address;
 
     return `
       <section>
@@ -201,7 +209,13 @@ export async function generateQRCode(QRCode: any, data: string): Promise<string>
 */
 export function generateDataForServer(data: DataForServer): string {
   try {
-    const { end_time: e, first: f, last: l, order_num: n, start_time: s } = data;
+    const {
+      end_time: e,
+      first: f,
+      last: l,
+      order_num: n,
+      start_time: s,
+    } = data;
 
     const a: string = '250000;1755164;13.07.2022;63;"USD"\r\n0;5;';
     const zeros: string = ';0;1;07;0;0;0;;;';
