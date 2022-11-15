@@ -153,7 +153,7 @@ export async function sendEmail(transporter: any, emailInfo: EmailData): Promise
 
     const from: string = `"Omni Airport Parking" ${f}`;
     const text: string = 'Your order has been confirmed for Omni Parking. The QR code is attached';
-    const subject: string = `Order #${orderNum} confirmed`;
+    const subject: string = `Order #${orderNum} QR Code`;
     const replyTo: string = 'info@omniairportparking.com';
     const emailData = { from, attachments, cc, html, replyTo, subject, text, to };
 
