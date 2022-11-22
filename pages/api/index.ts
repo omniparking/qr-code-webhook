@@ -65,7 +65,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         total_tax,
       } = body;
 
-      const lineItems = line_items?.[1] || { quantity: '00.00', price: '00.00', name: 'NA' };
+      const lineItems = h.checkProperties(line_items) || { quantity: '00.00', price: '00.00', name: 'NA', properties: [] };
       const { quantity, price, name } = lineItems;
       const bookingTimes: BookingTime[] = lineItems?.properties || [];
       const { first_name: first, last_name: last } = customer;

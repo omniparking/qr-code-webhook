@@ -22,6 +22,14 @@ export const errorFromMainTryCatchMessage: string = 'Webhook Event failed. Error
 export const successMessage: string = 'Webhook Event logged and Email Successfully logged!';
 export const failedToConnectToServerMessage: string = 'Failed to connect to ftp server.';
 
+/**
+ * Checks line items property for booking time or 
+ * @param {any} lineItems - line items off body
+ */
+export function checkProperties(lineItems: any): any {
+  return lineItems?.[0]?.properties?.length ? lineItems[0] : lineItems?.[1]?.properties?.length ? lineItems[1] : lineItems;
+} // END checkProperties
+
 
 /**
  * Returns date as dd.mm.yyyyhour:minute:second format i.e., 01.01.202216:14:14
