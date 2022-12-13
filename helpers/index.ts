@@ -38,7 +38,7 @@ export function checkProperties(lineItems: any): any {
 export function formatTime(dateString: string, shouldHaveGracePeriod = true): string {
   if (!dateString?.trim()) { return ''; }
 
-  const timeFormat = 'DD.MM.YYYYhh:mm:ss';
+  const timeFormat = 'DD.MM.YYYYHH:mm:ss';
 
   if (shouldHaveGracePeriod) {
     const time = moment(dateString);
@@ -129,7 +129,7 @@ export function formatBillingInfoForEmail(billing_address: BillingAddress): stri
       country,
       name,
       province,
-      zip,
+      zip
     }: BillingAddress = billing_address;
 
     return `
@@ -143,7 +143,7 @@ export function formatBillingInfoForEmail(billing_address: BillingAddress): stri
       </section>
     `;
   } catch (e) {
-    console.error('Error -- formatBillingInfoForEmail: => ', e);
+    console.error('formatBillingInfoForEmail => error:', e);
     return '';
   }
 } // END formatBillingInfoForEmail
@@ -159,7 +159,7 @@ export async function sendEmail(transporter: any, emailInfo: EmailData): Promise
     if (!emailInfo || !emailInfo?.to) { return false; }
 
     const {
-      from: f,
+      from: frm,
       attachments,
       cc,
       html,
@@ -167,11 +167,11 @@ export async function sendEmail(transporter: any, emailInfo: EmailData): Promise
       to,
     }: EmailData = emailInfo;
 
-    const from: string = `"Omni Airport Parking" ${f}`;
+    const from: string = `"Omni Airport Parking" ${frm}`;
     const text: string = 'Your order has been confirmed for Omni Parking. The QR code is attached';
     const subject: string = `Order #${orderNum} QR Code`;
     const replyTo: string = 'info@omniairportparking.com';
-    const emailData = { from, attachments, cc, html, replyTo, subject, text, to };
+    const emailData = { attachments, cc, from, html, replyTo, subject, text, to };
 
     // send email
     const emailResponse = await transporter.sendMail(emailData);
@@ -189,7 +189,7 @@ export async function sendEmail(transporter: any, emailInfo: EmailData): Promise
       return false;
     }
   } catch (e) {
-    console.error('Error -- sendEmail =>', e);
+    console.error('sendEmail => error:', e);
     return false;
   }
 } // END sendEmail
@@ -206,7 +206,7 @@ export async function generateQRCode(QRCode: any, data: string): Promise<string>
     const qrcodeUrl: string = await QRCode.toDataURL(data, { errorCorrectionLevel: 'L', version: 9 });
     return qrcodeUrl;
   } catch (e) {
-    console.error('Error -- generateQRCode => ', e);
+    console.error('generateQRCode => error:', e);
     return '';
   }
 } // END generateQRCode
@@ -236,7 +236,7 @@ export function generateDataForServer(data: DataForServer): string {
     // generate string as data for file for ftp server
     return `${a}${b};${s};${e}${zeros}"${f}";"${l}";"";"${orderNoFormated}";"";${st};1;04;${e};200${q}`;
   } catch (e) {
-    console.error('Error -- generateDataForServer =>', e);
+    console.error('generateDataForServer => error:', e);
     return '';
   }
 } // END generateDataForServer
@@ -258,7 +258,7 @@ export async function sendDataToServer(ftpClient: any, data: string, orderNumber
     const resp = await ftpClient.put(data, filename);
     serverResponse = !resp ? true : false;
   } catch (e) {
-    console.error('Error -- sendDataToServer =>', e);
+    console.error('sendDataToServer => error:', e);
     serverResponse = false;
   } finally {
     // end connection to ftp server
