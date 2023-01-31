@@ -15,7 +15,7 @@ export const dataMissingMessage: string = 'Webhook event failed. Critical data i
 export const failedToLoadDataToServerMessage: string = 'Failed to load data to server!';
 export const webhookNotLoggedAndEmailSentMessage: string = 'Webhook event not logged but email sent successfully.';
 export const webhookNotLoggedAndEmailNotSentMessage: string = 'Webhook event not logged and email not sent!';
-export const missingTimeInfoMessage: string = 'Webhook Event logged and Email Successfully logged.';
+export const missingTimeInfoMessage: string = 'Webhook Event failed due to time info missing.';
 export const webhookAlreadyLoggedMessage: string = 'Webhook Event failed as it has previously been successfully logged.';
 export const requestNotPostMethodMessage: string = 'Webhook Event failed as request not coming from trusted source.';
 export const errorFromMainTryCatchMessage: string = 'Webhook Event failed. Error from main try/catch.';
@@ -27,7 +27,7 @@ export const failedToConnectToServerMessage: string = 'Failed to connect to ftp 
  * @param {any} lineItems - line items off body
  */
 export function checkProperties(lineItems: any): any {
-  return lineItems?.[0]?.properties?.length ? lineItems[0] : lineItems?.[1]?.properties?.length ? lineItems[1] : lineItems;
+  return lineItems?.[1]?.properties?.length === 3 ? lineItems[1] : lineItems?.[0];
 } // END checkProperties
 
 
