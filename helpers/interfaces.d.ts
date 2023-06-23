@@ -21,7 +21,7 @@ interface BookingTime {
 
 interface DataForServer {
   end_time: string;
-  first: string
+  first: string;
   last: string;
   order_num: string;
   start_time: string;
@@ -34,6 +34,14 @@ interface EmailData {
   orderNum: string;
   to: string;
   cc?: string[];
+}
+
+interface FTPServer {
+  host: string;
+  user: string;
+  password: string;
+  port: number;
+  secure: boolean;
 }
 
 interface HTMLMarkupData {
