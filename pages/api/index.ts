@@ -428,7 +428,8 @@ const handleWebhook = async (
               .status(successCode)
               .send({ message: messages.successMessage(vendorName) });
           } catch (error) {
-            // Adding webhook_id to redis failed, so send response indicating email sent successfully but webhook_id not stored in redis
+            // Adding webhook_id to redis failed, so send response indicating email sent
+            // successfully but webhook_id not stored in redis
             console.error("Error saving webhook but email sent =>", error);
             return res.status(errorCode).send({
               message: messages.webhookNotLoggedAndEmailSentMessage(vendorName),
@@ -444,7 +445,8 @@ const handleWebhook = async (
       }
     } else {
       console.error("Hit case where webhook id already exists in database");
-      // Case where webhook_id is already stored, meaning an email has already been sent send response message indicating that webhook failed bc it was already successfully handled
+      // Case where webhook_id is already stored, meaning an email has already been
+      // sent send response message indicating that webhook failed bc it was already successfully handled
       return res
         .status(errorCode)
         .send({ message: messages.webhookAlreadyLoggedMessage(vendorName) });
