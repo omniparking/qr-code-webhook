@@ -1,1 +1,7 @@
-type METHOD_TYPES = "POST" | "GET" | "PUT" | "PATCH" | "DELETE" | "undefined";
+export type METHOD_TYPES =
+  | "POST"
+  | "GET"
+  | "PUT"
+  | "PATCH"
+  | "DELETE"
+  | "undefined";
