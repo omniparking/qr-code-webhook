@@ -33,6 +33,10 @@ const H1 = styled.h1`
   margin: 24px 0 12px 0;
 `;
 
+const Image = styled.img`
+  margin-top: 20px;
+`;
+
 const QRPage = ({ startTime, endTime, qrcodeData }) => {
   const [qrDataURL, setQRDataURL] = useState("");
 
@@ -48,14 +52,14 @@ const QRPage = ({ startTime, endTime, qrcodeData }) => {
       <H1>Omni Airport Parking</H1>
       <SpanBlock>
         <Paragraph>Start Time:</Paragraph>{" "}
-        <Span>{moment(startTime).format("MM/DD/YY h:mm a")}</Span>
+        <Span>{startTime && moment(startTime).format("MM/DD/YY h:mm a")}</Span>
       </SpanBlock>
 
       <SpanBlock>
         <Paragraph>End Time:</Paragraph>{" "}
         <Span>{moment(endTime).format("MM/DD/YY h:mm a")}</Span>
       </SpanBlock>
-      {qrDataURL && <img src={qrDataURL} alt="QR Code" />}
+      {qrDataURL && <Image src={qrDataURL} alt="QR Code" />}
     </Container>
   );
 };

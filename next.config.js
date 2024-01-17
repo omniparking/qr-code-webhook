@@ -2,9 +2,12 @@
 /*jshint esversion: 8 */
 
 const nextConfig = {
+  compiler: {
+    styledComponents: true,
+  },
   reactStrictMode: true,
   serverRuntimeConfig: {
-    PROJECT_ROOT: __dirname
+    PROJECT_ROOT: __dirname,
   },
   env: {
     EMAIL_PORT: process.env.EMAIL_PORT,
@@ -23,7 +26,7 @@ const nextConfig = {
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     SHOPIFY_TOPIC: process.env.SHOPIFY_TOPIC,
     SHOPIFY_HOST: process.env.SHOPIFY_HOST,
-  }
+  },
 };
 
 module.exports = nextConfig;
