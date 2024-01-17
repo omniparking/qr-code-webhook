@@ -54,4 +54,5 @@ interface HTMLMarkupData {
   subtotal_price: string;
   total_price: string;
   total_tax: string;
+  qrcodeData: string;
 }

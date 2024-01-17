@@ -89,6 +89,8 @@ export default async function handler(
       method?: string | undefined;
     } = req;
 
+    return handleWebhook(req, res);
+
     const shopifyTopic: string =
       (headers?.["x-shopify-topic"] as string)?.trim() || "";
     const webhookSourceName =
@@ -331,6 +333,7 @@ const handleWebhook = async (
         name,
         price,
         start_time,
+        qrcodeData,
       });
     } else {
       // Generate HTML markup for email (general)
@@ -345,6 +348,7 @@ const handleWebhook = async (
           price,
           quantity,
           start_time,
+          qrcodeData,
         },
         billingAddressMarkup
       );
@@ -391,6 +395,14 @@ const handleWebhook = async (
 
       try {
         emailResponse = await sendEmail(transporter, emailData);
+        res.setHeader(
+          "Set-Cookie",
+          `qrcodeData=${JSON.stringify({
+            qrcode: qrcodeData,
+            start_time,
+            end_time,
+          })}`
+        );
       } catch (error) {
         console.error("Error sending email =>", error);
         emailResponse = false;
@@ -414,6 +426,14 @@ const handleWebhook = async (
 
         try {
           emailRetryResponse = await sendEmail(transporter, emailData);
+          res.setHeader(
+            "Set-Cookie",
+            `qrcodeData=${JSON.stringify({
+              qrcode: qrcodeData,
+              start_time,
+              end_time,
+            })}`
+          );
         } catch (error) {
           console.error("Error retrying email =>", error);
           emailRetryResponse = false;

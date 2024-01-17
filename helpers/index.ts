@@ -107,6 +107,7 @@ export function generateHTMLMarkup(
     total_tax: taxes,
     price,
     quantity,
+    qrcodeData,
   }: HTMLMarkupData = data;
 
   const timeFormat: string = "MM/DD/YYYY hh:mm:ss a";
@@ -120,6 +121,8 @@ export function generateHTMLMarkup(
     ?.toUpperCase();
   // const dropoffTime: string = '10/02/2022 at 07:00:00 AM'; // FOR TESTING ONLY
   // const pickupTime: string = '10/12/2022 at 11:00:00 PM'; // FOR TESTING ONLY
+
+  const href = `http://localhost:1337/view/qr?startTime=${reservationStartTime}&endTime=${reservationEndTime}&qrcodeData=${qrcodeData}`;
 
   return `
     <html>
@@ -141,6 +144,11 @@ export function generateHTMLMarkup(
       <p style="${padding0} ${margin0}">Total: $${total}</p>
       <br />
       <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique-qrcode" alt="QR Code" title="QR Code" />
+      <br />
+      <p style="${padding0} ${margin0}">Can't see the QR Code? View it in your browser by clicking the link below:</p>
+      <a href="${href}" target="_blank">
+        View QR Code
+      </a>
     </body>
   `;
 } // END generateHTMLMarkup
@@ -339,6 +347,7 @@ export function generateHTMLMarkupMercedes(data: HTMLMarkupData): string {
     total_tax: taxes,
     price,
     quantity,
+    qrcodeData,
   }: HTMLMarkupData = data;
 
   const timeFormat: string = "MM/DD/YYYY hh:mm:ss a";
@@ -353,6 +362,8 @@ export function generateHTMLMarkupMercedes(data: HTMLMarkupData): string {
     ?.toUpperCase();
   // const dropoffTime: string = '10/02/2022 at 07:00:00 AM'; // FOR TESTING ONLY
   // const pickupTime: string = '10/12/2022 at 11:00:00 PM'; // FOR TESTING ONLY
+
+  const href = `http://localhost:1337/view/qr?startTime=${reservationStartTime}&endTime=${reservationEndTime}&qrcodeData=${qrcodeData}`;
 
   return `
     <html>
@@ -373,6 +384,11 @@ export function generateHTMLMarkupMercedes(data: HTMLMarkupData): string {
       <p style="${padding0} ${margin0}">Total After Discount: $0.00</p>
       <br />
       <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique-qrcode" alt="QR Code" title="QR Code" />
+      <br />
+      <p style="${padding0} ${margin0}">Can't see the QR Code? View it in your browser by clicking the link below:</p>
+      <a href="${href}" target="_blank">
+        View QR Code
+      </a>
     </body>
   `;
 } // END generateHTMLMarkupMercedes
