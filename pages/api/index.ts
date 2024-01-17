@@ -1,5 +1,7 @@
 /*jshint esversion: 8 */
 
+/* eslint max-len: ["error", { "code": 120 }] */
+
 // Types
 import type { NextApiRequest, NextApiResponse } from "next"; // for request/response types
 import { IncomingHttpHeaders } from "http";
@@ -14,11 +16,30 @@ import PromiseFtp from "promise-ftp";
 import QRCode from "qrcode"; // to generate qr code
 
 // Helpers
-import * as h from "../../helpers/index";
+import {
+  checkProperties,
+  messages,
+  formatBillingInfoForEmail,
+  formatTime,
+  generateDataForServer,
+  generateHTMLMarkup,
+  generateQRCode,
+  sendDataToServer,
+  sendEmail,
+  calculateDaysBetweenWithTime,
+  generateHTMLMarkupMercedes,
+} from "../../helpers/index";
 
 const errorCode: number = 500;
 const successCode: number = 201;
 const ftpPort: number = 21;
+
+const defaultObj = {
+  name: "NA",
+  price: "00.00",
+  properties: [],
+  quantity: "00.00",
+};
 
 // Deconstruct environment variables from process.env
 const {
@@ -33,6 +54,8 @@ const {
   SERVER_USER: S_USER,
   SHOPIFY_TOPIC,
   SHOPIFY_HOST,
+  THIRD_PARTY_TOPIC,
+  WEBHOOK_NAME,
 } = process.env;
 
 // Initialize redis (to store webhook ids)
@@ -57,7 +80,6 @@ export default async function handler(
 ) {
   try {
     const {
-      body,
       headers,
       method,
     }: {
@@ -65,8 +87,11 @@ export default async function handler(
       headers: IncomingHttpHeaders;
       method?: string | undefined;
     } = req;
+
     const shopifyTopic: string =
       (headers?.["x-shopify-topic"] as string)?.trim() || "";
+    const webhookSourceName =
+      (headers?.["x-hookdeck-source-name"] as string).trim() || "";
 
     // return res.status(successCode).send({ message: 'Webhook turned off!' }); // TO TURN OFF WEBHOOK
 
@@ -75,253 +100,347 @@ export default async function handler(
       shopifyTopic === SHOPIFY_TOPIC &&
       host === SHOPIFY_HOST;
 
-    if (isTrustedSource()) {
-      // Grab needed data from request object (i.e., start/end times, order num, address, price, etc.)
-      const {
-        order_number: order_num,
-        email: to,
-        billing_address,
-        customer,
-        created_at,
-        current_subtotal_price,
-        current_total_price,
-        current_total_tax,
-        line_items,
-        subtotal_price,
-        total_price,
-        total_tax,
-      } = body;
+    const isMercedesIntegration = (): boolean =>
+      method === "POST" &&
+      shopifyTopic === THIRD_PARTY_TOPIC &&
+      webhookSourceName === WEBHOOK_NAME;
 
-      const lineItems = h.checkProperties(line_items) || {
-        quantity: "00.00",
-        price: "00.00",
-        name: "NA",
-        properties: [],
+    if (!isTrustedSource() && !isMercedesIntegration()) {
+      // Case where request method is not of type "POST"
+      return res
+        .status(errorCode)
+        .send({ message: messages.requestNotPostMethodMessage("general") });
+    } else if (isMercedesIntegration()) {
+      handleMercedesIntegration(req, res);
+    } else {
+      handleWebhook(req, res);
+    }
+  } catch (error) {
+    // Case where something failed in the code above send a response message indicating webhook failed
+    console.error("Error -- main try/catch in handler =>", error);
+    res
+      .status(errorCode)
+      .send({ message: messages.errorFromMainTryCatchMessage("general") });
+  }
+}
+
+const handleMercedesIntegration = async (
+  req: NextApiRequest,
+  res: NextApiResponse
+): Promise<void> => {
+  try {
+    const {
+      body,
+      headers,
+    }: {
+      body: any;
+      headers: IncomingHttpHeaders;
+      method?: string | undefined;
+    } = req;
+
+    handleWebhook(req, res, "mercedes");
+  } catch (error) {
+    console.error("ERROR WITH handleMercedesIntegration WEBHOOK!", error);
+    res
+      .status(errorCode)
+      .send({ message: messages.errorFromMainTryCatchMessage("mercedes") });
+  }
+};
+
+const handleWebhook = async (
+  req: NextApiRequest,
+  res: NextApiResponse,
+  vendorName: "general" | "mercedes" = "general"
+): Promise<void> => {
+  try {
+    const {
+      body,
+      headers,
+    }: {
+      body: any;
+      headers: IncomingHttpHeaders;
+      method?: string | undefined;
+    } = req;
+
+    // Grab needed data from request object (i.e., start/end times, order num, address, price, etc.)
+    const {
+      order_number: order_num,
+      email: to,
+      billing_address,
+      customer,
+      created_at,
+      current_subtotal_price,
+      current_total_price,
+      current_total_tax,
+      line_items,
+      subtotal_price,
+      total_price,
+      total_tax,
+    } = body;
+
+    const lineItems = checkProperties(line_items) || defaultObj;
+    const { quantity, price, name } = lineItems;
+    const bookingTimes: BookingTime[] = lineItems?.properties || [];
+    const { first_name: first, last_name: last } = customer;
+
+    let start_time: string;
+    let end_time: string;
+
+    const missingData = (vendor: "general" | "mercedes") => {
+      if (vendor === "general") {
+        return !bookingTimes?.length || !price || !name || !customer;
+      } else {
+        return !bookingTimes || !price || !first || !last;
+      }
+    };
+
+    if (missingData(vendorName)) {
+      return res
+        .status(successCode)
+        .send({ message: messages.dataMissingMessage(vendorName) });
+    }
+
+    // Get start and end times of booking
+    bookingTimes?.forEach(({ name, value }: BookingTime) => {
+      if (name === "booking-start") {
+        start_time = value;
+      } else if (name === "booking-finish") {
+        end_time = value;
+      }
+    });
+
+    // If no start or end times from booking, event failed
+    if (!start_time || !end_time) {
+      return res
+        .status(errorCode)
+        .send({ message: messages.missingTimeInfoMessage(vendorName) });
+    }
+
+    const startTime = formatTime(start_time);
+    const endTime = formatTime(end_time, false);
+    // const startTime = '02.02.202202:00:00'; // FOR TESTING ONLY
+    // const endTime = '02.03.202203:00:00'; // FOR TESTING ONLY
+
+    // Generate date in MM/DD/YYYY format for email
+    const createdAt: string = moment(created_at).format("MM/DD/YYYY");
+
+    // Get subtotal, taxes, and total price for email template
+    const subtotalPrice: string =
+      subtotal_price || current_subtotal_price || "";
+    const totalTax: string = total_tax || current_total_tax || "";
+    const totalPrice: string = total_price || current_total_price || "";
+
+    // Grab unique webhook_id
+    const newWebhookId: string =
+      (headers?.["x-shopify-webhook-id"] as string) || "";
+
+    // Format data for QR Code
+    const qrcodeLength: number = `1755164${order_num}`.length;
+    const zeros: string = new Array(16 - qrcodeLength).join("0");
+    const qrcodeData: string = `1755164${zeros}${order_num}`; // add zero placeholders to qrcode data
+
+    // Generate qrcode with order information
+    const qrcodeUrl: string = await generateQRCode(QRCode, qrcodeData);
+
+    // Generate file for server
+    const dataForServer: DataForServer = {
+      end_time: endTime,
+      start_time: startTime,
+      first,
+      last,
+      order_num,
+    };
+
+    const fileForServer: string = generateDataForServer(dataForServer);
+
+    // Initiate ftp client
+    const ftpClient: PromiseFtp = new PromiseFtp();
+
+    try {
+      const ftpOptions: FTPServer = {
+        host: IP,
+        user: S_USER,
+        password: S_PASS,
+        port: ftpPort,
+        secure: false,
       };
 
-      const { quantity, price, name } = lineItems;
-      const bookingTimes: BookingTime[] = lineItems?.properties || [];
-      const { first_name: first, last_name: last } = customer;
-
-      let start_time: string;
-      let end_time: string;
-
-      if (!bookingTimes?.length || !price || !name || !customer) {
-        return res.status(successCode).send({ message: h.dataMissingMessage });
-      }
-
-      // Get start and end times of booking
-      bookingTimes?.forEach(({ name, value }: BookingTime) => {
-        if (name === "booking-start") {
-          start_time = value;
-        } else if (name === "booking-finish") {
-          end_time = value;
-        }
+      await ftpClient.connect(ftpOptions);
+    } catch (error) {
+      // If we fail to connect to ftp server, send error response
+      console.error("error connecting to ftp server:", error);
+      return res.status(errorCode).send({
+        message: messages.failedToConnectToFTPServerMessage(vendorName),
       });
+    }
 
-      // If no start or end times from booking, event failed
-      if (!start_time || !end_time) {
-        return res
-          .status(errorCode)
-          .send({ message: h.missingTimeInfoMessage });
-      }
-
-      const startTime = h.formatTime(start_time);
-      const endTime = h.formatTime(end_time, false);
-      // const startTime = '02.02.202202:00:00'; // FOR TESTING ONLY
-      // const endTime = '02.03.202203:00:00'; // FOR TESTING ONLY
-
-      // Generate date in MM/DD/YYYY format for email
-      const createdAt: string = moment(created_at).format("MM/DD/YYYY");
-
-      // Get subtotal, taxes, and total price for email template
-      const subtotalPrice: string =
-        subtotal_price || current_subtotal_price || "";
-      const totalTax: string = total_tax || current_total_tax || "";
-      const totalPrice: string = total_price || current_total_price || "";
-
-      // Grab unique webhook_id
-      const newWebhookId: string =
-        (headers?.["x-shopify-webhook-id"] as string) || "";
-
-      // Format data for QR Code
-      const qrcodeLength: number = `1755164${order_num}`.length;
-      const zeros: string = new Array(16 - qrcodeLength).join("0");
-      const qrcodeData: string = `1755164${zeros}${order_num}`; // add zero placeholders to qrcode data
-
-      // Generate qrcode with order information
-      const qrcodeUrl: string = await h.generateQRCode(QRCode, qrcodeData);
-
-      // Generate file for server
-      const dataForServer: DataForServer = {
-        end_time: endTime,
-        start_time: startTime,
-        first,
-        last,
-        order_num,
-      };
-      const fileForServer: string = h.generateDataForServer(dataForServer);
-
-      // Initiate ftp client
-      const ftpClient: PromiseFtp = new PromiseFtp();
-
-      try {
-        const ftpOptions: FTPServer = {
-          host: IP,
-          user: S_USER,
-          password: S_PASS,
-          port: ftpPort,
-          secure: false,
-        };
-        await ftpClient.connect(ftpOptions);
-      } catch (e) {
-        // If we fail to connect to ftp server, send error response
-        console.error("error connecting to ftp server:", e);
-        return res
-          .status(errorCode)
-          .send({ message: h.failedToConnectToServerMessage });
-      }
-
-      let serverResponse = false;
-      try {
-        // Send data to server
-        serverResponse = await h.sendDataToServer(
-          ftpClient,
-          fileForServer,
-          order_num
-        );
-        console.log("Response from server:", serverResponse);
-      } catch (e) {
-        // If sending data to server fails, send error response
-        console.error("error sending data to server =>", e);
-        res
-          .status(errorCode)
-          .send({ message: h.failedToLoadDataToServerMessage });
-      }
-
-      // if sending data to server fails, end request
-      if (!serverResponse) {
-        return res
-          .status(errorCode)
-          .send({ message: h.failedToLoadDataToServerMessage });
-      }
-
-      // Get icon for email template
-      const iconPath: string = path.join(
-        process.cwd(),
-        "public/img/omni-parking-logo.png"
+    let serverResponse = false;
+    try {
+      // Send data to server
+      serverResponse = await sendDataToServer(
+        ftpClient,
+        fileForServer,
+        order_num
       );
-      const logoImageBase64: string = await fs.readFile(iconPath, {
-        encoding: "base64",
+    } catch (error) {
+      // If sending data to server fails, send error response
+      console.error("error sending data to server =>", error);
+      res.status(errorCode).send({
+        message: messages.failedToLoadDataToServerMessage(vendorName),
       });
+    }
 
-      // Generate markup for user's billing address to display in email
-      const billingAddressMarkup: string =
-        h.formatBillingInfoForEmail(billing_address);
+    // if sending data to server fails, end request
+    if (!serverResponse) {
+      return res.status(errorCode).send({
+        message: messages.failedToLoadDataToServerMessage(vendorName),
+      });
+    }
 
-      // Define object for generating the HTML markup in generateHTMLMarkup function
-      const htmlMarkupData: HTMLMarkupData = {
-        subtotal_price: subtotalPrice,
-        total_price: totalPrice,
-        total_tax: totalTax,
+    // Get icon for email template
+    const iconPath: string = path.join(
+      process.cwd(),
+      "public/img/omni-parking-logo.png"
+    );
+
+    const logoImageBase64: string = await fs.readFile(iconPath, {
+      encoding: "base64",
+    });
+
+    // Generate markup for user's billing address to display in email
+    const billingAddressMarkup: string =
+      formatBillingInfoForEmail(billing_address);
+
+    let htmlMarkup: string;
+
+    if (vendorName === "mercedes") {
+      const qty = calculateDaysBetweenWithTime(start_time, end_time);
+      const subtotal = +(12.99 * qty + 4.99).toFixed(2);
+      const tax = +(+subtotal * 0.165).toFixed(2);
+      const total = parseFloat((subtotal + tax).toFixed(2));
+
+      // Generate HTML markup for email (mercedes)
+      htmlMarkup = generateHTMLMarkupMercedes({
+        subtotal_price: `${subtotal}`,
+        total_price: `${total}`,
+        total_tax: `${tax}`,
+        quantity: `${qty}`,
         createdAt,
         end_time,
         name,
         price,
-        quantity,
         start_time,
-      };
-
-      // Generate HTML markup for email
-      const htmlMarkup: string = h.generateHTMLMarkup(
-        htmlMarkupData,
+      });
+    } else {
+      // Generate HTML markup for email (general)
+      htmlMarkup = generateHTMLMarkup(
+        {
+          subtotal_price: subtotalPrice,
+          total_price: totalPrice,
+          total_tax: totalTax,
+          createdAt,
+          end_time,
+          name,
+          price,
+          quantity,
+          start_time,
+        },
         billingAddressMarkup
       );
+    }
 
+    let storedWebhook: string;
+    try {
       // Method to add webhook_id to redis
-      const storedWebhook: string = await redis.get(newWebhookId);
+      storedWebhook = await redis.get(newWebhookId);
+    } catch (error) {
+      console.error("ERROR GETTING STORED WEBHOOK FROM REDIS!", error);
+    }
 
-      const cc: string[] = ["info@omniairportparking.com"]; // cc emails
+    const cc: string[] =
+      vendorName === "mercedes"
+        ? ["info@omniairportparking.com", "jsaavedra@mbso.com"]
+        : ["info@omniairportparking.com"]; // cc emails
 
-      const attachments: MailAttachments[] = [
-        {
-          cid: "unique-qrcode",
-          filename: "qrcode.png",
-          path: qrcodeUrl,
-        },
-        {
-          cid: "unique-omnilogo",
-          filename: "logo.png",
-          path: `data:text/plain;base64, ${logoImageBase64}`,
-        },
-      ];
+    const attachments: MailAttachments[] = [
+      {
+        cid: "unique-qrcode",
+        filename: "qrcode.png",
+        path: qrcodeUrl,
+      },
+      {
+        cid: "unique-omnilogo",
+        filename: "logo.png",
+        path: `data:text/plain;base64, ${logoImageBase64}`,
+      },
+    ];
 
-      const emailData: EmailData = {
-        from: user,
-        html: htmlMarkup,
-        orderNum: order_num,
-        attachments,
-        cc,
-        to,
-      };
+    const emailData: EmailData = {
+      from: user,
+      html: htmlMarkup,
+      orderNum: order_num,
+      attachments,
+      cc,
+      to,
+    };
 
-      // If webhook_id does not already exist in db
-      if (!storedWebhook) {
-        const emailResponse: boolean = await h.sendEmail(
+    // If webhook_id does not already exist in db
+    if (!storedWebhook) {
+      const emailResponse: boolean = await sendEmail(transporter, emailData);
+
+      // If email is successful, add webhook to redis and send success response
+      if (emailResponse) {
+        try {
+          await redis.set(newWebhookId, newWebhookId);
+          return res
+            .status(successCode)
+            .send({ message: messages.successMessage(vendorName) });
+        } catch (error) {
+          return res.status(errorCode).send({
+            message: messages.webhookNotLoggedAndEmailSentMessage(vendorName),
+          });
+        }
+      } else {
+        // If email is unsuccessful, try once more
+        const emailRetryResponse: boolean = await sendEmail(
           transporter,
           emailData
         );
-        console.log("emailResponse:", emailResponse);
 
-        // If email is successful, add webhook to redis and send success response
-        if (emailResponse) {
+        // If resent email is successful
+        if (emailRetryResponse) {
           try {
+            // Add webhook_id to redis and send successful response
             await redis.set(newWebhookId, newWebhookId);
-            return res.status(successCode).send({ message: h.successMessage });
-          } catch (e) {
-            return res
-              .status(errorCode)
-              .send({ message: h.webhookNotLoggedAndEmailSentMessage });
+            res
+              .status(successCode)
+              .send({ message: messages.successMessage(vendorName) });
+          } catch (error) {
+            // Adding webhook_id to redis failed, so send response indicating email sent successfully but webhook_id not stored in redis
+            console.error("Error -- saving webhook but email send =>", error);
+            return res.status(errorCode).send({
+              message: messages.webhookNotLoggedAndEmailSentMessage(vendorName),
+            });
           }
         } else {
-          // If email is unsuccessful, try once more
-          const emailRetryResponse: boolean = await h.sendEmail(
-            transporter,
-            emailData
-          );
-
-          // If resent email is successful
-          if (emailRetryResponse) {
-            try {
-              // Add webhook_id to redis and send successful response
-              await redis.set(newWebhookId, newWebhookId);
-              res.status(successCode).send({ message: h.successMessage });
-            } catch (e) {
-              // Adding webhook_id to redis failed, so send response indicating email sent successfully but webhook_id not stored in redis
-              console.error("Error -- saving wehook but email send =>", e);
-              return res
-                .status(errorCode)
-                .send({ message: h.webhookNotLoggedAndEmailSentMessage });
-            }
-          } else {
-            // If retry email is not successful, send response message indicating webhook event logged but email not sent
-            return res
-              .status(errorCode)
-              .send({ message: h.webhookNotLoggedAndEmailNotSentMessage });
-          }
+          // If retry email is not successful, send response message indicating webhook event logged but email not sent
+          return res.status(errorCode).send({
+            message:
+              messages.webhookNotLoggedAndEmailNotSentMessage(vendorName),
+          });
         }
-      } else {
-        console.error("Hit case where webhook id already exists in database");
-        // Case where webhook_id is already stored, meaning an email has already been sent send response message indicating that webhook failed bc it was already successfully handled
-        res.status(errorCode).send({ message: h.webhookAlreadyLoggedMessage });
       }
     } else {
-      // Case where request method is not of type "POST"
-      res.status(errorCode).send({ message: h.requestNotPostMethodMessage });
+      console.error("Hit case where webhook id already exists in database");
+      // Case where webhook_id is already stored, meaning an email has already been sent send response message indicating that webhook failed bc it was already successfully handled
+      res
+        .status(errorCode)
+        .send({ message: messages.webhookAlreadyLoggedMessage(vendorName) });
     }
-  } catch (e) {
-    // Case where something failed in the code above send a response message indicating webhook failed
-    console.error("Error -- main try/catch in handler =>", e);
-    res.status(errorCode).send({ message: h.errorFromMainTryCatchMessage });
+  } catch (error) {
+    console.error("ERROR WITH MAIN WEBHOOK!", error);
+    res
+      .status(errorCode)
+      .send({ message: messages.errorFromMainTryCatchMessage(vendorName) });
   }
-}
+};

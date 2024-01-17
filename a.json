@@ -1,0 +1,470 @@
+{
+  "id": 5327438250165,
+  "admin_graphql_api_id": "gid://shopify/Order/5327438250165",
+  "app_id": 580111,
+  "browser_ip": "142.196.12.61",
+  "buyer_accepts_marketing": true,
+  "cancel_reason": null,
+  "cancelled_at": null,
+  "cart_token": "Z2NwLXVzLWNlbnRyYWwxOjAxSE0wNk44QUtaQzBNQk1aOUtTSkJONzVG",
+  "checkout_id": 36169668788405,
+  "checkout_token": "e0c07ad47d27833ef90ade2c260b9f89",
+  "client_details": {
+    "accept_language": "en-US",
+    "browser_height": null,
+    "browser_ip": "142.196.12.61",
+    "browser_width": null,
+    "session_hash": null,
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  },
+  "closed_at": null,
+  "confirmed": true,
+  "contact_email": "m.t.haskett@gmail.com",
+  "created_at": "2024-01-12T20:24:24-05:00",
+  "currency": "USD",
+  "current_subtotal_price": "74.89",
+  "current_subtotal_price_set": {
+    "shop_money": {
+      "amount": "74.89",
+      "currency_code": "USD"
+    },
+    "presentment_money": {
+      "amount": "74.89",
+      "currency_code": "USD"
+    }
+  },
+  "current_total_discounts": "0.00",
+  "current_total_discounts_set": {
+    "shop_money": {
+      "amount": "0.00",
+      "currency_code": "USD"
+    },
+    "presentment_money": {
+      "amount": "0.00",
+      "currency_code": "USD"
+    }
+  },
+  "current_total_duties_set": null,
+  "current_total_price": "87.25",
+  "current_total_price_set": {
+    "shop_money": {
+      "amount": "87.25",
+      "currency_code": "USD"
+    },
+    "presentment_money": {
+      "amount": "87.25",
+      "currency_code": "USD"
+    }
+  },
+  "current_total_tax": "12.36",
+  "current_total_tax_set": {
+    "shop_money": {
+      "amount": "12.36",
+      "currency_code": "USD"
+    },
+    "presentment_money": {
+      "amount": "12.36",
+      "currency_code": "USD"
+    }
+  },
+  "customer_locale": "en-US",
+  "device_id": null,
+  "discount_codes": [],
+  "email": "m.t.haskett@gmail.com",
+  "estimated_taxes": false,
+  "financial_status": "paid",
+  "fulfillment_status": null,
+  "gateway": "shopify_payments",
+  "landing_site": "/",
+  "landing_site_ref": null,
+  "location_id": null,
+  "merchant_of_record_app_id": null,
+  "name": "#61170",
+  "note": null,
+  "note_attributes": [],
+  "number": 60170,
+  "order_number": 61170,
+  "order_status_url": "https://www.omniairportparking.com/7502459/orders/f57a04547c281019cad77d10f54620fe/authenticate?key=dbc6e60a8e163127a55e6459c83beb8a",
+  "original_total_duties_set": null,
+  "payment_gateway_names": ["shopify_payments"],
+  "phone": null,
+  "presentment_currency": "USD",
+  "processed_at": "2024-01-12T20:24:20-05:00",
+  "processing_method": "direct",
+  "reference": "e3cf7a2188ff7fdb09063b5edea119d6",
+  "referring_site": "https://www.google.com/",
+  "source_identifier": "e3cf7a2188ff7fdb09063b5edea119d6",
+  "source_name": "web",
+  "source_url": null,
+  "subtotal_price": "74.89",
+  "subtotal_price_set": {
+    "shop_money": {
+      "amount": "74.89",
+      "currency_code": "USD"
+    },
+    "presentment_money": {
+      "amount": "74.89",
+      "currency_code": "USD"
+    }
+  },
+  "tags": "",
+  "tax_lines": [
+    {
+      "price": "4.87",
+      "rate": 0.065,
+      "title": "Federal Tax",
+      "price_set": {
+        "shop_money": {
+          "amount": "4.87",
+          "currency_code": "USD"
+        },
+        "presentment_money": {
+          "amount": "4.87",
+          "currency_code": "USD"
+        }
+      },
+      "channel_liable": false
+    },
+    {
+      "price": "7.49",
+      "rate": 0.1,
+      "title": "Privilege Fee Recovery Charge",
+      "price_set": {
+        "shop_money": {
+          "amount": "7.49",
+          "currency_code": "USD"
+        },
+        "presentment_money": {
+          "amount": "7.49",
+          "currency_code": "USD"
+        }
+      },
+      "channel_liable": false
+    }
+  ],
+  "taxes_included": false,
+  "test": false,
+  "token": "f57a04547c281019cad77d10f54620fe",
+  "total_discounts": "0.00",
+  "total_discounts_set": {
+    "shop_money": {
+      "amount": "0.00",
+      "currency_code": "USD"
+    },
+    "presentment_money": {
+      "amount": "0.00",
+      "currency_code": "USD"
+    }
+  },
+  "total_line_items_price": "74.89",
+  "total_line_items_price_set": {
+    "shop_money": {
+      "amount": "74.89",
+      "currency_code": "USD"
+    },
+    "presentment_money": {
+      "amount": "74.89",
+      "currency_code": "USD"
+    }
+  },
+  "total_outstanding": "0.00",
+  "total_price": "87.25",
+  "total_price_set": {
+    "shop_money": {
+      "amount": "87.25",
+      "currency_code": "USD"
+    },
+    "presentment_money": {
+      "amount": "87.25",
+      "currency_code": "USD"
+    }
+  },
+  "total_shipping_price_set": {
+    "shop_money": {
+      "amount": "0.00",
+      "currency_code": "USD"
+    },
+    "presentment_money": {
+      "amount": "0.00",
+      "currency_code": "USD"
+    }
+  },
+  "total_tax": "12.36",
+  "total_tax_set": {
+    "shop_money": {
+      "amount": "12.36",
+      "currency_code": "USD"
+    },
+    "presentment_money": {
+      "amount": "12.36",
+      "currency_code": "USD"
+    }
+  },
+  "total_tip_received": "0.00",
+  "total_weight": 0,
+  "updated_at": "2024-01-12T20:24:24-05:00",
+  "user_id": null,
+  "billing_address": {
+    "first_name": "Mitchell",
+    "address1": "1101 Shadow Wood Trl",
+    "phone": "2142747712",
+    "city": "Desoto",
+    "zip": "75115",
+    "province": "Texas",
+    "country": "United States",
+    "last_name": "Haskett",
+    "address2": null,
+    "company": null,
+    "latitude": 32.6111266,
+    "longitude": -96.88373329999999,
+    "name": "Mitchell Haskett",
+    "country_code": "US",
+    "province_code": "TX"
+  },
+  "customer": {
+    "id": 5364250149045,
+    "email": "m.t.haskett@gmail.com",
+    "accepts_marketing": true,
+    "created_at": "2021-06-28T21:42:11-04:00",
+    "updated_at": "2024-01-12T20:24:24-05:00",
+    "first_name": "Mitch",
+    "last_name": "Haskett",
+    "state": "enabled",
+    "note": null,
+    "verified_email": true,
+    "multipass_identifier": null,
+    "tax_exempt": false,
+    "phone": null,
+    "email_marketing_consent": {
+      "state": "subscribed",
+      "opt_in_level": "single_opt_in",
+      "consent_updated_at": "2021-06-28T21:42:11-04:00"
+    },
+    "sms_marketing_consent": null,
+    "tags": "",
+    "currency": "USD",
+    "accepts_marketing_updated_at": "2021-06-28T21:42:11-04:00",
+    "marketing_opt_in_level": "single_opt_in",
+    "tax_exemptions": [],
+    "admin_graphql_api_id": "gid://shopify/Customer/5364250149045",
+    "default_address": {
+      "id": 8838405161141,
+      "customer_id": 5364250149045,
+      "first_name": "Mitchell",
+      "last_name": "Haskett",
+      "company": null,
+      "address1": "1101 Shadow Wood Trl",
+      "address2": null,
+      "city": "Desoto",
+      "province": "Texas",
+      "country": "United States",
+      "zip": "75115",
+      "phone": "2142747712",
+      "name": "Mitchell Haskett",
+      "province_code": "TX",
+      "country_code": "US",
+      "country_name": "United States",
+      "default": true
+    }
+  },
+  "discount_applications": [],
+  "fulfillments": [],
+  "line_items": [
+    {
+      "id": 12953765216437,
+      "admin_graphql_api_id": "gid://shopify/LineItem/12953765216437",
+      "fulfillable_quantity": 10,
+      "fulfillment_service": "manual",
+      "fulfillment_status": null,
+      "gift_card": false,
+      "grams": 0,
+      "name": "(MCO) SELF PARKING",
+      "price": "6.99",
+      "price_set": {
+        "shop_money": {
+          "amount": "6.99",
+          "currency_code": "USD"
+        },
+        "presentment_money": {
+          "amount": "6.99",
+          "currency_code": "USD"
+        }
+      },
+      "product_exists": true,
+      "product_id": 408441216,
+      "properties": [
+        {
+          "name": "booking-start",
+          "value": "2024-01-13T12:30:00"
+        },
+        {
+          "name": "booking-finish",
+          "value": "2024-01-23T20:30:00"
+        },
+        {
+          "name": "Units",
+          "value": "1"
+        }
+      ],
+      "quantity": 10,
+      "requires_shipping": false,
+      "sku": "",
+      "taxable": true,
+      "title": "(MCO) SELF PARKING",
+      "total_discount": "0.00",
+      "total_discount_set": {
+        "shop_money": {
+          "amount": "0.00",
+          "currency_code": "USD"
+        },
+        "presentment_money": {
+          "amount": "0.00",
+          "currency_code": "USD"
+        }
+      },
+      "variant_id": 1114378828,
+      "variant_inventory_management": null,
+      "variant_title": null,
+      "vendor": "OMNI Airport Parking Orlando (MCO)",
+      "tax_lines": [
+        {
+          "channel_liable": false,
+          "price": "4.55",
+          "price_set": {
+            "shop_money": {
+              "amount": "4.55",
+              "currency_code": "USD"
+            },
+            "presentment_money": {
+              "amount": "4.55",
+              "currency_code": "USD"
+            }
+          },
+          "rate": 0.065,
+          "title": "Federal Tax"
+        },
+        {
+          "channel_liable": false,
+          "price": "6.99",
+          "price_set": {
+            "shop_money": {
+              "amount": "6.99",
+              "currency_code": "USD"
+            },
+            "presentment_money": {
+              "amount": "6.99",
+              "currency_code": "USD"
+            }
+          },
+          "rate": 0.1,
+          "title": "Privilege Fee Recovery Charge"
+        }
+      ],
+      "duties": [],
+      "discount_allocations": []
+    },
+    {
+      "id": 12953765249205,
+      "admin_graphql_api_id": "gid://shopify/LineItem/12953765249205",
+      "fulfillable_quantity": 1,
+      "fulfillment_service": "manual",
+      "fulfillment_status": null,
+      "gift_card": false,
+      "grams": 0,
+      "name": "Facility Charge - Facility Charge",
+      "price": "4.99",
+      "price_set": {
+        "shop_money": {
+          "amount": "4.99",
+          "currency_code": "USD"
+        },
+        "presentment_money": {
+          "amount": "4.99",
+          "currency_code": "USD"
+        }
+      },
+      "product_exists": true,
+      "product_id": 7393020674229,
+      "properties": [
+        {
+          "name": "_mws_fee",
+          "value": {
+            "id": 7393020674229,
+            "input_type": "HIDDEN"
+          }
+        }
+      ],
+      "quantity": 1,
+      "requires_shipping": false,
+      "sku": "",
+      "taxable": true,
+      "title": "Facility Charge",
+      "total_discount": "0.00",
+      "total_discount_set": {
+        "shop_money": {
+          "amount": "0.00",
+          "currency_code": "USD"
+        },
+        "presentment_money": {
+          "amount": "0.00",
+          "currency_code": "USD"
+        }
+      },
+      "variant_id": 42593489387701,
+      "variant_inventory_management": null,
+      "variant_title": "Facility Charge",
+      "vendor": "OMNI Airport Parking",
+      "tax_lines": [
+        {
+          "channel_liable": false,
+          "price": "0.32",
+          "price_set": {
+            "shop_money": {
+              "amount": "0.32",
+              "currency_code": "USD"
+            },
+            "presentment_money": {
+              "amount": "0.32",
+              "currency_code": "USD"
+            }
+          },
+          "rate": 0.065,
+          "title": "Federal Tax"
+        },
+        {
+          "channel_liable": false,
+          "price": "0.50",
+          "price_set": {
+            "shop_money": {
+              "amount": "0.50",
+              "currency_code": "USD"
+            },
+            "presentment_money": {
+              "amount": "0.50",
+              "currency_code": "USD"
+            }
+          },
+          "rate": 0.1,
+          "title": "Privilege Fee Recovery Charge"
+        }
+      ],
+      "duties": [],
+      "discount_allocations": []
+    }
+  ],
+  "payment_details": {
+    "credit_card_bin": "426684",
+    "avs_result_code": "Y",
+    "cvv_result_code": "M",
+    "credit_card_number": "•••• •••• •••• 5445",
+    "credit_card_company": "Visa",
+    "buyer_action_info": null,
+    "credit_card_name": "Mitch Haskett",
+    "credit_card_wallet": null,
+    "credit_card_expiration_month": 6,
+    "credit_card_expiration_year": 2028
+  },
+  "payment_terms": null,
+  "refunds": [],
+  "shipping_lines": []
+}
