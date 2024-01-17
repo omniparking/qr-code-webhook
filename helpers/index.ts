@@ -40,6 +40,9 @@ export const messages = {
   failedToConnectToFTPServerMessage: function (source: string): string {
     return `Failed to connect to ftp server. Source: ${source}`;
   },
+  generateQRCodeError: function (source: string): string {
+    return `Failed to generate a QR code! Source: ${source}`;
+  },
 };
 
 /**

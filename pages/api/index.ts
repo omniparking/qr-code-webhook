@@ -82,6 +82,7 @@ export default async function handler(
     const {
       headers,
       method,
+      body,
     }: {
       body: any;
       headers: IncomingHttpHeaders;
@@ -106,19 +107,21 @@ export default async function handler(
       webhookSourceName === WEBHOOK_NAME;
 
     if (!isTrustedSource() && !isMercedesIntegration()) {
-      // Case where request method is not of type "POST"
+      // Case where request method is not of type "POST" && is not mercedes integration
       return res
         .status(errorCode)
         .send({ message: messages.requestNotPostMethodMessage("general") });
     } else if (isMercedesIntegration()) {
-      handleMercedesIntegration(req, res);
+      // case where it is mercedes integration
+      return handleMercedesIntegration(req, res);
     } else {
-      handleWebhook(req, res);
+      // case where source is trusted, it is general webhook, and not mercedes integration
+      return handleWebhook(req, res);
     }
   } catch (error) {
     // Case where something failed in the code above send a response message indicating webhook failed
-    console.error("Error -- main try/catch in handler =>", error);
-    res
+    console.error("Error main try/catch in handler =>", error);
+    return res
       .status(errorCode)
       .send({ message: messages.errorFromMainTryCatchMessage("general") });
   }
@@ -129,19 +132,10 @@ const handleMercedesIntegration = async (
   res: NextApiResponse
 ): Promise<void> => {
   try {
-    const {
-      body,
-      headers,
-    }: {
-      body: any;
-      headers: IncomingHttpHeaders;
-      method?: string | undefined;
-    } = req;
-
     handleWebhook(req, res, "mercedes");
   } catch (error) {
-    console.error("ERROR WITH handleMercedesIntegration WEBHOOK!", error);
-    res
+    console.error("Error handleMercedesIntegration Webhook =>", error);
+    return res
       .status(errorCode)
       .send({ message: messages.errorFromMainTryCatchMessage("mercedes") });
   }
@@ -186,20 +180,6 @@ const handleWebhook = async (
     let start_time: string;
     let end_time: string;
 
-    const missingData = (vendor: "general" | "mercedes") => {
-      if (vendor === "general") {
-        return !bookingTimes?.length || !price || !name || !customer;
-      } else {
-        return !bookingTimes || !price || !first || !last;
-      }
-    };
-
-    if (missingData(vendorName)) {
-      return res
-        .status(successCode)
-        .send({ message: messages.dataMissingMessage(vendorName) });
-    }
-
     // Get start and end times of booking
     bookingTimes?.forEach(({ name, value }: BookingTime) => {
       if (name === "booking-start") {
@@ -208,6 +188,20 @@ const handleWebhook = async (
         end_time = value;
       }
     });
+
+    const missingData = (vendor: "general" | "mercedes") => {
+      if (vendor === "general") {
+        return !bookingTimes?.length || !price || !name || !customer;
+      } else {
+        return !bookingTimes || !start_time || !end_time;
+      }
+    };
+
+    if (missingData(vendorName)) {
+      return res
+        .status(successCode)
+        .send({ message: messages.dataMissingMessage(vendorName) });
+    }
 
     // If no start or end times from booking, event failed
     if (!start_time || !end_time) {
@@ -239,8 +233,15 @@ const handleWebhook = async (
     const zeros: string = new Array(16 - qrcodeLength).join("0");
     const qrcodeData: string = `1755164${zeros}${order_num}`; // add zero placeholders to qrcode data
 
-    // Generate qrcode with order information
-    const qrcodeUrl: string = await generateQRCode(QRCode, qrcodeData);
+    let qrcodeUrl: string;
+    try {
+      // Generate qrcode with order information
+      qrcodeUrl = await generateQRCode(QRCode, qrcodeData);
+    } catch (error) {
+      res.status(errorCode).send({
+        message: messages.generateQRCodeError(vendorName),
+      });
+    }
 
     // Generate file for server
     const dataForServer: DataForServer = {
@@ -268,7 +269,7 @@ const handleWebhook = async (
       await ftpClient.connect(ftpOptions);
     } catch (error) {
       // If we fail to connect to ftp server, send error response
-      console.error("error connecting to ftp server:", error);
+      console.error("Error connecting to ftp server =>", error);
       return res.status(errorCode).send({
         message: messages.failedToConnectToFTPServerMessage(vendorName),
       });
@@ -284,7 +285,7 @@ const handleWebhook = async (
       );
     } catch (error) {
       // If sending data to server fails, send error response
-      console.error("error sending data to server =>", error);
+      console.error("Error sending data to server =>", error);
       res.status(errorCode).send({
         message: messages.failedToLoadDataToServerMessage(vendorName),
       });
@@ -354,7 +355,7 @@ const handleWebhook = async (
       // Method to add webhook_id to redis
       storedWebhook = await redis.get(newWebhookId);
     } catch (error) {
-      console.error("ERROR GETTING STORED WEBHOOK FROM REDIS!", error);
+      console.error("Error getting stored webhook from redis =>", error);
     }
 
     const cc: string[] =
@@ -386,7 +387,14 @@ const handleWebhook = async (
 
     // If webhook_id does not already exist in db
     if (!storedWebhook) {
-      const emailResponse: boolean = await sendEmail(transporter, emailData);
+      let emailResponse: boolean;
+
+      try {
+        emailResponse = await sendEmail(transporter, emailData);
+      } catch (error) {
+        console.error("Error sending email =>", error);
+        emailResponse = false;
+      }
 
       // If email is successful, add webhook to redis and send success response
       if (emailResponse) {
@@ -402,10 +410,14 @@ const handleWebhook = async (
         }
       } else {
         // If email is unsuccessful, try once more
-        const emailRetryResponse: boolean = await sendEmail(
-          transporter,
-          emailData
-        );
+        let emailRetryResponse: boolean;
+
+        try {
+          emailRetryResponse = await sendEmail(transporter, emailData);
+        } catch (error) {
+          console.error("Error retrying email =>", error);
+          emailRetryResponse = false;
+        }
 
         // If resent email is successful
         if (emailRetryResponse) {
@@ -417,7 +429,7 @@ const handleWebhook = async (
               .send({ message: messages.successMessage(vendorName) });
           } catch (error) {
             // Adding webhook_id to redis failed, so send response indicating email sent successfully but webhook_id not stored in redis
-            console.error("Error -- saving webhook but email send =>", error);
+            console.error("Error saving webhook but email sent =>", error);
             return res.status(errorCode).send({
               message: messages.webhookNotLoggedAndEmailSentMessage(vendorName),
             });
@@ -433,13 +445,13 @@ const handleWebhook = async (
     } else {
       console.error("Hit case where webhook id already exists in database");
       // Case where webhook_id is already stored, meaning an email has already been sent send response message indicating that webhook failed bc it was already successfully handled
-      res
+      return res
         .status(errorCode)
         .send({ message: messages.webhookAlreadyLoggedMessage(vendorName) });
     }
   } catch (error) {
-    console.error("ERROR WITH MAIN WEBHOOK!", error);
-    res
+    console.error(`Error with main webhook. Source ${vendorName} =>`, error);
+    return res
       .status(errorCode)
       .send({ message: messages.errorFromMainTryCatchMessage(vendorName) });
   }
