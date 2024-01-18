@@ -11,7 +11,7 @@ const margin8000: string = "margin: 8px 0px 0px 0px;";
 const url =
   process.env.NODE_ENV === "production"
     ? "https://qr-code-webhook.vercel.app/api/"
-    : "https://localhost:1337/api/view/qr";
+    : "https://localhostt:1337/api/view/qr";
 
 // declaring messages for server response
 export const messages = {
