@@ -89,8 +89,6 @@ export default async function handler(
       method?: string | undefined;
     } = req;
 
-    return handleWebhook(req, res);
-
     const shopifyTopic: string =
       (headers?.["x-shopify-topic"] as string)?.trim() || "";
     const webhookSourceName =
