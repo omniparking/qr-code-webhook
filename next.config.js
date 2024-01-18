@@ -2,9 +2,6 @@
 /*jshint esversion: 8 */
 
 const nextConfig = {
-  compiler: {
-    styledComponents: true,
-  },
   reactStrictMode: true,
   serverRuntimeConfig: {
     PROJECT_ROOT: __dirname,
