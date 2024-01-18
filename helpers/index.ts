@@ -8,6 +8,11 @@ const margin1000: string = "margin: 1px 0px 0px 0px;";
 const margin0010: string = "margin: 0px 0px 1px 0px;";
 const margin8000: string = "margin: 8px 0px 0px 0px;";
 
+const url =
+  process.env.NODE_ENV === "production"
+    ? "https://qr-code-webhook.vercel.app/api/"
+    : "https://localhost:1337/api/view/qr";
+
 // declaring messages for server response
 export const messages = {
   dataMissingMessage: function (source: string): string {
@@ -122,7 +127,7 @@ export function generateHTMLMarkup(
   // const dropoffTime: string = '10/02/2022 at 07:00:00 AM'; // FOR TESTING ONLY
   // const pickupTime: string = '10/12/2022 at 11:00:00 PM'; // FOR TESTING ONLY
 
-  const href = `http://localhost:1337/view/qr?startTime=${reservationStartTime}&endTime=${reservationEndTime}&qrcodeData=${qrcodeData}`;
+  const href = `${url}view/qr?startTime=${reservationStartTime}&endTime=${reservationEndTime}&qrcodeData=${qrcodeData}`;
 
   return `
     <html>
@@ -363,7 +368,7 @@ export function generateHTMLMarkupMercedes(data: HTMLMarkupData): string {
   // const dropoffTime: string = '10/02/2022 at 07:00:00 AM'; // FOR TESTING ONLY
   // const pickupTime: string = '10/12/2022 at 11:00:00 PM'; // FOR TESTING ONLY
 
-  const href = `http://localhost:1337/view/qr?startTime=${reservationStartTime}&endTime=${reservationEndTime}&qrcodeData=${qrcodeData}`;
+  const href = `${url}view/qr?startTime=${reservationStartTime}&endTime=${reservationEndTime}&qrcodeData=${qrcodeData}`;
 
   return `
     <html>
