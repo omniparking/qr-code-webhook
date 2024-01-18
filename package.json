@@ -3,7 +3,7 @@
   "scripts": {
     "dev": "next dev -p 1337",
     "build": "next build",
-    "start": "next start --port=8080",
+    "start": "next start --port=3000",
     "lint": "next lint",
     "lint:format": "next lint --format"
   },
