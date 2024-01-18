@@ -79,22 +79,14 @@ export default async function handler(
   res: NextApiResponse
 ) {
   try {
-    const {
-      headers,
-      method,
-      body,
-    }: {
-      body: any;
-      headers: IncomingHttpHeaders;
-      method?: string | undefined;
-    } = req;
+    const headers = req?.headers;
+    const method = req?.method;
+    const body = req?.body;
 
     const shopifyTopic: string =
       (headers?.["x-shopify-topic"] as string)?.trim() || "";
     const webhookSourceName =
       (headers?.["x-hookdeck-source-name"] as string).trim() || "";
-
-    // return res.status(successCode).send({ message: 'Webhook turned off!' }); // TO TURN OFF WEBHOOK
 
     const isTrustedSource = (): boolean =>
       method === "POST" &&
@@ -106,17 +98,17 @@ export default async function handler(
       shopifyTopic === THIRD_PARTY_TOPIC &&
       webhookSourceName === WEBHOOK_NAME;
 
-    if (!isTrustedSource() && !isMercedesIntegration()) {
+    if (isMercedesIntegration()) {
+      // case where source is trusted, it is general webhook, and not mercedes integration
+      return handleWebhook(req, res);
+    } else if (!isTrustedSource()) {
       // Case where request method is not of type "POST" && is not mercedes integration
       return res
         .status(errorCode)
         .send({ message: messages.requestNotPostMethodMessage("general") });
-    } else if (isMercedesIntegration()) {
+    } else {
       // case where it is mercedes integration
       return handleMercedesIntegration(req, res);
-    } else {
-      // case where source is trusted, it is general webhook, and not mercedes integration
-      return handleWebhook(req, res);
     }
   } catch (error) {
     // Case where something failed in the code above send a response message indicating webhook failed
@@ -351,7 +343,9 @@ const handleWebhook = async (
         billingAddressMarkup
       );
     }
-
+    console.log("start:", start_time);
+    console.log("end:", end_time);
+    console.log("qrcode:", qrcodeData);
     let storedWebhook: string;
     try {
       // Method to add webhook_id to redis

@@ -9,7 +9,7 @@ const margin0010: string = "margin: 0px 0px 1px 0px;";
 const margin8000: string = "margin: 8px 0px 0px 0px;";
 
 const hrefBase =
-  process.env.NODE_ENV === "production"
+  process.env.NODE_ENV === "development"
     ? "https://qr-code-webhook-git-master-omniairportparking.vercel.app/"
     : "http://localhost:3000";
 
