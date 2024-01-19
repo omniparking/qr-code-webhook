@@ -78,23 +78,23 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  console.log("req.headers: ", req.headers);
-  console.log("req.method:", req.method);
-  console.log("req:", req);
-  console.log(req.headers["x-hookdeck-source-name"]);
   try {
-    const headers = req?.headers || {
-      "x-shopify-topic": "",
-      "x-hookdeck-source-name": "",
-    };
-    const method = req?.method;
-
-    console.log("req.headers:", req.headers);
+    const {
+      headers,
+      method,
+      body,
+    }: {
+      body: any;
+      headers: IncomingHttpHeaders;
+      method?: string | undefined;
+    } = req;
 
     const shopifyTopic: string =
       (headers?.["x-shopify-topic"] as string)?.trim() || "";
     const webhookSourceName =
       (headers?.["x-hookdeck-source-name"] as string).trim() || "";
+
+    // return res.status(successCode).send({ message: 'Webhook turned off!' }); // TO TURN OFF WEBHOOK
 
     const isTrustedSource = (): boolean =>
       method === "POST" &&
@@ -106,17 +106,17 @@ export default async function handler(
       shopifyTopic === THIRD_PARTY_TOPIC &&
       webhookSourceName === WEBHOOK_NAME;
 
-    if (isMercedesIntegration()) {
-      // case where source is trusted, it is general webhook, and not mercedes integration
-      return handleWebhook(req, res, "mercedes");
-    } else if (isTrustedSource()) {
+    if (!isTrustedSource() && !isMercedesIntegration()) {
       // Case where request method is not of type "POST" && is not mercedes integration
-      return handleWebhook(req, res);
-    } else {
-      // case where it is mercedes integration
       return res
         .status(errorCode)
         .send({ message: messages.requestNotPostMethodMessage("general") });
+    } else if (isMercedesIntegration()) {
+      // case where it is mercedes integration
+      return handleMercedesIntegration(req, res);
+    } else {
+      // case where source is trusted, it is general webhook, and not mercedes integration
+      return handleWebhook(req, res);
     }
   } catch (error) {
     // Case where something failed in the code above send a response message indicating webhook failed
@@ -126,6 +126,20 @@ export default async function handler(
       .send({ message: messages.errorFromMainTryCatchMessage("general") });
   }
 }
+
+const handleMercedesIntegration = async (
+  req: NextApiRequest,
+  res: NextApiResponse
+): Promise<void> => {
+  try {
+    handleWebhook(req, res, "mercedes");
+  } catch (error) {
+    console.error("Error handleMercedesIntegration Webhook =>", error);
+    return res
+      .status(errorCode)
+      .send({ message: messages.errorFromMainTryCatchMessage("mercedes") });
+  }
+};
 
 const handleWebhook = async (
   req: NextApiRequest,
@@ -183,12 +197,10 @@ const handleWebhook = async (
       }
     };
 
-    if (vendorName === "mercedes") {
-      if (missingData(vendorName)) {
-        return res
-          .status(successCode)
-          .send({ message: messages.dataMissingMessage(vendorName) });
-      }
+    if (missingData(vendorName)) {
+      return res
+        .status(successCode)
+        .send({ message: messages.dataMissingMessage(vendorName) });
     }
 
     // If no start or end times from booking, event failed
@@ -200,8 +212,8 @@ const handleWebhook = async (
 
     const startTime = formatTime(start_time);
     const endTime = formatTime(end_time, false);
-    // const startTime = '02.02.2022T02:00:00'; // FOR TESTING ONLY
-    // const endTime = '02.03.20220T3:00:00'; // FOR TESTING ONLY
+    // const startTime = '02.02.202202:00:00'; // FOR TESTING ONLY
+    // const endTime = '02.03.202203:00:00'; // FOR TESTING ONLY
 
     // Generate date in MM/DD/YYYY format for email
     const createdAt: string = moment(created_at).format("MM/DD/YYYY");
@@ -383,6 +395,14 @@ const handleWebhook = async (
 
       try {
         emailResponse = await sendEmail(transporter, emailData);
+        res.setHeader(
+          "Set-Cookie",
+          `qrcodeData=${JSON.stringify({
+            qrcode: qrcodeData,
+            start_time,
+            end_time,
+          })}`
+        );
       } catch (error) {
         console.error("Error sending email =>", error);
         emailResponse = false;
@@ -406,6 +426,14 @@ const handleWebhook = async (
 
         try {
           emailRetryResponse = await sendEmail(transporter, emailData);
+          res.setHeader(
+            "Set-Cookie",
+            `qrcodeData=${JSON.stringify({
+              qrcode: qrcodeData,
+              start_time,
+              end_time,
+            })}`
+          );
         } catch (error) {
           console.error("Error retrying email =>", error);
           emailRetryResponse = false;
