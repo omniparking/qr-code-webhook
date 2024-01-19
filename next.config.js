@@ -4,7 +4,7 @@
 const nextConfig = {
   reactStrictMode: true,
   serverRuntimeConfig: {
-    PROJECT_ROOT: __dirname
+    PROJECT_ROOT: __dirname,
   },
   env: {
     EMAIL_PORT: process.env.EMAIL_PORT,
@@ -23,7 +23,14 @@ const nextConfig = {
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     SHOPIFY_TOPIC: process.env.SHOPIFY_TOPIC,
     SHOPIFY_HOST: process.env.SHOPIFY_HOST,
-  }
+  },
+  webpack: (
+    config,
+    { buildId, dev, isServer, defaultLoaders, nextRuntime, webpack }
+  ) => {
+    // Important: return the modified config
+    return config;
+  },
 };
 
 module.exports = nextConfig;
