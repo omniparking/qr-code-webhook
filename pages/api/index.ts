@@ -30,7 +30,7 @@ import {
   generateHTMLMarkupMercedes,
 } from "../../helpers/index";
 
-const errorCode: number = 500;
+const errorCode: number = 400;
 const successCode: number = 201;
 const ftpPort: number = 21;
 
