@@ -29,6 +29,7 @@ const nextConfig = {
     { buildId, dev, isServer, defaultLoaders, nextRuntime, webpack }
   ) => {
     // Important: return the modified config
+    config.infrastructureLogging = { debug: /PackFileCache/ };
     return config;
   },
 };

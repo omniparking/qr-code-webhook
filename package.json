@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "dev": "next dev --port=1337 --trace-warnings",
+    "dev": "next dev --port=1337",
     "build": "next build",
     "start": "next start --port=8080",
     "lint": "next lint"
