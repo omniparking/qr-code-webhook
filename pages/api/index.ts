@@ -88,7 +88,8 @@ export default async function handler(
       headers: IncomingHttpHeaders;
       method?: string | undefined;
     } = req;
-
+    console.log("req.body;", req.body);
+    console.log("req.headers:", req.headers);
     const shopifyTopic: string =
       (headers?.["x-shopify-topic"] as string)?.trim() || "";
     const webhookSourceName =
@@ -102,21 +103,16 @@ export default async function handler(
       host === SHOPIFY_HOST;
 
     const isMercedesIntegration = (): boolean =>
-      method === "POST" &&
-      shopifyTopic === THIRD_PARTY_TOPIC &&
-      webhookSourceName === WEBHOOK_NAME;
+      body.note_attributes[0].value === "mercedes";
 
-    if (!isTrustedSource() && !isMercedesIntegration()) {
-      // Case where request method is not of type "POST" && is not mercedes integration
+    if (isMercedesIntegration()) {
+      return handleWebhook(req, res, "mercedes");
+    } else if (isTrustedSource()) {
+      return handleWebhook(req, res);
+    } else {
       return res
         .status(errorCode)
         .send({ message: messages.requestNotPostMethodMessage("general") });
-    } else if (isMercedesIntegration()) {
-      // case where it is mercedes integration
-      return handleWebhook(req, res, "mercedes");
-    } else {
-      // case where source is trusted, it is general webhook, and not mercedes integration
-      return handleWebhook(req, res);
     }
   } catch (error) {
     // Case where something failed in the code above send a response message indicating webhook failed
