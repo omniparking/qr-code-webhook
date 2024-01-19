@@ -94,24 +94,34 @@ export default async function handler(
 
     // return res.status(successCode).send({ message: 'Webhook turned off!' }); // TO TURN OFF WEBHOOK
 
-    const isTrustedSource = (): boolean =>
-      method === "POST" &&
-      shopifyTopic === SHOPIFY_TOPIC &&
-      host === SHOPIFY_HOST;
-
-    const isMercedesIntegration = (): boolean =>
-      body?.note_attributes?.[0]?.name === M_VENDOR &&
-      body?.note_attributes?.[0]?.value === M_NAME;
+    const isTrustedSource = (): boolean => {
+      return (
+        method === "POST" &&
+        shopifyTopic === SHOPIFY_TOPIC &&
+        host === SHOPIFY_HOST
+      );
+    };
+    console.log("METHOD:", method);
+    console.log("shopifyTopic:", shopifyTopic);
+    console.log("host:", host);
+    const isMercedesIntegration = (): boolean => {
+      return (
+        body?.note_attributes?.[0]?.name === M_VENDOR &&
+        body?.note_attributes?.[0]?.value === M_NAME
+      );
+    };
 
     if (isMercedesIntegration()) {
       return handleWebhook(req, res, "mercedes");
-    } else if (isTrustedSource()) {
-      return handleWebhook(req, res);
-    } else {
-      return res
-        .status(errorCode)
-        .send({ message: messages.requestNotPostMethodMessage("general") });
     }
+
+    if (isTrustedSource()) {
+      return handleWebhook(req, res);
+    }
+
+    res
+      .status(errorCode)
+      .send({ message: messages.requestNotPostMethodMessage("general") });
   } catch (error) {
     // Case where something failed in the code above send a response message indicating webhook failed
     console.error("Error main try/catch in handler =>", error);
@@ -135,6 +145,9 @@ const handleWebhook = async (
       headers: IncomingHttpHeaders;
       method?: string | undefined;
     } = req;
+
+    console.log("BODY:", body);
+    console.log("HEADERS:", headers);
 
     // Grab needed data from request object (i.e., start/end times, order num, address, price, etc.)
     const {
