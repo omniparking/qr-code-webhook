@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import moment from "moment";
 
+// SAMPLE DATA URL: https://qr-code-webhook-git-master-omniairportparking.vercel.app/view/qr?startTime=02.02.2022T02:00:00&endTime=02.02.2022T02:00:00&qrcodeData=123123123
+
 const QRPage = ({ startTime, endTime, qrcodeData }) => {
   const [qrDataURL, setQRDataURL] = useState("");
 
