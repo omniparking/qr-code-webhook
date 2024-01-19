@@ -114,7 +114,7 @@ export default async function handler(
 
     if (isMercedesIntegration()) {
       return handleWebhook(req, res, "mercedes");
-    } else if (isTrustedSource()) {
+    } else {
       return handleWebhook(req, res);
     }
 
