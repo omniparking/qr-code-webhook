@@ -113,7 +113,7 @@ export default async function handler(
         .send({ message: messages.requestNotPostMethodMessage("general") });
     } else if (isMercedesIntegration()) {
       // case where it is mercedes integration
-      return handleMercedesIntegration(req, res);
+      return handleWebhook(req, res, "mercedes");
     } else {
       // case where source is trusted, it is general webhook, and not mercedes integration
       return handleWebhook(req, res);
@@ -126,20 +126,6 @@ export default async function handler(
       .send({ message: messages.errorFromMainTryCatchMessage("general") });
   }
 }
-
-const handleMercedesIntegration = async (
-  req: NextApiRequest,
-  res: NextApiResponse
-): Promise<void> => {
-  try {
-    handleWebhook(req, res, "mercedes");
-  } catch (error) {
-    console.error("Error handleMercedesIntegration Webhook =>", error);
-    return res
-      .status(errorCode)
-      .send({ message: messages.errorFromMainTryCatchMessage("mercedes") });
-  }
-};
 
 const handleWebhook = async (
   req: NextApiRequest,
