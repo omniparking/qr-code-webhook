@@ -56,6 +56,7 @@ const {
   SHOPIFY_HOST,
   M_NAME,
   M_VENDOR,
+  HOOKDECK_SOURCE,
 } = process.env;
 
 // Initialize redis (to store webhook ids)
@@ -78,6 +79,8 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  // return res.status(successCode).send({ message: 'Webhook turned off!' }); // TO TURN OFF WEBHOOK
+
   try {
     const {
       headers,
@@ -92,18 +95,16 @@ export default async function handler(
     const shopifyTopic: string =
       (headers?.["x-shopify-topic"] as string)?.trim() || "";
 
-    // return res.status(successCode).send({ message: 'Webhook turned off!' }); // TO TURN OFF WEBHOOK
+    const sourceName = (req["x-hookdeck-source-name"] as string)?.trim();
 
     const isTrustedSource = (): boolean => {
       return (
         method === "POST" &&
         shopifyTopic === SHOPIFY_TOPIC &&
-        host === SHOPIFY_HOST
+        sourceName === HOOKDECK_SOURCE
       );
     };
-    console.log("METHOD:", method);
-    console.log("shopifyTopic:", shopifyTopic);
-    console.log("host:", host);
+
     const isMercedesIntegration = (): boolean => {
       return (
         body?.note_attributes?.[0]?.name === M_VENDOR &&
@@ -113,7 +114,7 @@ export default async function handler(
 
     if (isMercedesIntegration()) {
       return handleWebhook(req, res, "mercedes");
-    } else {
+    } else if (isTrustedSource()) {
       return handleWebhook(req, res);
     }
 

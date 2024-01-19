@@ -26,6 +26,9 @@ const nextConfig = {
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     SHOPIFY_TOPIC: process.env.SHOPIFY_TOPIC,
     SHOPIFY_HOST: process.env.SHOPIFY_HOST,
+    M_VENDOR: process.env.M_VENDOR,
+    M_NAME: process.env.M_NAME,
+    HOOKDECK_SOURCE: process.env.HOOKDECK_SOURCE,
   },
   webpack: (
     config,
