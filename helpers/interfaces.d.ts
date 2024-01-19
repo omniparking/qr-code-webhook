@@ -56,3 +56,5 @@ interface HTMLMarkupData {
   total_tax: string;
   qrcodeData: string;
 }
+
+type Vendor = "general" | "mercedes";

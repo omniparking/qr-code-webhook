@@ -6,6 +6,9 @@ const nextConfig = {
   serverRuntimeConfig: {
     PROJECT_ROOT: __dirname,
   },
+  // experimental: {
+  //   forceSwcTransforms: true,
+  // },
   env: {
     EMAIL_PORT: process.env.EMAIL_PORT,
     FILE_FOR_SERVER: process.env.FILE_FOR_SERVER,
@@ -29,7 +32,7 @@ const nextConfig = {
     { buildId, dev, isServer, defaultLoaders, nextRuntime, webpack }
   ) => {
     // Important: return the modified config
-    config.infrastructureLogging = { debug: /PackFileCache/ };
+    // config.infrastructureLogging = { debug: /PackFileCache/ };
     return config;
   },
 };

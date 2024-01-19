@@ -6,11 +6,7 @@ export default function Document() {
       <Head>
         <link rel="preconnect" href="https://fonts.gstatic.com" />
         <style jsx global>
-          {`
-            .icon {
-              font-size: 18px;
-            }
-          `}
+          {``}
         </style>
       </Head>
       <body>

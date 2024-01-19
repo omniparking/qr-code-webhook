@@ -49,13 +49,13 @@ const {
   EMAIL_PORT: emailPort,
   UPSTASH_REDIS_REST_TOKEN: token,
   UPSTASH_REDIS_REST_URL: url,
-  SERVER_IP_ADDRESS: IP,
-  SERVER_PASSWORD: S_PASS,
-  SERVER_USER: S_USER,
+  SERVER_IP_ADDRESS: SERVER_IP,
+  SERVER_PASSWORD: SERVER_PASS,
+  SERVER_USER: SERVER_USER,
   SHOPIFY_TOPIC,
   SHOPIFY_HOST,
-  THIRD_PARTY_TOPIC,
-  WEBHOOK_NAME,
+  M_NAME,
+  M_VENDOR,
 } = process.env;
 
 // Initialize redis (to store webhook ids)
@@ -88,12 +88,9 @@ export default async function handler(
       headers: IncomingHttpHeaders;
       method?: string | undefined;
     } = req;
-    console.log("req.body;", req.body);
-    console.log("req.headers:", req.headers);
+
     const shopifyTopic: string =
       (headers?.["x-shopify-topic"] as string)?.trim() || "";
-    const webhookSourceName =
-      (headers?.["x-hookdeck-source-name"] as string).trim() || "";
 
     // return res.status(successCode).send({ message: 'Webhook turned off!' }); // TO TURN OFF WEBHOOK
 
@@ -103,7 +100,8 @@ export default async function handler(
       host === SHOPIFY_HOST;
 
     const isMercedesIntegration = (): boolean =>
-      body.note_attributes[0].value === "mercedes";
+      body?.note_attributes?.[0]?.name === M_VENDOR &&
+      body?.note_attributes?.[0]?.value === M_NAME;
 
     if (isMercedesIntegration()) {
       return handleWebhook(req, res, "mercedes");
@@ -126,7 +124,7 @@ export default async function handler(
 const handleWebhook = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  vendorName: "general" | "mercedes" = "general"
+  vendorName: Vendor = "general"
 ): Promise<void> => {
   try {
     const {
@@ -171,7 +169,7 @@ const handleWebhook = async (
       }
     });
 
-    const missingData = (vendor: "general" | "mercedes") => {
+    const missingData = (vendor: Vendor) => {
       if (vendor === "general") {
         return !bookingTimes?.length || !price || !name || !customer;
       } else {
@@ -241,9 +239,9 @@ const handleWebhook = async (
 
     try {
       const ftpOptions: FTPServer = {
-        host: IP,
-        user: S_USER,
-        password: S_PASS,
+        host: SERVER_IP,
+        user: SERVER_USER,
+        password: SERVER_PASS,
         port: ftpPort,
         secure: false,
       };
