@@ -348,7 +348,7 @@ const handleWebhook = async (
 
     const cc: string[] =
       vendorName === "mercedes"
-        ? ["info@omniairportparking.com", "jsaavedra@mbso.com"]
+        ? ["info@omniairportparking.com", "Bdc_service@mbso.com"]
         : ["info@omniairportparking.com"]; // cc emails
 
     const attachments: MailAttachments[] = [
