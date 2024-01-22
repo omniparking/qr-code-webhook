@@ -7,7 +7,7 @@ import styles from "./qr.module.css";
 // SAMPLE DATA URL: https://qr-code-webhook-git-master-omniairportparking.vercel.app/view/qr?startTime=02.02.2022T02:00:00&endTime=02.02.2022T02:00:00&qrcodeData=123123123
 
 export default function QRPage({ startTime, endTime, qrcodeData }) {
-  const [qrDataURL, setQRDataURL] = useState<string | null>(null);
+  const [qrDataURL, setQRDataURL] = useState<string>("");
   const [error, setError] = useState<boolean>(false);
 
   useEffect(() => {
