@@ -7,7 +7,8 @@ import styles from "./qr.module.css";
 // SAMPLE DATA URL: https://qr-code-webhook-git-master-omniairportparking.vercel.app/view/qr?startTime=02.02.2022T02:00:00&endTime=02.02.2022T02:00:00&qrcodeData=123123123
 
 export default function QRPage({ startTime, endTime, qrcodeData }) {
-  const [qrDataURL, setQRDataURL] = useState<string>("");
+  const [qrDataURL, setQRDataURL] = useState<string | null>(null);
+  const [error, setError] = useState<boolean>(false);
 
   useEffect(() => {
     // Generate QR code as a data URL
@@ -19,7 +20,7 @@ export default function QRPage({ startTime, endTime, qrcodeData }) {
         });
         setQRDataURL(qrUrl);
       } catch (error) {
-        return <p>There was an error generating the QR Code!</p>;
+        setError(true);
       }
     };
 
@@ -45,6 +46,8 @@ export default function QRPage({ startTime, endTime, qrcodeData }) {
           <Image src={qrDataURL} alt="QR Code" height={200} width={200} />
         </div>
       )}
+
+      {error && <p>There was an error generating the QR code</p>}
     </div>
   );
 }

@@ -73,8 +73,7 @@ export const messages = {
 //     ? "https://qr-code-webhook-git-master-omniairportparking.vercel.app/"
 //     : "http://localhost:3000";
 
-const hrefBase =
-  "https://qr-code-webhook-git-master-omniairportparking.vercel.app/";
+const hrefBase = "https://qr-code-webhook.vercel.app/";
 
 export function convertDateFormat(inputDate: string): string {
   // Parse the input date string
