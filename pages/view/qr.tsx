@@ -5,32 +5,6 @@ import Image from "next/image";
 
 // SAMPLE DATA URL: https://qr-code-webhook-git-master-omniairportparking.vercel.app/view/qr?startTime=02.02.2022T02:00:00&endTime=02.02.2022T02:00:00&qrcodeData=123123123
 
-const containerStyle: CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: "center",
-  alignItems: "center",
-  gap: 20,
-  width: "100%",
-};
-const pStyle: CSSProperties = {
-  display: "flex",
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "center",
-  margin: 0,
-  padding: 0,
-  gap: 8,
-};
-const h1Style = { marginTop: 24, fontSize: 32 };
-const timeStyle: CSSProperties = { fontSize: 20 };
-const titleStyle: CSSProperties = {
-  fontSize: 18,
-  fontWeight: 600,
-  alignItems: "right",
-};
-const imgStyle: CSSProperties = { marginTop: 32 };
-
 export default function QRPage({ startTime, endTime, qrcodeData }) {
   const [qrDataURL, setQRDataURL] = useState<string>("");
 
@@ -52,22 +26,67 @@ export default function QRPage({ startTime, endTime, qrcodeData }) {
   }, [qrcodeData]);
 
   return (
-    <div style={containerStyle}>
-      <h1 style={h1Style}>Omni Airport Parking</h1>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 20,
+        width: "100%",
+      }}
+    >
+      <h1 style={{ marginTop: 24, fontSize: 32 }}>Omni Airport Parking</h1>
 
-      <p style={pStyle}>
-        <span style={titleStyle}>Start Time:</span>
-        <span style={timeStyle}>{convertDateFormat(startTime)}</span>
+      <p
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          margin: 0,
+          padding: 0,
+          gap: 8,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 18,
+            fontWeight: 600,
+            alignItems: "right",
+          }}
+        >
+          Start Time:
+        </span>
+        <span style={{ fontSize: 20 }}>{convertDateFormat(startTime)}</span>
       </p>
 
-      <p style={pStyle}>
-        <span style={titleStyle}>End Time:</span>
-        <span style={timeStyle}>{convertDateFormat(endTime)}</span>
+      <p
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          margin: 0,
+          padding: 0,
+          gap: 8,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 18,
+            fontWeight: 600,
+            alignItems: "right",
+          }}
+        >
+          End Time:
+        </span>
+        <span style={{ fontSize: 20 }}>{convertDateFormat(endTime)}</span>
       </p>
 
       {qrDataURL && (
         <Image
-          style={imgStyle}
+          style={{ marginTop: 32 }}
           src={qrDataURL}
           alt="QR Code"
           height={200}
