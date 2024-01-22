@@ -55,6 +55,7 @@ interface HTMLMarkupData {
   total_price: string;
   total_tax: string;
   qrcodeData: string;
+  userName?: string;
 }
 
 type Vendor = "general" | "mercedes";

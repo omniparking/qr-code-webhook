@@ -324,6 +324,7 @@ const handleWebhook = async (
         price,
         start_time,
         qrcodeData,
+        userName: `${first} ${last}`,
       });
     } else {
       // Generate HTML markup for email (general)
