@@ -419,7 +419,7 @@ export function generateHTMLMarkupMercedes(data: HTMLMarkupData): string {
       <b>Parking Confirmation Details:</b>
       <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
       <p>This email is to confirm your recent order.</p>
-      <p style="${padding0} margin: 2px 0;"><b>Date:</b> ${userName}</p>
+      <p style="${padding0} margin: 2px 0;"><b>Name:</b> ${userName}</p>
       <p><b>Date:</b> ${purchaseDate}</p>
       ${generateIconImageForEmailTemplate()}
       <p style="${margin0010}">1x Facility Charge for $4.99 each</p>
