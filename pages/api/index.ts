@@ -145,9 +145,6 @@ const handleWebhook = async (
       method?: string | undefined;
     } = req;
 
-    console.log("BODY:", body);
-    console.log("HEADERS:", headers);
-
     // Grab needed data from request object (i.e., start/end times, order num, address, price, etc.)
     const {
       order_number: order_num,
@@ -202,7 +199,7 @@ const handleWebhook = async (
         .send({ message: messages.missingTimeInfoMessage(vendorName) });
     }
 
-    const startTime = formatTime(start_time);
+    const startTimeWithGrace = formatTime(start_time);
     const endTime = formatTime(end_time, false);
     // const startTime = '02.02.202202:00:00'; // FOR TESTING ONLY
     // const endTime = '02.03.202203:00:00'; // FOR TESTING ONLY
@@ -238,7 +235,7 @@ const handleWebhook = async (
     // Generate file for server
     const dataForServer: DataForServer = {
       end_time: endTime,
-      start_time: startTime,
+      start_time: startTimeWithGrace,
       first,
       last,
       order_num,

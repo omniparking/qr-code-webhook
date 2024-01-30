@@ -110,15 +110,12 @@ export function formatTime(
   dateString: string,
   shouldHaveGracePeriod = true
 ): string {
-  if (!dateString?.trim()) {
-    return "";
-  }
+  if (!dateString?.trim()) return "";
 
   const timeFormat = "DD.MM.YYYYHH:mm:ss";
 
   if (shouldHaveGracePeriod) {
-    const time = moment(dateString);
-    time.subtract(moment.duration("02:00:00"));
+    const time = moment(dateString).set({ hour: 0, minute: 1 });
     return moment(time).format(timeFormat);
   }
 
