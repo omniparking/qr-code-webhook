@@ -29,7 +29,9 @@ import {
   calculateDaysBetweenWithTime,
   generateHTMLMarkupMercedes,
   generateTimeForSuperSaverPass,
+  formatPhoneNumber,
 } from "../../helpers/index";
+// import { sendQRCodeSMSToUser } from "../../helpers/sms";
 
 const errorCode: number = 400;
 const successCode: number = 201;
@@ -53,11 +55,11 @@ const {
   SERVER_IP_ADDRESS: SERVER_IP,
   SERVER_PASSWORD: SERVER_PASS,
   SERVER_USER: SERVER_USER,
-  SHOPIFY_TOPIC,
-  SHOPIFY_HOST,
   M_NAME,
   M_VENDOR,
-  HOOKDECK_SOURCE,
+  // SHOPIFY_TOPIC,
+  // SHOPIFY_HOST,
+  // HOOKDECK_SOURCE,
 } = process.env;
 
 // Initialize redis (to store webhook ids)
@@ -84,8 +86,8 @@ export default async function handler(
 
   try {
     const {
-      headers,
-      method,
+      // headers,
+      // method,
       body,
     }: {
       body: any;
@@ -93,18 +95,18 @@ export default async function handler(
       method?: string | undefined;
     } = req;
 
-    const shopifyTopic: string =
-      (headers?.["x-shopify-topic"] as string)?.trim() || "";
+    // const shopifyTopic: string =
+    //   (headers?.["x-shopify-topic"] as string)?.trim() || "";
 
-    const sourceName = (req["x-hookdeck-source-name"] as string)?.trim();
+    // const sourceName = (req["x-hookdeck-source-name"] as string)?.trim();
 
-    const isTrustedSource = (): boolean => {
-      return (
-        method === "POST" &&
-        shopifyTopic === SHOPIFY_TOPIC &&
-        sourceName === HOOKDECK_SOURCE
-      );
-    };
+    // const isTrustedSource = (): boolean => {
+    //   return (
+    //     method === "POST" &&
+    //     shopifyTopic === SHOPIFY_TOPIC &&
+    //     sourceName === HOOKDECK_SOURCE
+    //   );
+    // };
 
     const isMercedesIntegration = (): boolean => {
       return (
@@ -118,10 +120,6 @@ export default async function handler(
     } else {
       return handleWebhook(req, res);
     }
-
-    res
-      .status(errorCode)
-      .send({ message: messages.requestNotPostMethodMessage("general") });
   } catch (error) {
     // Case where something failed in the code above send a response message indicating webhook failed
     console.error("Error main try/catch in handler =>", error);
@@ -166,6 +164,13 @@ const handleWebhook = async (
     const { quantity, price, name } = lineItems;
     const bookingTimes: BookingTime[] = lineItems?.properties || [];
     const { first_name: first, last_name: last } = customer;
+    let phoneNumber;
+
+    if (vendorName === "general") {
+      phoneNumber = formatPhoneNumber(billing_address.phone);
+    } else {
+      phoneNumber = formatPhoneNumber(body.phone);
+    }
 
     let start_time: string;
     let end_time: string;
@@ -387,19 +392,11 @@ const handleWebhook = async (
     };
 
     // If webhook_id does not already exist in db
-    if (true || !storedWebhook) {
+    if (!storedWebhook) {
       let emailResponse: boolean;
 
       try {
         emailResponse = await sendEmail(transporter, emailData);
-        res.setHeader(
-          "Set-Cookie",
-          `qrcodeData=${JSON.stringify({
-            qrcode: qrcodeData,
-            start_time,
-            end_time,
-          })}`
-        );
       } catch (error) {
         console.error("Error sending email =>", error);
         emailResponse = false;
@@ -407,16 +404,39 @@ const handleWebhook = async (
 
       // If email is successful, add webhook to redis and send success response
       if (emailResponse) {
+        let webhookLogged = false;
         try {
           await redis.set(newWebhookId, newWebhookId);
+          webhookLogged = true;
           return res
             .status(successCode)
             .send({ message: messages.successMessage(vendorName) });
         } catch (error) {
+          console.error("Error redis webhook =>", error);
+          // remove return below for
           return res.status(errorCode).send({
             message: messages.webhookNotLoggedAndEmailSentMessage(vendorName),
           });
         }
+
+        // // send SMS to user
+        // try {
+        //   const smsResponse = await sendQRCodeSMSToUser(
+        //     phoneNumber,
+        //     order_num,
+        //     start_time,
+        //     end_time,
+        //     qrcodeData
+        //   );
+        //   console.log("smsResponse:", smsResponse);
+        //   return res
+        //     .status(successCode)
+        //     .send({ message: messages.successMessage(vendorName) });
+        // } catch (error) {
+        //   return res.status(errorCode).send({
+        //     message: messages.sendingSMSFailed(vendorName, webhookLogged),
+        //   });
+        // }
       } else {
         // If email is unsuccessful, try once more
         let emailRetryResponse: boolean;

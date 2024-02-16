@@ -66,28 +66,23 @@ export const messages = {
   generateQRCodeError: function (source: string): string {
     return `Failed to generate a QR code! Source: ${source}`;
   },
+  sendingSMSFailed: function (source: string, webhookLogged: boolean): string {
+    return `Failed to send an SMS to the user! Webhook logged: ${webhookLogged}. Source: ${source}`;
+  },
 };
 
-// const hrefBase =
-//   process.env.NODE_ENV === "production"
-//     ? "https://qr-code-webhook-git-master-omniairportparking.vercel.app/"
-//     : "http://localhost:3000";
+export const hrefBase = "https://qr-code-webhook.vercel.app/";
 
-const hrefBase = "https://qr-code-webhook.vercel.app/";
-
+/**
+ *
+ * @param inputDate
+ * @returns {string} date in the format 'MM/DD/YY 12:20 PM'
+ */
 export function convertDateFormat(inputDate: string): string {
-  // Parse the input date string
-  const parsedDate = new Date(inputDate);
+  const date = new Date(inputDate);
 
-  // Format the output date
-  const formattedDate = `${
-    parsedDate.getMonth() + 1
-  }/${parsedDate.getDate()}/${parsedDate
-    .getFullYear()
-    .toString()
-    .slice(-2)} ${parsedDate.getHours()}:${
-    (parsedDate.getMinutes() < 10 ? "0" : "") + parsedDate.getMinutes()
-  } ${parsedDate.getHours() >= 12 ? "PM" : "AM"}`;
+  const dateFormat = "MM/DD/YY h:mm A";
+  const formattedDate = moment(date).format(dateFormat);
 
   return formattedDate;
 }
@@ -480,3 +475,31 @@ export const generateTimeForSuperSaverPass = (): {
   const end = endDate.toISOString();
   return { start, end };
 }; // END generateTimeForSuperSaverPass
+
+/**
+ * Formats the user's phone number to ensure +1 is in the front of it for twilio sms
+ * @param {string} phoneNumber - the user's phone number
+ */
+export const formatPhoneNumber = (phoneNumber: string): string => {
+  if (phoneNumber.startsWith("+1")) {
+    return phoneNumber;
+  }
+
+  if (phoneNumber.startsWith("+")) {
+    return `${phoneNumber.substring(0, 1)}1${phoneNumber.substring(1)}`;
+  }
+
+  if (!phoneNumber.startsWith("+") && phoneNumber.length === 10) {
+    return `+1${phoneNumber}`;
+  }
+
+  if (
+    !phoneNumber.startsWith("+") &&
+    phoneNumber.length === 11 &&
+    phoneNumber[0] === "1"
+  ) {
+    return `+${phoneNumber}`;
+  }
+
+  return phoneNumber;
+}; // END formatPhoneNumber

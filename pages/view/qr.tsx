@@ -1,8 +1,7 @@
-import { CSSProperties, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 import QRCode from "qrcode";
 import { convertDateFormat } from "../../helpers";
-import Image from "next/image";
-import styles from "./qr.module.css";
 
 // SAMPLE DATA URL: https://qr-code-webhook-git-master-omniairportparking.vercel.app/view/qr?startTime=02.02.2022T02:00:00&endTime=02.02.2022T02:00:00&qrcodeData=123123123
 
@@ -20,6 +19,7 @@ export default function QRPage({ startTime, endTime, qrcodeData }) {
         });
         setQRDataURL(qrUrl);
       } catch (error) {
+        console.error("Error generating qr code image:", error);
         setError(true);
       }
     };
@@ -28,26 +28,30 @@ export default function QRPage({ startTime, endTime, qrcodeData }) {
   }, [qrcodeData]);
 
   return (
-    <div className={styles.container}>
-      <h1 className={styles.h1}>Omni Airport Parking</h1>
+    <div className="flex flex-col justify-center items-center gap-4 w-full">
+      <h1 className="mt-6 mb-4 text-4xl">Omni Airport Parking</h1>
 
-      <p className={styles.paragraph}>
-        <span className={styles.span}>Start Time:</span>
-        <span className={styles.date}>{convertDateFormat(startTime)}</span>
+      <p className="flex flex-row items-center justify-center m-0 p-0 gap-2">
+        <span className="text-[18px] font-semibold">Start Time:</span>
+        <span className="text-[22px]">{convertDateFormat(startTime)}</span>
       </p>
 
-      <p className={styles.paragraph}>
-        <span className={styles.span}>End Time:</span>
-        <span className={styles.date}>{convertDateFormat(endTime)}</span>
+      <p className="flex flex-row items-center justify-center m-0 p-0 gap-2">
+        <span className="text-[18px] font-semibold">End Time:</span>
+        <span className="text-[22px]">{convertDateFormat(endTime)}</span>
       </p>
 
       {qrDataURL && (
-        <div className={styles.image}>
+        <div className="mt-6">
           <Image src={qrDataURL} alt="QR Code" height={200} width={200} />
         </div>
       )}
 
-      {error && <p>There was an error generating the QR code</p>}
+      {error && (
+        <p className="text-xl text-center font-bold text-red-600">
+          There was an error generating the QR code!
+        </p>
+      )}
     </div>
   );
 }
