@@ -28,6 +28,7 @@ import {
   sendEmail,
   calculateDaysBetweenWithTime,
   generateHTMLMarkupMercedes,
+  generateTimeForSuperSaverPass,
 } from "../../helpers/index";
 
 const errorCode: number = 400;
@@ -168,15 +169,23 @@ const handleWebhook = async (
 
     let start_time: string;
     let end_time: string;
+    const isSuperSavePass =
+      line_items?.[1]?.name === "(MCO) SUPER SAVER 30 DAY PASS";
 
-    // Get start and end times of booking
-    bookingTimes?.forEach(({ name, value }: BookingTime) => {
-      if (name === "booking-start") {
-        start_time = value;
-      } else if (name === "booking-finish") {
-        end_time = value;
-      }
-    });
+    if (isSuperSavePass) {
+      const { start, end } = generateTimeForSuperSaverPass();
+      start_time = start;
+      end_time = end;
+    } else {
+      // Get start and end times of booking
+      bookingTimes?.forEach(({ name, value }: BookingTime) => {
+        if (name === "booking-start") {
+          start_time = value;
+        } else if (name === "booking-finish") {
+          end_time = value;
+        }
+      });
+    }
 
     const missingData = (vendor: Vendor) => {
       if (vendor === "general") {
@@ -378,7 +387,7 @@ const handleWebhook = async (
     };
 
     // If webhook_id does not already exist in db
-    if (!storedWebhook) {
+    if (true || !storedWebhook) {
       let emailResponse: boolean;
 
       try {

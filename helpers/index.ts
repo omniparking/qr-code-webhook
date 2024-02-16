@@ -97,7 +97,8 @@ export function convertDateFormat(inputDate: string): string {
  * @param {any} lineItems - line items off body
  */
 export function checkProperties(lineItems: any): any {
-  return lineItems?.[1]?.properties?.length === 3
+  return lineItems?.[1]?.properties?.length === 3 ||
+    lineItems?.[1]?.name === "(MCO) SUPER SAVER 30 DAY PASS"
     ? lineItems[1]
     : lineItems?.[0];
 } // END checkProperties
@@ -460,3 +461,22 @@ export const calculateDaysBetweenWithTime = (
 
   return Math.ceil(daysDifference);
 }; // END calculateDaysBetweenWithTime
+
+/**
+ * Determines the start and end date for super saver pass
+ * Returns the start and end dates in ISO String format
+ */
+export const generateTimeForSuperSaverPass = (): {
+  start: string;
+  end: string;
+} => {
+  const startDate = new Date();
+  const endDate = new Date();
+  endDate.setDate(endDate.getDate() + 30);
+
+  // startDate.setHours(0, 1, 0, 0);
+  endDate.setHours(23, 59, 0, 0);
+  const start = startDate.toISOString();
+  const end = endDate.toISOString();
+  return { start, end };
+}; // END generateTimeForSuperSaverPass
