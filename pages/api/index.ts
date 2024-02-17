@@ -9,7 +9,7 @@ import { IncomingHttpHeaders } from "http";
 // npm/node imports
 import { promises as fs } from "fs"; // to read icon file as promise
 import { Redis } from "@upstash/redis"; // to store webhook_ids to database
-import moment from "moment";
+
 import nodemailer from "nodemailer"; // to send emails
 import path from "path"; // to get path for icon file
 import PromiseFtp from "promise-ftp";
@@ -20,16 +20,16 @@ import {
   checkProperties,
   messages,
   formatBillingInfoForEmail,
-  formatTime,
   generateDataForServer,
   generateHTMLMarkup,
   generateQRCode,
   sendDataToServer,
   sendEmail,
   calculateDaysBetweenWithTime,
-  generateHTMLMarkupMercedes,
   generateTimeForSuperSaverPass,
   formatPhoneNumber,
+  formatDateWithTime,
+  formatDate,
 } from "../../helpers/index";
 // import { sendQRCodeSMSToUser } from "../../helpers/sms";
 
@@ -213,13 +213,13 @@ const handleWebhook = async (
         .send({ message: messages.missingTimeInfoMessage(vendorName) });
     }
 
-    const startTimeWithGrace = formatTime(start_time);
-    const endTime = formatTime(end_time, false);
+    const startTimeWithGrace = formatDate(start_time, true);
+    const endTime = formatDate(end_time, false);
     // const startTime = '02.02.202202:00:00'; // FOR TESTING ONLY
     // const endTime = '02.03.202203:00:00'; // FOR TESTING ONLY
 
     // Generate date in MM/DD/YYYY format for email
-    const createdAt: string = moment(created_at).format("MM/DD/YYYY");
+    const createdAt: string = formatDateWithTime(created_at, true);
 
     // Get subtotal, taxes, and total price for email template
     const subtotalPrice: string =
@@ -324,19 +324,24 @@ const handleWebhook = async (
       const total = parseFloat((subtotal + tax).toFixed(2));
 
       // Generate HTML markup for email (mercedes)
-      htmlMarkup = generateHTMLMarkupMercedes({
-        subtotal_price: `${subtotal}`,
-        total_price: `${total}`,
-        total_tax: `${tax}`,
-        quantity: `${qty}`,
-        createdAt,
-        end_time,
-        name,
-        price,
-        start_time,
-        qrcodeData,
-        userName: `${first} ${last}`,
-      });
+      htmlMarkup = generateHTMLMarkup(
+        {
+          subtotal_price: `${subtotal}`,
+          total_price: `${total}`,
+          total_tax: `${tax}`,
+          quantity: `${qty}`,
+          createdAt,
+          end_time,
+          name,
+          price,
+          start_time,
+          qrcodeData,
+          userName: `${first} ${last}`,
+        },
+        "",
+        false,
+        true
+      );
     } else {
       // Generate HTML markup for email (general)
       htmlMarkup = generateHTMLMarkup(
@@ -352,7 +357,8 @@ const handleWebhook = async (
           start_time,
           qrcodeData,
         },
-        billingAddressMarkup
+        billingAddressMarkup,
+        isSuperSavePass
       );
     }
 
@@ -393,6 +399,7 @@ const handleWebhook = async (
 
     // If webhook_id does not already exist in db
     if (!storedWebhook) {
+      // FOR TESTING ONLY -> change to (true || !storedWebhook)
       let emailResponse: boolean;
 
       try {

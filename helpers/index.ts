@@ -1,35 +1,13 @@
 /*jshint esversion: 8 */
-// npm
-import moment from "moment";
 
 // declaring variables for styling HTML markup
+const inline: string = "display: inline-block;";
 const padding0: string = "padding: 0px;";
 const margin0: string = "margin: 0px;";
-const margin1000: string = "margin: 1px 0px 0px 0px;";
-const margin0010: string = "margin: 0px 0px 1px 0px;";
-const margin8000: string = "margin: 8px 0px 0px 0px;";
-
-// declaring message variables for server response
-export const dataMissingMessage: string =
-  "Webhook event failed. Critical data is missing from request body!";
-export const failedToLoadDataToServerMessage: string =
-  "Failed to load data to server!";
-export const webhookNotLoggedAndEmailSentMessage: string =
-  "Webhook event not logged but email sent successfully.";
-export const webhookNotLoggedAndEmailNotSentMessage: string =
-  "Webhook event not logged and email not sent!";
-export const missingTimeInfoMessage: string =
-  "Webhook Event failed due to missing start/end booking times!";
-export const webhookAlreadyLoggedMessage: string =
-  "Webhook Event failed as it has previously been successfully logged.";
-export const requestNotPostMethodMessage: string =
-  "Webhook Event failed as request not coming from trusted source.";
-export const errorFromMainTryCatchMessage: string =
-  "Webhook Event failed. Error from main try/catch.";
-export const successMessage: string =
-  "Webhook Event logged and Email Successfully logged!";
-export const failedToConnectToServerMessage: string =
-  "Failed to connect to ftp server.";
+const marginV = (px: string): string => `margin: ${px}px 0;`;
+const marginT = (px: string): string => `margin: ${px}px 0 0 0;`;
+const marginB = (px: string): string => `margin: 0 0 ${px}px 0;`;
+const fontSize = (px: string): string => `font-size: ${px}rem;`;
 
 // declaring messages for server response
 export const messages = {
@@ -74,22 +52,87 @@ export const messages = {
 export const hrefBase = "https://qr-code-webhook.vercel.app/";
 
 /**
- *
- * @param inputDate
- * @returns {string} date in the format 'MM/DD/YY 12:20 PM'
+ * @param {string} dateString - date in string format
+ * @param {boolean} shouldExcludeTime - determines whether or not time should be added to date string
+ * @returns {string} - in the format MM/DD/YYYY or MM/DD/YYYY hh:mm:ss a
  */
-export function convertDateFormat(inputDate: string): string {
-  const date = new Date(inputDate);
+export function formatDateWithTime(
+  dateString: string,
+  shouldExcludeTime: boolean
+): string {
+  const date = new Date(dateString);
 
-  const dateFormat = "MM/DD/YY h:mm A";
-  const formattedDate = moment(date).format(dateFormat);
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const year = date.getFullYear();
+
+  let formattedDate = `${month}/${day}/${year}`;
+
+  if (shouldExcludeTime) {
+    return formattedDate;
+  }
+
+  let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  const meridiem = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
+  const formattedTime = `${hours}:${minutes}:${seconds} ${meridiem}`;
+  formattedDate += ` ${formattedTime}`;
 
   return formattedDate;
 }
 
 /**
- * Checks line items property for booking time or
+ * @param {string} inputDate - date in string format
+ * @param {boolean} shouldAddGracePeriod - whether or not to set time to beginning of the day
+ * @returns {string} date in the format MM.DD.YYYYhh:mm:ss
+ */
+export function formatDate(inputDate: string, shouldAddGracePeriod): string {
+  if (!inputDate) return "";
+
+  const date = new Date(inputDate);
+
+  if (shouldAddGracePeriod) {
+    date.setHours(0, 1, 0, 0);
+  }
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+
+  const formattedDate = `${day}.${month}.${year}${hours}:${minutes}:${seconds}`;
+
+  return formattedDate;
+} // END formatDate
+
+/**
+ *
+ * @param {string} inputDate
+ * @returns {string} date in the format 'MM/DD/YY 12:20 PM'
+ */
+export function convertDateFormat(inputDate: string): string {
+  const date = new Date(inputDate);
+
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const year = String(date.getFullYear()).slice(-2);
+  let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const meridiem = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
+  const formattedDate = `${month}/${day}/${year} ${hours}:${minutes} ${meridiem}`;
+
+  return formattedDate;
+} // END convertDateFormat
+
+/**
+ * Determines which line_items array should be used
  * @param {any} lineItems - line items off body
+ * @returns {any} - line item properties for booking
  */
 export function checkProperties(lineItems: any): any {
   return lineItems?.[1]?.properties?.length === 3 ||
@@ -99,44 +142,28 @@ export function checkProperties(lineItems: any): any {
 } // END checkProperties
 
 /**
- * Returns date as dd.mm.yyyyhour:minute:second format i.e., 01.01.202216:14:14
- * @param {string} dateString - date in string form
- */
-export function formatTime(
-  dateString: string,
-  shouldHaveGracePeriod = true
-): string {
-  if (!dateString?.trim()) return "";
-
-  const timeFormat = "DD.MM.YYYYHH:mm:ss";
-
-  if (shouldHaveGracePeriod) {
-    const time = moment(dateString).set({ hour: 0, minute: 1 });
-    return moment(time).format(timeFormat);
-  }
-
-  return moment(dateString).format(timeFormat);
-} // END formatTime
-
-/**
- * Returns date as dd.mm.yyyyhour:minute:second format
- *
+ * Generates Omni Airport Logo as Image Tag
+ * @returns {string} - HTML Image Tag of Omni logo
  */
 function generateIconImageForEmailTemplate(): string {
-  const style: string = 'display: block; margin: 0px 2px 8px 4px;"';
+  const style: string = 'display: block; margin: 8px 2px 8px 4px;"';
   const alt: string = "Omni Airport Parking logo";
   return `<img width="100" height="50" style="${style}" src="cid:unique-omnilogo" alt="${alt}" title="${alt}" />`;
 } // END generateIconImageForEmailTemplate
 
 /**
  * Generates HTML markup for email
- * Returns date as dd.mm.yyyyhour:minute:second format
  * @param {HTMLMarkupData} data - object containing properties needed for email
  * @param {string} billingAddressMarkup - billing address info in html format as string
+ * @param {boolean} shouldExcludeTime - whether or not time should be included in email
+ * @param {boolean} isForMercedes - denotes whether or not this email is for mercedes vendor
+ * @returns {string} - HTML markup for email
  */
 export function generateHTMLMarkup(
   data: HTMLMarkupData,
-  billingAddressMarkup: string
+  billingAddressMarkup: string,
+  shouldExcludeTime: boolean,
+  isForMercedes = false
 ): string {
   const {
     createdAt: purchaseDate,
@@ -149,13 +176,11 @@ export function generateHTMLMarkup(
     qrcodeData,
     price,
     quantity,
+    userName,
   }: HTMLMarkupData = data;
 
-  const timeFormat: string = "MM/DD/YYYY hh:mm:ss a";
-
-  // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
-  const dropoffTime: string = moment(dropoff).format(timeFormat)?.toUpperCase();
-  const pickupTime: string = moment(pickup).format(timeFormat)?.toUpperCase();
+  const dropoffTime: string = formatDateWithTime(dropoff, shouldExcludeTime);
+  const pickupTime: string = formatDateWithTime(pickup, shouldExcludeTime);
   // const dropoffTime: string = '10/02/2022 at 07:00:00 AM'; // FOR TESTING ONLY
   // const pickupTime: string = '10/12/2022 at 11:00:00 PM'; // FOR TESTING ONLY
 
@@ -165,27 +190,54 @@ export function generateHTMLMarkup(
     <html>
     <body>
       <b>Parking Confirmation Details:</b>
-      <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
-      <p>This email is to confirm your recent order.</p>
-      <p><b>Date:</b> ${purchaseDate}</p>
-      <p style="font-weight: bold; ${margin0010} ${padding0}">Billing Address:</p>
-      <p style="${padding0} margin: 2px 0;">${billingAddressMarkup}</p>
       ${generateIconImageForEmailTemplate()}
-      <p style="${margin0010}">1x Facility Charge for $4.99 each</p>
-      <p style="${margin1000} ${padding0}">${quantity}x ${type.toUpperCase()} for $${price} each</p>
-      <p style="${margin8000} ${padding0}"><b>Drop off:</b> ${dropoffTime}</p>
-      <p style="${margin1000} ${padding0}"><b>Pick up:</b> ${pickupTime}</p>
-      <br />
-      <p style="${padding0} ${margin0}">Subtotal: $${subtotal}</p>
+      <p style="${fontSize("1")} ${marginV("8")}">
+        Thank you for placing your order with OMNI Airport Parking!
+      </p>
+      <p style="${marginV("8")}">This email is to confirm your recent order.</p>
+      ${
+        isForMercedes
+          ? `<p style="${padding0} ${marginT("4")}">
+              <b>Name:</b> ${userName}
+            </p>`
+          : ""
+      }
+      <p style="${marginB("8")}"><b>Purchased Date:</b> ${purchaseDate}</p>
+      <p style="${marginT("4")} ${padding0} ${fontSize("1")}">
+        <b>Drop off:</b> ${dropoffTime}
+      </p>
+      <p style="margin: 1px 0 16px 0; ${padding0} ${fontSize("1")}">
+        <b>Pick up:</b> ${pickupTime}
+      </p>
+
+      <p style="${marginB("1")} ${padding0}">
+        1x Facility Charge for $4.99 each
+      </p>
+      <p style="${margin0} ${padding0}">${quantity}x ${type.toUpperCase()} for $${price} each</p>
+      
+      <p style="${padding0} ${marginT("8")}">Subtotal: $${subtotal}</p>
       <p style="${padding0} ${margin0}">Taxes and Fees: $${taxes}</p>
-      <p style="${padding0} ${margin0}">Total: $${total}</p>
+      ${
+        isForMercedes
+          ? `<p style="${padding0} ${margin0}">Total Before Discount: $${total}</p>
+          <p style="${padding0} ${margin0}">Total After Discount: $0.00</p>`
+          : `<p style="${padding0} ${margin0}">Total: $${total}</p>`
+      }
+      
       <br />
+      ${
+        isForMercedes
+          ? ""
+          : `<p style="font-weight: bold; ${marginB("1")} ${padding0}">
+              Billing Address:
+            </p>
+            <p style="${padding0} ${marginV("4")};">${billingAddressMarkup}</p>`
+      }
       <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique-qrcode" alt="QR Code" title="QR Code" />
-      <br />
-      <p style="${padding0} ${margin0}">Can't see the QR Code? View it in your browser by clicking the link below:</p>
-      <a href="${href}" target="_blank" alt="link to qr code">
-        View QR Code
-      </a>
+      <div>
+        <p style="${padding0} ${margin0} ${inline}">Can't see the QR Code? View it in your browser by clicking</p>
+        <a style="${inline}" href="${href}" target="_blank" alt="link to qr code">here</a>
+      </div>
     </body>
   `;
 } // END generateHTMLMarkup
@@ -193,14 +245,13 @@ export function generateHTMLMarkup(
 /**
  * Generates billing address HTML markup for email
  * @param {BillingAddress} billing_address - Object containing properties needed for billing address
+ * @returns {string} - billing info in HTML markup for email
  */
 export function formatBillingInfoForEmail(
   billing_address: BillingAddress
 ): string {
   try {
-    if (!billing_address) {
-      return "";
-    }
+    if (!billing_address) return "";
 
     const {
       address1,
@@ -229,9 +280,10 @@ export function formatBillingInfoForEmail(
 } // END formatBillingInfoForEmail
 
 /**
- * Sends email to user - returns true if email was sent and false if not
+ * Sends email to user
  * @param {any} transporter - nodemailer sdk
  * @param {EmailData} emailInfo - object containing properties needed for email
+ * @returns {Promise<boolean>} - Indicates whether email was sent or not
  */
 export async function sendEmail(
   transporter: any,
@@ -296,6 +348,7 @@ export async function sendEmail(
  * Generates QR code with order number
  * @param {any} QRCode - qrcode sdk
  * @param {string} data - data for qr code (order number, default numbers, & trailing zeros)
+ * @returns {Promise<string>} - QR Code image
  */
 export async function generateQRCode(
   QRCode: any,
@@ -316,6 +369,7 @@ export async function generateQRCode(
 
 /**
  * @param {DataForServer} data - object containing properties needed for server
+ * @returns {string} - Data for server
  */
 export function generateDataForServer(data: DataForServer): string {
   try {
@@ -349,6 +403,7 @@ export function generateDataForServer(data: DataForServer): string {
  * @param {any} client - ftp client sdk
  * @param {string} data - data sent to server
  * @param {string} orderNumber - the order number for this purchase
+ * @returns {Promise<boolean>} - Boolean indicating whether or not sending data was successful
  */
 export async function sendDataToServer(
   ftpClient: any,
@@ -374,76 +429,15 @@ export async function sendDataToServer(
 } // END sendDataToServer
 
 /**
- * Generates HTML markup for email returned as string
- * @param {HTMLMarkupData} data - object containing properties needed for email
- */
-export function generateHTMLMarkupMercedes(data: HTMLMarkupData): string {
-  const {
-    createdAt: purchaseDate,
-    end_time: endTime,
-    name: type,
-    start_time: startTime,
-    subtotal_price: subtotal,
-    total_price: total,
-    total_tax: taxes,
-    qrcodeData,
-    price,
-    quantity,
-    userName,
-  }: HTMLMarkupData = data;
-
-  const timeFormat: string = "MM/DD/YYYY hh:mm:ss a";
-
-  // Format start and end times to 'MM/DD/YYYY 12:00:00 PM' format
-  const dropoffTime: string = moment(startTime)
-    .format(timeFormat)
-    ?.toUpperCase();
-
-  const pickupTime: string = moment(endTime).format(timeFormat)?.toUpperCase();
-  // const dropoffTime: string = '10/02/2022 at 07:00:00 AM'; // FOR TESTING ONLY
-  // const pickupTime: string = '10/12/2022 at 11:00:00 PM'; // FOR TESTING ONLY
-
-  const href = `${hrefBase}/view/qr?startTime=${startTime}&endTime=${endTime}&qrcodeData=${qrcodeData}`;
-
-  return `
-    <html>
-    <body>
-      <b>Parking Confirmation Details:</b>
-      <p style="font-size:1.2rem">Thank you for placing your order with OMNI Airport Parking!</p>
-      <p>This email is to confirm your recent order.</p>
-      <p style="${padding0} margin: 2px 0;"><b>Name:</b> ${userName}</p>
-      <p><b>Date:</b> ${purchaseDate}</p>
-      ${generateIconImageForEmailTemplate()}
-      <p style="${margin0010}">1x Facility Charge for $4.99 each</p>
-      <p style="${margin1000} ${padding0}">${quantity}x ${type.toUpperCase()} for $${price} each</p>
-      <p style="${margin8000} ${padding0}"><b>Drop off:</b> ${dropoffTime}</p>
-      <p style="${margin1000} ${padding0}"><b>Pick up:</b> ${pickupTime}</p>
-      <br />
-      <p style="${padding0} ${margin0}">Subtotal: $${subtotal}</p>
-      <p style="${padding0} ${margin0}">Taxes and Fees: $${taxes}</p>
-      <p style="${padding0} ${margin0}">Total Before Discount: $${total}</p>
-      <p style="${padding0} ${margin0}">Total After Discount: $0.00</p>
-      <br />
-      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique-qrcode" alt="QR Code" title="QR Code" />
-      <br />
-      <p style="${padding0} ${margin0}">Can't see the QR Code? View it in your browser by clicking the link below:</p>
-      <a href="${href}" target="_blank" alt="link to qr code">
-        View QR Code
-      </a>
-    </body>
-  `;
-} // END generateHTMLMarkupMercedes
-
-/**
  * Determines quantity of days user parking in lot for mercedes VIP users
- * Returns the quantity as an integer
  * @param {string} startDateStr - start date of reservation as string in format 2024-02-01T18:00:00
  * @param {string} endDateStr - end date of reservation as string in format 2024-02-01T18:00:00
+ * @returns {number} - the quantity of days between start and end time as number
  */
-export const calculateDaysBetweenWithTime = (
+export function calculateDaysBetweenWithTime(
   startDateStr: string,
   endDateStr: string
-): number => {
+): number {
   // Convert date strings to Date objects
   const startDate: Date = new Date(startDateStr);
   const endDate: Date = new Date(endDateStr);
@@ -455,32 +449,35 @@ export const calculateDaysBetweenWithTime = (
   const daysDifference: number = timeDifference / (1000 * 60 * 60 * 24);
 
   return Math.ceil(daysDifference);
-}; // END calculateDaysBetweenWithTime
+} // END calculateDaysBetweenWithTime
+
+interface ITime {
+  start: string;
+  end: string;
+}
 
 /**
  * Determines the start and end date for super saver pass
- * Returns the start and end dates in ISO String format
+ * @returns {ITime} the start and end dates in ISO String format
  */
-export const generateTimeForSuperSaverPass = (): {
-  start: string;
-  end: string;
-} => {
+export function generateTimeForSuperSaverPass(): ITime {
   const startDate = new Date();
   const endDate = new Date();
   endDate.setDate(endDate.getDate() + 30);
 
-  // startDate.setHours(0, 1, 0, 0);
+  startDate.setHours(0, 1, 0, 0);
   endDate.setHours(23, 59, 0, 0);
   const start = startDate.toISOString();
   const end = endDate.toISOString();
   return { start, end };
-}; // END generateTimeForSuperSaverPass
+} // END generateTimeForSuperSaverPass
 
 /**
  * Formats the user's phone number to ensure +1 is in the front of it for twilio sms
  * @param {string} phoneNumber - the user's phone number
+ * @returns {string} - user phone number with +1 in the beginning
  */
-export const formatPhoneNumber = (phoneNumber: string): string => {
+export function formatPhoneNumber(phoneNumber: string): string {
   if (phoneNumber.startsWith("+1")) {
     return phoneNumber;
   }
@@ -502,4 +499,4 @@ export const formatPhoneNumber = (phoneNumber: string): string => {
   }
 
   return phoneNumber;
-}; // END formatPhoneNumber
+} // END formatPhoneNumber
