@@ -146,17 +146,52 @@ export function checkProperties(lineItems: any): any {
  * @returns {string} - HTML Image Tag of Omni logo
  */
 function generateIconImageForEmailTemplate(): string {
-  const style: string = 'display: block; margin: 8px 2px 8px 4px;"';
+  const style: string = 'display: block; margin: 0px 2px 4px 4px;"';
   const alt: string = "Omni Airport Parking logo";
   return `<img width="100" height="50" style="${style}" src="cid:unique-omnilogo" alt="${alt}" title="${alt}" />`;
 } // END generateIconImageForEmailTemplate
+
+const generateNameHTML = (userName: string): string => {
+  return `
+    <p style="${padding0} ${marginT("16")}">
+      <b>Name:</b> ${userName}
+    </p>
+  `;
+}; // END generateNameHTML
+
+/**
+ *
+ * @param {string} billingAddressMarkup - HTML markup for billing address
+ * @returns Billing Address HTML Markup
+ */
+const generateBillingHTMLMarkup = (billingAddressMarkup: string): string => {
+  return `
+    <p style="font-weight: bold; ${marginB("1")} ${padding0}">
+      Billing Address:
+    </p>
+    <p style="${padding0} ${marginV("4")};">${billingAddressMarkup}</p>
+  `;
+};
+
+/**
+ *
+ * @param {string} total - the total price of the booking
+ * @param {boolean} [includeDiscount] - the total price of the booking
+ * @returns HTML markup for price before discount and after
+ */
+const getPriceHTML = (total: string, includeDiscount = true): string => {
+  return includeDiscount
+    ? `<p style="${padding0} ${margin0}">Total Before Discount: $${total}</p>
+    <p style="${padding0} ${margin0}">Total After Discount: $0.00</p>`
+    : `<p style="${padding0} ${margin0}">Total: $${total}</p>`;
+}; // END getPriceHTML
 
 /**
  * Generates HTML markup for email
  * @param {HTMLMarkupData} data - object containing properties needed for email
  * @param {string} billingAddressMarkup - billing address info in html format as string
  * @param {boolean} shouldExcludeTime - whether or not time should be included in email
- * @param {boolean} isForMercedes - denotes whether or not this email is for mercedes vendor
+ * @param {boolean} [isForMercedes] - denotes whether or not this email is for mercedes vendor
  * @returns {string} - HTML markup for email
  */
 export function generateHTMLMarkup(
@@ -189,24 +224,21 @@ export function generateHTMLMarkup(
   return `
     <html>
     <body>
-      <b>Parking Confirmation Details:</b>
-      ${generateIconImageForEmailTemplate()}
+    ${generateIconImageForEmailTemplate()}
+      <p style="${marginB("8")}"><b>Parking Confirmation Details:</b></p>
       <p style="${fontSize("1")} ${marginV("8")}">
         Thank you for placing your order with OMNI Airport Parking!
       </p>
-      <p style="${marginV("8")}">This email is to confirm your recent order.</p>
-      ${
-        isForMercedes
-          ? `<p style="${padding0} ${marginT("4")}">
-              <b>Name:</b> ${userName}
-            </p>`
-          : ""
-      }
-      <p style="${marginB("8")}"><b>Purchased Date:</b> ${purchaseDate}</p>
-      <p style="${marginT("4")} ${padding0} ${fontSize("1")}">
+      <p style="${marginV("10")}">
+        This email is to confirm your recent order.
+      </p>
+      ${isForMercedes ? generateNameHTML(userName) : ""}
+      <p style="${marginB("20")}"><b>Purchased Date:</b> ${purchaseDate}</p>
+
+      <p style="${marginB("2")} ${padding0} ${fontSize("1")}">
         <b>Drop off:</b> ${dropoffTime}
       </p>
-      <p style="margin: 1px 0 16px 0; ${padding0} ${fontSize("1")}">
+      <p style="${marginB("20")} ${padding0} ${fontSize("1")}">
         <b>Pick up:</b> ${pickupTime}
       </p>
 
@@ -215,29 +247,21 @@ export function generateHTMLMarkup(
       </p>
       <p style="${margin0} ${padding0}">${quantity}x ${type.toUpperCase()} for $${price} each</p>
       
-      <p style="${padding0} ${marginT("8")}">Subtotal: $${subtotal}</p>
+      <p style="${padding0} ${marginT("20")}">Subtotal: $${subtotal}</p>
       <p style="${padding0} ${margin0}">Taxes and Fees: $${taxes}</p>
-      ${
-        isForMercedes
-          ? `<p style="${padding0} ${margin0}">Total Before Discount: $${total}</p>
-          <p style="${padding0} ${margin0}">Total After Discount: $0.00</p>`
-          : `<p style="${padding0} ${margin0}">Total: $${total}</p>`
-      }
+      ${isForMercedes ? getPriceHTML(total) : getPriceHTML(total, false)}
       
       <br />
-      ${
-        isForMercedes
-          ? ""
-          : `<p style="font-weight: bold; ${marginB("1")} ${padding0}">
-              Billing Address:
-            </p>
-            <p style="${padding0} ${marginV("4")};">${billingAddressMarkup}</p>`
-      }
+
+      ${isForMercedes ? "" : generateBillingHTMLMarkup(billingAddressMarkup)}
+
       <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique-qrcode" alt="QR Code" title="QR Code" />
-      <div>
-        <p style="${padding0} ${margin0} ${inline}">Can't see the QR Code? View it in your browser by clicking</p>
+      
+      <p style="${padding0} ${marginT("2")} ${inline}">
+        Can't see the QR Code? View it in your browser by clicking 
         <a style="${inline}" href="${href}" target="_blank" alt="link to qr code">here</a>
-      </div>
+      </p>
+      
     </body>
   `;
 } // END generateHTMLMarkup
