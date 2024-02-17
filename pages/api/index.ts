@@ -58,8 +58,8 @@ const transporter: any = nodemailer.createTransport({
 
 /**
  * Handler function which handles http request coming in (webhook calls from shopify)
- * @param {NextApiRequest} req - request object
- * @param {NextApiResponse} res - response object
+ * @param {NextApiRequest} req request object
+ * @param {NextApiResponse} res response object
  */
 export default async function handler(
   req: NextApiRequest,
@@ -204,7 +204,7 @@ const handleWebhook = async (
 
     let qrcodeUrl: string;
     try {
-      // Generate qrcode with order information
+      // Generate qrcode with order info
       qrcodeUrl = await h.generateQRCode(QRCode, qrcodeData);
     } catch (error) {
       res.status(errorCode).send({
@@ -342,7 +342,6 @@ const handleWebhook = async (
 
       // If email is successful, add webhook to redis and send success response
       if (emailResponse) {
-        // let webhookLogged = false;
         const webhookLogged = await h.sendWebhookIdToRedis(redis, newWebhookId);
         if (webhookLogged) {
           return res

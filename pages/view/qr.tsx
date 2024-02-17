@@ -1,8 +1,9 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import QRCode from "qrcode";
 import { convertDateFormat } from "../../helpers";
+import QRCode from "qrcode";
 
 // SAMPLE DATA URL: https://qr-code-webhook-git-master-omniairportparking.vercel.app/view/qr?startTime=02.02.2022T02:00:00&endTime=02.02.2022T02:00:00&qrcodeData=123123123
 

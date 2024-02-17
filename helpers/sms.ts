@@ -1,16 +1,16 @@
 import { hrefBase } from ".";
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const client = require("twilio")(accountSid, authToken);
+// const accountSid = process.env.TWILIO_ACCOUNT_SID;
+// const authToken = process.env.TWILIO_AUTH_TOKEN;
+// const client = require("twilio")(accountSid, authToken);
 
 /**
  * Generates text that gets sent in SMS to user
- * @param {string} orderNum - order num of booking
- * @param {string} startTime - start time of booking
- * @param {string} endTime - end time of booking
- * @param {string} qrcodeData - data send to server
- * @returns {string} - text for SMS message
+ * @param {string} orderNum order num of booking
+ * @param {string} startTime start time of booking
+ * @param {string} endTime end time of booking
+ * @param {string} qrcodeData data send to server
+ * @returns {string} message for SMS
  */
 const generateSMSMessage = (
   orderNum: string,
@@ -33,10 +33,10 @@ const generateSMSMessage = (
 
 /**
  *
- * @param {string} to - the users phone number
- * @param {string} OrderNum - the order number
- * @param {string} qrcodeLink - the url to the qr code
- * @returns {Promise<any>} - response from twilio api
+ * @param {string} to the users phone number
+ * @param {string} OrderNum the order number
+ * @param {string} qrcodeLink the url to the qr code
+ * @returns {Promise<any>} response from twilio api
  */
 export const sendQRCodeSMSToUser = async (
   to: string,
@@ -48,9 +48,9 @@ export const sendQRCodeSMSToUser = async (
   try {
     const body = generateSMSMessage(orderNum, startTime, endTime, qrcodeData);
     const from = process.env.TWILIO_PHONE_NUMBER;
-    const response = await client.messages.create({ to, body, from });
-    console.log("response is:", response);
-    return response;
+    // const response = await client.messages.create({ to, body, from });
+    // console.log("response is:", response);
+    // return response;
   } catch (error) {
     console.error("sendQRCodeSMSToUser Error =>", error);
   }

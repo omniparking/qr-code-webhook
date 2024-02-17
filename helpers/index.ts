@@ -28,9 +28,9 @@ export const hrefBase = "https://qr-code-webhook.vercel.app/";
 
 /**
  *
- * @param {Redis} redis - redis instance
- * @param newWebhookId - webhook id being stored in redis db
- * @returns {Promise<boolean>} - represents whether webhook id was stored in redis db
+ * @param {Redis} redis redis instance
+ * @param newWebhookId webhook id being stored in redis db
+ * @returns {Promise<boolean>} represents whether webhook id was stored in redis db
  */
 export async function sendWebhookIdToRedis(
   redis: Redis,
@@ -48,9 +48,9 @@ export async function sendWebhookIdToRedis(
 
 /**
  *
- * @param {string} qrcodeUrl - url to view qr code in browser
- * @param {string} logoImg - base64 string of omni parking logo
- * @returns {MailAttachment[]} - an array of objects that are the attachments for email (omni logo and qrcode image)
+ * @param {string} qrcodeUrl url to view qr code in browser
+ * @param {string} logoImg base64 string of omni parking logo
+ * @returns {MailAttachment[]} an array of objects that are the attachments for email (omni logo and qrcode image)
  */
 export function generateAttachments(
   qrcodeUrl: string,
@@ -72,8 +72,8 @@ export function generateAttachments(
 
 /**
  *
- * @param {Vendor} vendorName
- * @returns {string[]} - an array of emails to CC email
+ * @param {Vendor} vendorName either 'general' or 'mercedes'
+ * @returns {string[]} an array of emails to CC email
  */
 export function generateCC(vendorName: Vendor): string[] {
   return vendorName === "mercedes"
@@ -82,9 +82,9 @@ export function generateCC(vendorName: Vendor): string[] {
 } // END generateCC
 
 /**
- * @param {string} startTime - start time of booking
- * @param {string} endTime - end time of booking
- * @returns {PriceInfoForMercedes} - price info for mercedes order
+ * @param {string} startTime start time of booking
+ * @param {string} endTime end time of booking
+ * @returns {PriceInfoForMercedes} price info for mercedes order
  */
 export function generatePricesForMercedes(
   startTime: string,
@@ -104,8 +104,8 @@ export function generatePricesForMercedes(
 
 /**
  *
- * @param {string} order_number - the order number of the booking
- * @returns {string} - data for qr code
+ * @param {string} order_number the order number of the booking
+ * @returns {string} data for qr code
  */
 export function generateQRCodeData(order_number): string {
   const qrcodeLength: number = `1755164${order_number}`.length;
@@ -116,13 +116,13 @@ export function generateQRCodeData(order_number): string {
 
 /**
  *
- * @param {Vendor} vendor - vendor name either 'general' or 'mercedes'
- * @param {BookingTime[]} bookingTimes - Booking Time info
- * @param {string} price - order price
- * @param {string} name - name of product
- * @param {any} customer - object containing customer info
- * @param {string} start_time - start of booking datetime as string
- * @param {string} end_time - end of booking datetime as string
+ * @param {Vendor} vendor vendor name either 'general' or 'mercedes'
+ * @param {BookingTime[]} bookingTimes Booking Time info
+ * @param {string} price order price
+ * @param {string} name name of product
+ * @param {any} customer object containing customer info
+ * @param {string} start_time start of booking datetime as string
+ * @param {string} end_time end of booking datetime as string
  * @returns
  */
 export function missingData(
@@ -142,8 +142,8 @@ export function missingData(
 } // END missingData
 
 /**
- *  @param {BookingTime[]} bookingTimes - an array of objects containing booking time info
- *  @returns {StartAndEndTime}
+ *  @param {BookingTime[]} bookingTimes an array of objects containing booking time info
+ *  @returns {StartAndEndTime} start and end times as string
  */
 export function getStartAndEndTimes(
   bookingTimes: BookingTime[]
@@ -165,8 +165,8 @@ export function getStartAndEndTimes(
 }
 
 /**
- * @param {any} lineItems - array of objects containing booking data
- * @param {any} customer - an object containing user data
+ * @param {any} lineItems array of objects containing booking data
+ * @param {any} customer an object containing user data
  * @returns {{ quantity: string, price: string, name: string, bookingTimes: BookingTime[], first: string, last: string }}
  */
 export function getInfoFromRequest(
@@ -189,8 +189,8 @@ export function getInfoFromRequest(
 
 /**
  *
- * @param {any} body - the request body
- * @returns {boolean} - whether or not request is from mercedes vendor
+ * @param {any} body the request body
+ * @returns {boolean} whether or not request is from mercedes vendor
  */
 export function isMercedesIntegration(body: any): boolean {
   return (
@@ -201,10 +201,10 @@ export function isMercedesIntegration(body: any): boolean {
 
 /**
  *
- * @param {string | undefined} method - http method
- * @param {string} shopifyTopic - shopify topic
- * @param {string} sourceName - http source name
- * @returns {boolean} - whether or not the http request comes from a trusted source
+ * @param {string | undefined} method http method
+ * @param {string} shopifyTopic shopify topic
+ * @param {string} sourceName http source name
+ * @returns {boolean} whether or not the http request comes from a trusted source
  */
 export function isTrustedSource(
   method: string | undefined,
@@ -219,9 +219,9 @@ export function isTrustedSource(
 } // END isTrustedSource
 
 /**
- * @param {string} dateString - date in string format
- * @param {boolean} shouldExcludeTime - determines whether or not time should be added to date string
- * @returns {string} - in the format MM/DD/YYYY or MM/DD/YYYY hh:mm:ss a
+ * @param {string} dateString date in string format
+ * @param {boolean} shouldExcludeTime determines whether or not time should be added to date string
+ * @returns {string} in the format MM/DD/YYYY or MM/DD/YYYY hh:mm:ss a
  */
 export function formatDateWithTime(
   dateString: string,
@@ -251,8 +251,8 @@ export function formatDateWithTime(
 }
 
 /**
- * @param {string} inputDate - date in string format
- * @param {boolean} shouldAddGracePeriod - whether or not to set time to beginning of the day
+ * @param {string} inputDate date in string format
+ * @param {boolean} shouldAddGracePeriod whether or not to set time to beginning of the day
  * @returns {string} date in the format MM.DD.YYYYhh:mm:ss
  */
 export function formatDate(inputDate: string, shouldAddGracePeriod): string {
@@ -298,8 +298,8 @@ export function convertDateFormat(inputDate: string): string {
 
 /**
  * Determines which line_items array should be used
- * @param {any} lineItems - line items off body
- * @returns {any} - line item properties for booking
+ * @param {any} lineItems line items off body
+ * @returns {any} line item properties for booking
  */
 export function checkProperties(lineItems: any): any {
   return lineItems?.[1]?.properties?.length === 3 ||
@@ -310,7 +310,7 @@ export function checkProperties(lineItems: any): any {
 
 /**
  * Generates Omni Airport Logo as Image Tag
- * @returns {string} - HTML Image Tag of Omni logo
+ * @returns {string} HTML Image Tag of Omni logo
  */
 function generateIconImageForEmailTemplate(): string {
   const style: string = `style="display: block; ${marginB("12")};"`;
@@ -331,7 +331,7 @@ const generateNameHTML = (userName: string): string => {
 
 /**
  *
- * @param {string} billingAddressMarkup - HTML markup for billing address
+ * @param {string} billingAddressMarkup HTML markup for billing address
  * @returns Billing Address HTML Markup
  */
 const generateBillingHTMLMarkup = (billingAddressMarkup: string): string => {
@@ -345,8 +345,8 @@ const generateBillingHTMLMarkup = (billingAddressMarkup: string): string => {
 
 /**
  *
- * @param {string} total - the total price of the booking
- * @param {boolean} [includeDiscount] - the total price of the booking
+ * @param {string} total the total price of the booking
+ * @param {boolean} [includeDiscount] the total price of the booking
  * @returns HTML markup for price before discount and after
  */
 const getPriceHTML = (total: string, includeDiscount = true): string => {
@@ -361,11 +361,11 @@ const dropAndPickupAnytime = () =>
 
 /**
  * Generates HTML markup for email
- * @param {HTMLMarkupData} data - object containing properties needed for email
- * @param {string} billingAddressMarkup - billing address info in html format as string
- * @param {boolean} shouldExcludeTime - whether or not time should be included in email
- * @param {boolean} [isForMercedes] - denotes whether or not this email is for mercedes vendor
- * @returns {string} - HTML markup for email
+ * @param {HTMLMarkupData} data object containing properties needed for email
+ * @param {string} billingAddressMarkup billing address info in html format as string
+ * @param {boolean} shouldExcludeTime whether or not time should be included in email
+ * @param {boolean} [isForMercedes] denotes whether or not this email is for mercedes vendor
+ * @returns {string} HTML markup for email
  */
 export function generateHTMLMarkup(
   data: HTMLMarkupData,
@@ -452,8 +452,8 @@ export function generateHTMLMarkup(
 
 /**
  * Generates billing address HTML markup for email
- * @param {BillingAddress} billing_address - Object containing properties needed for billing address
- * @returns {string} - billing info in HTML markup for email
+ * @param {BillingAddress} billing_address Object containing properties needed for billing address
+ * @returns {string} billing info in HTML markup for email
  */
 export function getBillingInfoMarkup(billing_address: BillingAddress): string {
   try {
@@ -487,9 +487,9 @@ export function getBillingInfoMarkup(billing_address: BillingAddress): string {
 
 /**
  * Sends email to user
- * @param {any} transporter - nodemailer sdk
- * @param {EmailData} emailInfo - object containing properties needed for email
- * @returns {Promise<boolean>} - Indicates whether email was sent or not
+ * @param {any} transporter nodemailer sdk
+ * @param {EmailData} emailInfo object containing properties needed for email
+ * @returns {Promise<boolean>} Indicates whether email was sent or not
  */
 export async function sendEmail(
   transporter: any,
@@ -552,9 +552,9 @@ export async function sendEmail(
 
 /**
  * Generates QR code with order number
- * @param {any} QRCode - qrcode sdk
- * @param {string} data - data for qr code (order number, default numbers, & trailing zeros)
- * @returns {Promise<string>} - QR Code image
+ * @param {any} QRCode qrcode sdk
+ * @param {string} data data for qr code (order number, default numbers, & trailing zeros)
+ * @returns {Promise<string>} QR Code image
  */
 export async function generateQRCode(
   QRCode: any,
@@ -574,8 +574,8 @@ export async function generateQRCode(
 } // END generateQRCode
 
 /**
- * @param {DataForServer} data - object containing properties needed for server
- * @returns {string} - Data for server
+ * @param {DataForServer} data object containing properties needed for server
+ * @returns {string} Data for server
  */
 export function generateDataForServer(data: DataForServer): string {
   try {
@@ -606,10 +606,10 @@ export function generateDataForServer(data: DataForServer): string {
 /**
  * Sends data to omni servers with reservation info and unique id
  * The unique id is what is stored in the QR code and used to look up the reservation
- * @param {any} client - ftp client sdk
- * @param {string} data - data sent to server
- * @param {string} orderNumber - the order number for this purchase
- * @returns {Promise<boolean>} - Boolean indicating whether or not sending data was successful
+ * @param {any} client ftp client sdk
+ * @param {string} data data sent to server
+ * @param {string} orderNumber the order number for this purchase
+ * @returns {Promise<boolean>} Boolean indicating whether or not sending data was successful
  */
 export async function sendDataToServer(
   ftpClient: any,
@@ -636,9 +636,9 @@ export async function sendDataToServer(
 
 /**
  * Determines quantity of days user parking in lot for mercedes VIP users
- * @param {string} startDateStr - start date of reservation as string in format 2024-02-01T18:00:00
- * @param {string} endDateStr - end date of reservation as string in format 2024-02-01T18:00:00
- * @returns {number} - the quantity of days between start and end time as number
+ * @param {string} startDateStr start date of reservation as string in format 2024-02-01T18:00:00
+ * @param {string} endDateStr end date of reservation as string in format 2024-02-01T18:00:00
+ * @returns {number} the quantity of days between start and end time as number
  */
 export function calculateDaysBetweenWithTime(
   startDateStr: string,
@@ -659,7 +659,7 @@ export function calculateDaysBetweenWithTime(
 
 /**
  * Determines the start and end date for super saver pass
- * @returns {{ start: string, end: string }} -  the start and end dates in ISO String format
+ * @returns {{ start: string, end: string }} the start and end dates in ISO String format
  */
 export function generateTimeForSuperSaverPass(): {
   start: string;
@@ -678,8 +678,8 @@ export function generateTimeForSuperSaverPass(): {
 
 /**
  * Formats the user's phone number to ensure +1 is in the front of it for twilio sms
- * @param {string} phoneNumber - the user's phone number
- * @returns {string} - user phone number with +1 in the beginning
+ * @param {string} phoneNumber the user's phone number
+ * @returns {string} user phone number with +1 in the beginning
  */
 export function formatPhoneNumber(phoneNumber: string): string {
   if (phoneNumber.startsWith("+1")) {
