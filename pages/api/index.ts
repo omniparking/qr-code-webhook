@@ -443,14 +443,6 @@ const handleWebhook = async (
 
         try {
           emailRetryResponse = await sendEmail(transporter, emailData);
-          res.setHeader(
-            "Set-Cookie",
-            `qrcodeData=${JSON.stringify({
-              qrcode: qrcodeData,
-              start_time,
-              end_time,
-            })}`
-          );
         } catch (error) {
           console.error("Error retrying email =>", error);
           emailRetryResponse = false;
