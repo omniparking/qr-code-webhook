@@ -1,55 +1,222 @@
 /*jshint esversion: 8 */
+/* eslint-disable prefer-destructuring */
+
+import { Redis } from "@upstash/redis";
+
+/* eslint max-len: ["error", { "code": 120 }] */
+
+// Deconstruct environment variables from process.env
+// const { M_NAME, M_VENDOR, SHOPIFY_TOPIC, HOOKDECK_SOURCE } = process.env;
+const M_NAME = process.env.M_NAME;
+const M_VENDOR = process.env.M_VENDOR;
+const SHOPIFY_TOPIC = process.env.SHOPIFY_TOPIC;
+const HOOKDECK_SOURCE = process.env.HOOKDECK_SOURCE;
 
 // declaring variables for styling HTML markup
+const qrCodeStyles: string =
+  "display: block; object=fit: contain; margin-left: 0; margin-right: 0;";
 const inline: string = "display: inline-block;";
 const padding0: string = "padding: 0px;";
 const margin0: string = "margin: 0px;";
+const bold: string = "font-weight: bold;";
 const marginV = (px: string): string => `margin: ${px}px 0;`;
 const marginT = (px: string): string => `margin: ${px}px 0 0 0;`;
 const marginB = (px: string): string => `margin: 0 0 ${px}px 0;`;
 const fontSize = (px: string): string => `font-size: ${px}rem;`;
 
-// declaring messages for server response
-export const messages = {
-  dataMissingMessage: function (source: string): string {
-    return `Webhook event failed from ${source}. Critical data is missing from request body!`;
-  },
-  failedToLoadDataToServerMessage: function (source: string): string {
-    return `Failed to load data to server! Source: ${source}`;
-  },
-  webhookNotLoggedAndEmailSentMessage: function (source: string): string {
-    return `Webhook event not logged but email sent successfully. Source: ${source}`;
-  },
-  webhookNotLoggedAndEmailNotSentMessage: function (source: string): string {
-    return `Webhook event not logged and email not sent! Source: ${source}`;
-  },
-  missingTimeInfoMessage: function (source: string): string {
-    return `Webhook Event failed due to missing start/end booking times! Source: ${source}`;
-  },
-  webhookAlreadyLoggedMessage: function (source: string): string {
-    return `Webhook Event failed as it has previously been successfully logged. Source: ${source}`;
-  },
-  requestNotPostMethodMessage: function (source: string): string {
-    return `Webhook Event failed as request not coming from trusted source. Source: ${source}`;
-  },
-  errorFromMainTryCatchMessage: function (source: string): string {
-    return `Webhook Event failed. Error from main try/catch. Source: ${source}`;
-  },
-  successMessage: function (source: string): string {
-    return `Webhook Event logged and Email Successfully logged! Source: ${source}`;
-  },
-  failedToConnectToFTPServerMessage: function (source: string): string {
-    return `Failed to connect to ftp server. Source: ${source}`;
-  },
-  generateQRCodeError: function (source: string): string {
-    return `Failed to generate a QR code! Source: ${source}`;
-  },
-  sendingSMSFailed: function (source: string, webhookLogged: boolean): string {
-    return `Failed to send an SMS to the user! Webhook logged: ${webhookLogged}. Source: ${source}`;
-  },
-};
-
 export const hrefBase = "https://qr-code-webhook.vercel.app/";
+
+/**
+ *
+ * @param {Redis} redis - redis instance
+ * @param newWebhookId - webhook id being stored in redis db
+ * @returns {Promise<boolean>} - represents whether webhook id was stored in redis db
+ */
+export async function sendWebhookIdToRedis(
+  redis: Redis,
+  newWebhookId: string
+): Promise<boolean> {
+  let webhookLogged = false;
+  try {
+    await redis.set(newWebhookId, newWebhookId);
+    webhookLogged = true;
+  } catch (error) {
+    console.error("Error redis webhook =>", error);
+  }
+  return webhookLogged;
+} // END sendWebhookIdToRedis
+
+/**
+ *
+ * @param {string} qrcodeUrl - url to view qr code in browser
+ * @param {string} logoImg - base64 string of omni parking logo
+ * @returns {MailAttachment[]} - an array of objects that are the attachments for email (omni logo and qrcode image)
+ */
+export function generateAttachments(
+  qrcodeUrl: string,
+  logoImg: string
+): MailAttachment[] {
+  return [
+    {
+      cid: "unique-qrcode",
+      filename: "qrcode.png",
+      path: qrcodeUrl,
+    },
+    {
+      cid: "unique-omnilogo",
+      filename: "logo.png",
+      path: `data:text/plain;base64, ${logoImg}`,
+    },
+  ];
+} // END generateAttachments
+
+/**
+ *
+ * @param {Vendor} vendorName
+ * @returns {string[]} - an array of emails to CC email
+ */
+export function generateCC(vendorName: Vendor): string[] {
+  return vendorName === "mercedes"
+    ? ["info@omniairportparking.com", "Bdc_service@mbso.com"]
+    : ["info@omniairportparking.com"];
+} // END generateCC
+
+/**
+ * @param {string} startTime - start time of booking
+ * @param {string} endTime - end time of booking
+ * @returns {PriceInfoForMercedes} - price info for mercedes order
+ */
+export function generatePricesForMercedes(
+  startTime: string,
+  endTime: string
+): PriceInfoForMercedes {
+  const qty = calculateDaysBetweenWithTime(startTime, endTime);
+  const sub = +(12.99 * qty + 4.99).toFixed(2);
+  const tax = +(sub * 0.165).toFixed(2);
+  const total = parseFloat((sub + tax).toFixed(2));
+  return {
+    quantity: `${qty}`,
+    subtotal: `${sub}`,
+    tax: `${tax}`,
+    total: `${total}`,
+  };
+} // END generatePricesForMercedes
+
+/**
+ *
+ * @param {string} order_number - the order number of the booking
+ * @returns {string} - data for qr code
+ */
+export function generateQRCodeData(order_number): string {
+  const qrcodeLength: number = `1755164${order_number}`.length;
+  const zeros: string = new Array(16 - qrcodeLength).join("0");
+  const qrcodeData: string = `1755164${zeros}${order_number}`; // add zero placeholders to qrcode data
+  return qrcodeData;
+} // END generateQRCodeData
+
+/**
+ *
+ * @param {Vendor} vendor - vendor name either 'general' or 'mercedes'
+ * @param {BookingTime[]} bookingTimes - Booking Time info
+ * @param {string} price - order price
+ * @param {string} name - name of product
+ * @param {any} customer - object containing customer info
+ * @param {string} start_time - start of booking datetime as string
+ * @param {string} end_time - end of booking datetime as string
+ * @returns
+ */
+export function missingData(
+  vendor: Vendor,
+  bookingTimes: BookingTime[],
+  price: string,
+  name: string,
+  customer: any,
+  start_time: string,
+  end_time: string
+): boolean {
+  if (vendor === "general") {
+    return !bookingTimes?.length || !price || !name || !customer;
+  } else {
+    return !bookingTimes || !start_time || !end_time;
+  }
+} // END missingData
+
+/**
+ *  @param {BookingTime[]} bookingTimes - an array of objects containing booking time info
+ *  @returns {StartAndEndTime}
+ */
+export function getStartAndEndTimes(
+  bookingTimes: BookingTime[]
+): StartAndEndTime {
+  const result: StartAndEndTime = {
+    start_time: "",
+    end_time: "",
+  };
+
+  bookingTimes?.forEach(({ name, value }: BookingTime) => {
+    if (name === "booking-start") {
+      result.start_time = value;
+    } else if (name === "booking-finish") {
+      result.end_time = value;
+    }
+  });
+
+  return result;
+}
+
+/**
+ * @param {any} lineItems - array of objects containing booking data
+ * @param {any} customer - an object containing user data
+ * @returns {{ quantity: string, price: string, name: string, bookingTimes: BookingTime[], first: string, last: string }}
+ */
+export function getInfoFromRequest(
+  lineItems: any,
+  customer: any
+): {
+  quantity: string;
+  price: string;
+  name: string;
+  bookingTimes: BookingTime[];
+  first: string;
+  last: string;
+} {
+  const { quantity, price, name } = lineItems;
+  const bookingTimes: BookingTime[] = lineItems?.properties || [];
+  const { first_name: first, last_name: last } = customer;
+
+  return { quantity, price, name, bookingTimes, first, last };
+} // END getInfoFromRequest
+
+/**
+ *
+ * @param {any} body - the request body
+ * @returns {boolean} - whether or not request is from mercedes vendor
+ */
+export function isMercedesIntegration(body: any): boolean {
+  return (
+    body?.note_attributes?.[0]?.name === M_VENDOR &&
+    body?.note_attributes?.[0]?.value === M_NAME
+  );
+} // END isMercedesIntegration
+
+/**
+ *
+ * @param {string | undefined} method - http method
+ * @param {string} shopifyTopic - shopify topic
+ * @param {string} sourceName - http source name
+ * @returns {boolean} - whether or not the http request comes from a trusted source
+ */
+export function isTrustedSource(
+  method: string | undefined,
+  shopifyTopic: string,
+  sourceName: string
+): boolean {
+  return (
+    method === "POST" &&
+    shopifyTopic === SHOPIFY_TOPIC &&
+    sourceName === HOOKDECK_SOURCE
+  );
+} // END isTrustedSource
 
 /**
  * @param {string} dateString - date in string format
@@ -146,9 +313,12 @@ export function checkProperties(lineItems: any): any {
  * @returns {string} - HTML Image Tag of Omni logo
  */
 function generateIconImageForEmailTemplate(): string {
-  const style: string = 'display: block; margin: 0px 2px 4px 4px;"';
-  const alt: string = "Omni Airport Parking logo";
-  return `<img width="100" height="50" style="${style}" src="cid:unique-omnilogo" alt="${alt}" title="${alt}" />`;
+  const style: string = `style="display: block; ${marginB("12")};"`;
+  const desc: string = "Omni Airport Parking logo";
+  const alt: string = `alt="${desc}"`;
+  const title: string = `title="${desc}"`;
+  const src: string = `src="cid:unique-omnilogo"`;
+  return `<img width="100" height="50" ${style} ${src} ${alt} ${title} />`;
 } // END generateIconImageForEmailTemplate
 
 const generateNameHTML = (userName: string): string => {
@@ -166,7 +336,7 @@ const generateNameHTML = (userName: string): string => {
  */
 const generateBillingHTMLMarkup = (billingAddressMarkup: string): string => {
   return `
-    <p style="font-weight: bold; ${marginB("1")} ${padding0}">
+    <p style="${bold} ${marginB("1")} ${padding0}">
       Billing Address:
     </p>
     <p style="${padding0} ${marginV("4")};">${billingAddressMarkup}</p>
@@ -182,9 +352,12 @@ const generateBillingHTMLMarkup = (billingAddressMarkup: string): string => {
 const getPriceHTML = (total: string, includeDiscount = true): string => {
   return includeDiscount
     ? `<p style="${padding0} ${margin0}">Total Before Discount: $${total}</p>
-    <p style="${padding0} ${margin0}">Total After Discount: $0.00</p>`
-    : `<p style="${padding0} ${margin0}">Total: $${total}</p>`;
+    <p style="${padding0} ${marginB("20")}">Total After Discount: $0.00</p>`
+    : `<p style="${padding0} ${marginB("20")}">Total: $${total}</p>`;
 }; // END getPriceHTML
+
+const dropAndPickupAnytime = () =>
+  '<span style="font-size: 14px;">(at anytime)</span>';
 
 /**
  * Generates HTML markup for email
@@ -221,43 +394,54 @@ export function generateHTMLMarkup(
 
   const href = `${hrefBase}/view/qr?startTime=${dropoff}&endTime=${pickup}&qrcodeData=${qrcodeData}`;
 
+  //   <p style="${marginV("10")}">
+  //   This email is to confirm your recent order.
+  // </p>
+
   return `
     <html>
     <body>
-    ${generateIconImageForEmailTemplate()}
-      <p style="${marginB("8")}"><b>Parking Confirmation Details:</b></p>
-      <p style="${fontSize("1")} ${marginV("8")}">
+      <p style="${marginB("16")}"><b>Parking Confirmation Details:</b></p>
+      ${generateIconImageForEmailTemplate()}
+
+      <p style="${fontSize("1")} ${marginV("4")}">
         Thank you for placing your order with OMNI Airport Parking!
       </p>
-      <p style="${marginV("10")}">
-        This email is to confirm your recent order.
-      </p>
+ 
       ${isForMercedes ? generateNameHTML(userName) : ""}
-      <p style="${marginB("20")}"><b>Purchased Date:</b> ${purchaseDate}</p>
-
-      <p style="${marginB("2")} ${padding0} ${fontSize("1")}">
-        <b>Drop off:</b> ${dropoffTime}
-      </p>
-      <p style="${marginB("20")} ${padding0} ${fontSize("1")}">
-        <b>Pick up:</b> ${pickupTime}
-      </p>
-
-      <p style="${marginB("1")} ${padding0}">
-        1x Facility Charge for $4.99 each
-      </p>
-      <p style="${margin0} ${padding0}">${quantity}x ${type.toUpperCase()} for $${price} each</p>
       
+      <p style="${isForMercedes ? marginB("12") : marginV("12")}">
+        <span style="${bold}">Purchased Date:</span> 
+        ${purchaseDate}
+      </p>
+
+      <p style="${margin0} ${padding0} ${fontSize("1")}">
+        <span style="${bold}">
+          Drop off
+          ${shouldExcludeTime ? dropAndPickupAnytime() : ""}:
+        </span> 
+        ${dropoffTime}
+      </p>
+      <p style="${marginB("16")} ${padding0} ${fontSize("1")}">
+        <span style="${bold}">
+          Pick up 
+          ${shouldExcludeTime ? dropAndPickupAnytime() : ""}:
+        </span>
+        ${pickupTime}
+      </p>
+
+      <p style="${margin0} ${padding0}">1x Facility Charge for $4.99 each</p>
+      <p style="${margin0} ${padding0}">${quantity}x ${type.toUpperCase()} for $${price} each</p>
+
       <p style="${padding0} ${marginT("20")}">Subtotal: $${subtotal}</p>
       <p style="${padding0} ${margin0}">Taxes and Fees: $${taxes}</p>
       ${isForMercedes ? getPriceHTML(total) : getPriceHTML(total, false)}
-      
-      <br />
 
       ${isForMercedes ? "" : generateBillingHTMLMarkup(billingAddressMarkup)}
 
-      <img height="200" width="200" style="display: block; object=fit: contain;" src="cid:unique-qrcode" alt="QR Code" title="QR Code" />
+      <img height="250" width="250" style="${qrCodeStyles}" src="cid:unique-qrcode" alt="QR Code" title="QR Code" />
       
-      <p style="${padding0} ${marginT("2")} ${inline}">
+      <p style="${padding0} ${marginT("2")}">
         Can't see the QR Code? View it in your browser by clicking 
         <a style="${inline}" href="${href}" target="_blank" alt="link to qr code">here</a>
       </p>
@@ -271,9 +455,7 @@ export function generateHTMLMarkup(
  * @param {BillingAddress} billing_address - Object containing properties needed for billing address
  * @returns {string} - billing info in HTML markup for email
  */
-export function formatBillingInfoForEmail(
-  billing_address: BillingAddress
-): string {
+export function getBillingInfoMarkup(billing_address: BillingAddress): string {
   try {
     if (!billing_address) return "";
 
@@ -298,10 +480,10 @@ export function formatBillingInfoForEmail(
       </section>
     `;
   } catch (e) {
-    console.error("formatBillingInfoForEmail => error:", e);
+    console.error("getBillingInfoMarkup => error:", e);
     return "";
   }
-} // END formatBillingInfoForEmail
+} // END getBillingInfoMarkup
 
 /**
  * Sends email to user

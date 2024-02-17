@@ -44,7 +44,7 @@ export default function QRPage({ startTime, endTime, qrcodeData }) {
 
       {qrDataURL && (
         <div className="mt-6">
-          <Image src={qrDataURL} alt="QR Code" height={200} width={200} />
+          <Image src={qrDataURL} alt="QR Code" height={250} width={250} />
         </div>
       )}
 

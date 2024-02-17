@@ -1,4 +1,4 @@
-interface MailAttachments {
+interface MailAttachment {
   cid: string;
   filename: string;
   path: string;
@@ -56,6 +56,18 @@ interface HTMLMarkupData {
   total_tax: string;
   qrcodeData: string;
   userName?: string;
+}
+
+interface StartAndEndTime {
+  start_time: string;
+  end_time: string;
+}
+
+interface PriceInfoForMercedes {
+  quantity: string;
+  subtotal: string;
+  tax: string;
+  total: string;
 }
 
 type Vendor = "general" | "mercedes";

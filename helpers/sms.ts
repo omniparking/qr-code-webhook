@@ -10,7 +10,7 @@ const client = require("twilio")(accountSid, authToken);
  * @param {string} startTime - start time of booking
  * @param {string} endTime - end time of booking
  * @param {string} qrcodeData - data send to server
- * @returns {string}
+ * @returns {string} - text for SMS message
  */
 const generateSMSMessage = (
   orderNum: string,
@@ -36,6 +36,7 @@ const generateSMSMessage = (
  * @param {string} to - the users phone number
  * @param {string} OrderNum - the order number
  * @param {string} qrcodeLink - the url to the qr code
+ * @returns {Promise<any>} - response from twilio api
  */
 export const sendQRCodeSMSToUser = async (
   to: string,
@@ -43,13 +44,13 @@ export const sendQRCodeSMSToUser = async (
   startTime: string,
   endTime: string,
   qrcodeData: string
-) => {
+): Promise<any> => {
   try {
     const body = generateSMSMessage(orderNum, startTime, endTime, qrcodeData);
     const from = process.env.TWILIO_PHONE_NUMBER;
-    return;
     const response = await client.messages.create({ to, body, from });
     console.log("response is:", response);
+    return response;
   } catch (error) {
     console.error("sendQRCodeSMSToUser Error =>", error);
   }

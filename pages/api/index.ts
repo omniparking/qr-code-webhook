@@ -8,30 +8,18 @@ import { IncomingHttpHeaders } from "http";
 
 // npm/node imports
 import { promises as fs } from "fs"; // to read icon file as promise
-import { Redis } from "@upstash/redis"; // to store webhook_ids to database
 
+// Helpers
+import * as h from "../../helpers/index";
+import { messages } from "../../helpers/statusMessages";
+// import { sendQRCodeSMSToUser } from "../../helpers/sms";
+
+// npm
+import { Redis } from "@upstash/redis"; // to store webhook_ids to database
 import nodemailer from "nodemailer"; // to send emails
 import path from "path"; // to get path for icon file
 import PromiseFtp from "promise-ftp";
 import QRCode from "qrcode"; // to generate qr code
-
-// Helpers
-import {
-  checkProperties,
-  messages,
-  formatBillingInfoForEmail,
-  generateDataForServer,
-  generateHTMLMarkup,
-  generateQRCode,
-  sendDataToServer,
-  sendEmail,
-  calculateDaysBetweenWithTime,
-  generateTimeForSuperSaverPass,
-  formatPhoneNumber,
-  formatDateWithTime,
-  formatDate,
-} from "../../helpers/index";
-// import { sendQRCodeSMSToUser } from "../../helpers/sms";
 
 const errorCode: number = 400;
 const successCode: number = 201;
@@ -55,11 +43,6 @@ const {
   SERVER_IP_ADDRESS: SERVER_IP,
   SERVER_PASSWORD: SERVER_PASS,
   SERVER_USER: SERVER_USER,
-  M_NAME,
-  M_VENDOR,
-  // SHOPIFY_TOPIC,
-  // SHOPIFY_HOST,
-  // HOOKDECK_SOURCE,
 } = process.env;
 
 // Initialize redis (to store webhook ids)
@@ -86,8 +69,8 @@ export default async function handler(
 
   try {
     const {
-      // headers,
-      // method,
+      headers,
+      method,
       body,
     }: {
       body: any;
@@ -95,27 +78,14 @@ export default async function handler(
       method?: string | undefined;
     } = req;
 
-    // const shopifyTopic: string =
-    //   (headers?.["x-shopify-topic"] as string)?.trim() || "";
+    const shopifyTopic = (
+      (headers?.["x-shopify-topic"] as string) || ""
+    )?.trim();
+    const sourceName = (req["x-hookdeck-source-name"] as string)?.trim();
 
-    // const sourceName = (req["x-hookdeck-source-name"] as string)?.trim();
+    const isTrustedSrc = h.isTrustedSource(method, shopifyTopic, sourceName);
 
-    // const isTrustedSource = (): boolean => {
-    //   return (
-    //     method === "POST" &&
-    //     shopifyTopic === SHOPIFY_TOPIC &&
-    //     sourceName === HOOKDECK_SOURCE
-    //   );
-    // };
-
-    const isMercedesIntegration = (): boolean => {
-      return (
-        body?.note_attributes?.[0]?.name === M_VENDOR &&
-        body?.note_attributes?.[0]?.value === M_NAME
-      );
-    };
-
-    if (isMercedesIntegration()) {
+    if (h.isMercedesIntegration(body)) {
       return handleWebhook(req, res, "mercedes");
     } else {
       return handleWebhook(req, res);
@@ -146,30 +116,29 @@ const handleWebhook = async (
 
     // Grab needed data from request object (i.e., start/end times, order num, address, price, etc.)
     const {
-      order_number: order_num,
-      email: to,
       billing_address,
-      customer,
       created_at,
       current_subtotal_price,
       current_total_price,
       current_total_tax,
+      customer,
+      email,
       line_items,
+      order_number,
       subtotal_price,
       total_price,
       total_tax,
     } = body;
 
-    const lineItems = checkProperties(line_items) || defaultObj;
-    const { quantity, price, name } = lineItems;
-    const bookingTimes: BookingTime[] = lineItems?.properties || [];
-    const { first_name: first, last_name: last } = customer;
+    const lineItems = h.checkProperties(line_items) || defaultObj;
+    const { quantity, price, name, bookingTimes, first, last } =
+      h.getInfoFromRequest(lineItems, customer);
     let phoneNumber;
 
     if (vendorName === "general") {
-      phoneNumber = formatPhoneNumber(billing_address.phone);
+      phoneNumber = h.formatPhoneNumber(billing_address.phone);
     } else {
-      phoneNumber = formatPhoneNumber(body.phone);
+      phoneNumber = h.formatPhoneNumber(body.phone);
     }
 
     let start_time: string;
@@ -178,29 +147,28 @@ const handleWebhook = async (
       line_items?.[1]?.name === "(MCO) SUPER SAVER 30 DAY PASS";
 
     if (isSuperSavePass) {
-      const { start, end } = generateTimeForSuperSaverPass();
+      const { start, end } = h.generateTimeForSuperSaverPass();
       start_time = start;
       end_time = end;
     } else {
       // Get start and end times of booking
-      bookingTimes?.forEach(({ name, value }: BookingTime) => {
-        if (name === "booking-start") {
-          start_time = value;
-        } else if (name === "booking-finish") {
-          end_time = value;
-        }
-      });
+      const { start_time: st, end_time: et } =
+        h.getStartAndEndTimes(bookingTimes);
+      start_time = st;
+      end_time = et;
     }
 
-    const missingData = (vendor: Vendor) => {
-      if (vendor === "general") {
-        return !bookingTimes?.length || !price || !name || !customer;
-      } else {
-        return !bookingTimes || !start_time || !end_time;
-      }
-    };
+    const isMissingData = h.missingData(
+      vendorName,
+      bookingTimes,
+      price,
+      name,
+      customer,
+      start_time,
+      end_time
+    );
 
-    if (missingData(vendorName)) {
+    if (isMissingData) {
       return res
         .status(successCode)
         .send({ message: messages.dataMissingMessage(vendorName) });
@@ -213,13 +181,13 @@ const handleWebhook = async (
         .send({ message: messages.missingTimeInfoMessage(vendorName) });
     }
 
-    const startTimeWithGrace = formatDate(start_time, true);
-    const endTime = formatDate(end_time, false);
+    const startTimeWithGrace = h.formatDate(start_time, true);
+    const endTime = h.formatDate(end_time, false);
     // const startTime = '02.02.202202:00:00'; // FOR TESTING ONLY
     // const endTime = '02.03.202203:00:00'; // FOR TESTING ONLY
 
     // Generate date in MM/DD/YYYY format for email
-    const createdAt: string = formatDateWithTime(created_at, true);
+    const createdAt: string = h.formatDateWithTime(created_at, true);
 
     // Get subtotal, taxes, and total price for email template
     const subtotalPrice: string =
@@ -232,14 +200,12 @@ const handleWebhook = async (
       (headers?.["x-shopify-webhook-id"] as string) || "";
 
     // Format data for QR Code
-    const qrcodeLength: number = `1755164${order_num}`.length;
-    const zeros: string = new Array(16 - qrcodeLength).join("0");
-    const qrcodeData: string = `1755164${zeros}${order_num}`; // add zero placeholders to qrcode data
+    const qrcodeData = h.generateQRCodeData(order_number);
 
     let qrcodeUrl: string;
     try {
       // Generate qrcode with order information
-      qrcodeUrl = await generateQRCode(QRCode, qrcodeData);
+      qrcodeUrl = await h.generateQRCode(QRCode, qrcodeData);
     } catch (error) {
       res.status(errorCode).send({
         message: messages.generateQRCodeError(vendorName),
@@ -247,29 +213,25 @@ const handleWebhook = async (
     }
 
     // Generate file for server
-    const dataForServer: DataForServer = {
+    const fileForServer: string = h.generateDataForServer({
       end_time: endTime,
       start_time: startTimeWithGrace,
       first,
       last,
-      order_num,
-    };
-
-    const fileForServer: string = generateDataForServer(dataForServer);
+      order_num: order_number,
+    });
 
     // Initiate ftp client
     const ftpClient: PromiseFtp = new PromiseFtp();
 
     try {
-      const ftpOptions: FTPServer = {
+      await ftpClient.connect({
         host: SERVER_IP,
         user: SERVER_USER,
         password: SERVER_PASS,
         port: ftpPort,
         secure: false,
-      };
-
-      await ftpClient.connect(ftpOptions);
+      });
     } catch (error) {
       // If we fail to connect to ftp server, send error response
       console.error("Error connecting to ftp server =>", error);
@@ -281,10 +243,10 @@ const handleWebhook = async (
     let serverResponse = false;
     try {
       // Send data to server
-      serverResponse = await sendDataToServer(
+      serverResponse = await h.sendDataToServer(
         ftpClient,
         fileForServer,
-        order_num
+        order_number
       );
     } catch (error) {
       // If sending data to server fails, send error response
@@ -313,54 +275,36 @@ const handleWebhook = async (
 
     // Generate markup for user's billing address to display in email
     const billingAddressMarkup: string =
-      formatBillingInfoForEmail(billing_address);
+      h.getBillingInfoMarkup(billing_address);
 
-    let htmlMarkup: string;
+    const {
+      quantity: mercQty,
+      subtotal: mercSubtotal,
+      tax: mercTax,
+      total: mercTotal,
+    } = h.generatePricesForMercedes(start_time, end_time);
 
-    if (vendorName === "mercedes") {
-      const qty = calculateDaysBetweenWithTime(start_time, end_time);
-      const subtotal = +(12.99 * qty + 4.99).toFixed(2);
-      const tax = +(+subtotal * 0.165).toFixed(2);
-      const total = parseFloat((subtotal + tax).toFixed(2));
+    let payload: HTMLMarkupData = {
+      quantity: vendorName === "mercedes" ? mercQty : quantity,
+      subtotal_price: vendorName === "mercedes" ? mercSubtotal : subtotalPrice,
+      total_price: vendorName === "mercedes" ? mercTotal : totalPrice,
+      total_tax: vendorName === "mercedes" ? mercTax : totalTax,
+      userName: vendorName === "mercedes" ? `${first} ${last}` : "",
+      createdAt,
+      end_time,
+      name,
+      price,
+      qrcodeData,
+      start_time,
+    };
 
-      // Generate HTML markup for email (mercedes)
-      htmlMarkup = generateHTMLMarkup(
-        {
-          subtotal_price: `${subtotal}`,
-          total_price: `${total}`,
-          total_tax: `${tax}`,
-          quantity: `${qty}`,
-          createdAt,
-          end_time,
-          name,
-          price,
-          start_time,
-          qrcodeData,
-          userName: `${first} ${last}`,
-        },
-        "",
-        false,
-        true
-      );
-    } else {
-      // Generate HTML markup for email (general)
-      htmlMarkup = generateHTMLMarkup(
-        {
-          subtotal_price: subtotalPrice,
-          total_price: totalPrice,
-          total_tax: totalTax,
-          createdAt,
-          end_time,
-          name,
-          price,
-          quantity,
-          start_time,
-          qrcodeData,
-        },
-        billingAddressMarkup,
-        isSuperSavePass
-      );
-    }
+    // generate html markup for email
+    const htmlMarkup = h.generateHTMLMarkup(
+      payload,
+      vendorName === "mercedes" ? "" : billingAddressMarkup,
+      vendorName === "mercedes" ? false : isSuperSavePass,
+      vendorName === "mercedes" ? true : false
+    );
 
     let storedWebhook: string;
     try {
@@ -370,40 +314,27 @@ const handleWebhook = async (
       console.error("Error getting stored webhook from redis =>", error);
     }
 
-    const cc: string[] =
-      vendorName === "mercedes"
-        ? ["info@omniairportparking.com", "Bdc_service@mbso.com"]
-        : ["info@omniairportparking.com"]; // cc emails
-
-    const attachments: MailAttachments[] = [
-      {
-        cid: "unique-qrcode",
-        filename: "qrcode.png",
-        path: qrcodeUrl,
-      },
-      {
-        cid: "unique-omnilogo",
-        filename: "logo.png",
-        path: `data:text/plain;base64, ${logoImageBase64}`,
-      },
-    ];
+    const cc: string[] = h.generateCC(vendorName);
+    const attachments: MailAttachment[] = h.generateAttachments(
+      qrcodeUrl,
+      logoImageBase64
+    );
 
     const emailData: EmailData = {
       from: user,
       html: htmlMarkup,
-      orderNum: order_num,
+      orderNum: order_number,
       attachments,
       cc,
-      to,
+      to: email,
     };
 
     // If webhook_id does not already exist in db
     if (!storedWebhook) {
-      // FOR TESTING ONLY -> change to (true || !storedWebhook)
       let emailResponse: boolean;
 
       try {
-        emailResponse = await sendEmail(transporter, emailData);
+        emailResponse = await h.sendEmail(transporter, emailData);
       } catch (error) {
         console.error("Error sending email =>", error);
         emailResponse = false;
@@ -411,16 +342,13 @@ const handleWebhook = async (
 
       // If email is successful, add webhook to redis and send success response
       if (emailResponse) {
-        let webhookLogged = false;
-        try {
-          await redis.set(newWebhookId, newWebhookId);
-          webhookLogged = true;
+        // let webhookLogged = false;
+        const webhookLogged = await h.sendWebhookIdToRedis(redis, newWebhookId);
+        if (webhookLogged) {
           return res
             .status(successCode)
             .send({ message: messages.successMessage(vendorName) });
-        } catch (error) {
-          console.error("Error redis webhook =>", error);
-          // remove return below for
+        } else {
           return res.status(errorCode).send({
             message: messages.webhookNotLoggedAndEmailSentMessage(vendorName),
           });
@@ -430,7 +358,7 @@ const handleWebhook = async (
         // try {
         //   const smsResponse = await sendQRCodeSMSToUser(
         //     phoneNumber,
-        //     order_num,
+        //     order_num: order_number,
         //     start_time,
         //     end_time,
         //     qrcodeData
@@ -449,7 +377,7 @@ const handleWebhook = async (
         let emailRetryResponse: boolean;
 
         try {
-          emailRetryResponse = await sendEmail(transporter, emailData);
+          emailRetryResponse = await h.sendEmail(transporter, emailData);
         } catch (error) {
           console.error("Error retrying email =>", error);
           emailRetryResponse = false;
