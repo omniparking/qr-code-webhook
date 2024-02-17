@@ -451,16 +451,14 @@ export function calculateDaysBetweenWithTime(
   return Math.ceil(daysDifference);
 } // END calculateDaysBetweenWithTime
 
-interface ITime {
-  start: string;
-  end: string;
-}
-
 /**
  * Determines the start and end date for super saver pass
- * @returns {ITime} the start and end dates in ISO String format
+ * @returns {{ start: string, end: string }} -  the start and end dates in ISO String format
  */
-export function generateTimeForSuperSaverPass(): ITime {
+export function generateTimeForSuperSaverPass(): {
+  start: string;
+  end: string;
+} {
   const startDate = new Date();
   const endDate = new Date();
   endDate.setDate(endDate.getDate() + 30);
