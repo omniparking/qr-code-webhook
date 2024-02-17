@@ -6,7 +6,7 @@ export default function Document() {
       <Head>
         <link rel="preconnect" href="https://fonts.gstatic.com" />
       </Head>
-      <body style={{ display: "block !important" }}>
+      <body>
         <Main />
         <NextScript />
       </body>
