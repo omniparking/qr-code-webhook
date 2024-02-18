@@ -40,6 +40,7 @@ const nextConfig = {
     config,
     { buildId, dev, isServer, defaultLoaders, nextRuntime, webpack }
   ) => {
+    config.resolve.fallback = { tls: false };
     // Important: return the modified config
     // config.infrastructureLogging = { debug: /PackFileCache/ };
     return config;
