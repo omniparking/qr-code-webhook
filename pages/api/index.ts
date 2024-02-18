@@ -143,8 +143,7 @@ const handleWebhook = async (
 
     let start_time: string;
     let end_time: string;
-    const isSuperSavePass =
-      line_items?.[1]?.name === "(MCO) SUPER SAVER 30 DAY PASS";
+    const isSuperSavePass = lineItems?.name === "(MCO) SUPER SAVER 30 DAY PASS";
 
     if (isSuperSavePass) {
       const { start, end } = h.generateTimeForSuperSaverPass();
