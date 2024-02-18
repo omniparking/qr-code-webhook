@@ -21,6 +21,11 @@ import path from "path"; // to get path for icon file
 import PromiseFtp from "promise-ftp";
 import QRCode from "qrcode"; // to generate qr code
 
+export const enum Vendor {
+  general = "general",
+  mercedes = "mercedes",
+}
+
 const errorCode: number = 400;
 const successCode: number = 201;
 const ftpPort: number = 21;
@@ -86,23 +91,23 @@ export default async function handler(
     const isTrustedSrc = h.isTrustedSource(method, shopifyTopic, sourceName);
 
     if (h.isMercedesIntegration(body)) {
-      return handleWebhook(req, res, "mercedes");
+      return handleWebhook(req, res, Vendor.mercedes);
     } else {
       return handleWebhook(req, res);
     }
   } catch (error) {
     // Case where something failed in the code above send a response message indicating webhook failed
     console.error("Error main try/catch in handler =>", error);
-    return res
-      .status(errorCode)
-      .send({ message: messages.errorFromMainTryCatchMessage("general") });
+    return res.status(errorCode).send({
+      message: messages.errorFromMainTryCatchMessage(Vendor.general),
+    });
   }
 }
 
 const handleWebhook = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  vendorName: Vendor = "general"
+  vendorName: Vendor = Vendor.general
 ): Promise<void> => {
   try {
     const {
@@ -135,7 +140,7 @@ const handleWebhook = async (
       h.getInfoFromRequest(lineItems, customer);
     let phoneNumber;
 
-    if (vendorName === "general") {
+    if (vendorName === Vendor.general) {
       phoneNumber = h.formatPhoneNumber(billing_address.phone);
     } else {
       phoneNumber = h.formatPhoneNumber(body.phone);
@@ -152,12 +157,12 @@ const handleWebhook = async (
     } else {
       // Get start and end times of booking
       const { start_time: st, end_time: et } =
-        h.getStartAndEndTimes(bookingTimes);
+        h.getStartAndEndBookingTimes(bookingTimes);
       start_time = st;
       end_time = et;
     }
 
-    const isMissingData = h.missingData(
+    const isMissingDataFromRequest = h.missingData(
       vendorName,
       bookingTimes,
       price,
@@ -167,9 +172,9 @@ const handleWebhook = async (
       end_time
     );
 
-    if (isMissingData) {
+    if (isMissingDataFromRequest) {
       return res
-        .status(successCode)
+        .status(errorCode)
         .send({ message: messages.dataMissingMessage(vendorName) });
     }
 
@@ -284,11 +289,12 @@ const handleWebhook = async (
     } = h.generatePricesForMercedes(start_time, end_time);
 
     let payload: HTMLMarkupData = {
-      quantity: vendorName === "mercedes" ? mercQty : quantity,
-      subtotal_price: vendorName === "mercedes" ? mercSubtotal : subtotalPrice,
-      total_price: vendorName === "mercedes" ? mercTotal : totalPrice,
-      total_tax: vendorName === "mercedes" ? mercTax : totalTax,
-      userName: vendorName === "mercedes" ? `${first} ${last}` : "",
+      quantity: vendorName === Vendor.mercedes ? mercQty : quantity,
+      subtotal_price:
+        vendorName === Vendor.mercedes ? mercSubtotal : subtotalPrice,
+      total_price: vendorName === Vendor.mercedes ? mercTotal : totalPrice,
+      total_tax: vendorName === Vendor.mercedes ? mercTax : totalTax,
+      userName: vendorName === Vendor.mercedes ? `${first} ${last}` : "",
       createdAt,
       end_time,
       name,
@@ -300,9 +306,9 @@ const handleWebhook = async (
     // generate html markup for email
     const htmlMarkup = h.generateHTMLMarkup(
       payload,
-      vendorName === "mercedes" ? "" : billingAddressMarkup,
-      vendorName === "mercedes" ? false : isSuperSavePass,
-      vendorName === "mercedes" ? true : false
+      vendorName === Vendor.mercedes ? "" : billingAddressMarkup,
+      vendorName === Vendor.mercedes ? false : isSuperSavePass,
+      vendorName === Vendor.mercedes ? true : false
     );
 
     let storedWebhook: string;

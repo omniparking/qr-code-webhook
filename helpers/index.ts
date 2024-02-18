@@ -2,11 +2,11 @@
 /* eslint-disable prefer-destructuring */
 
 import { Redis } from "@upstash/redis";
+import { Vendor } from "../pages/api";
 
 /* eslint max-len: ["error", { "code": 120 }] */
 
-// Deconstruct environment variables from process.env
-// const { M_NAME, M_VENDOR, SHOPIFY_TOPIC, HOOKDECK_SOURCE } = process.env;
+// Get environment variables from process.env
 const M_NAME = process.env.M_NAME;
 const M_VENDOR = process.env.M_VENDOR;
 const SHOPIFY_TOPIC = process.env.SHOPIFY_TOPIC;
@@ -22,7 +22,8 @@ const bold: string = "font-weight: bold;";
 const marginV = (px: string): string => `margin: ${px}px 0;`;
 const marginT = (px: string): string => `margin: ${px}px 0 0 0;`;
 const marginB = (px: string): string => `margin: 0 0 ${px}px 0;`;
-const fontSize = (px: string): string => `font-size: ${px}rem;`;
+const fontSize = (size: string, type = "rem"): string =>
+  `font-size: ${size}${type};`;
 
 export const hrefBase = "https://qr-code-webhook.vercel.app/";
 
@@ -72,11 +73,11 @@ export function generateAttachments(
 
 /**
  *
- * @param {Vendor} vendorName either 'general' or 'mercedes'
+ * @param {Vendor} vendorName 'general' or 'mercedes'
  * @returns {string[]} an array of emails to CC email
  */
 export function generateCC(vendorName: Vendor): string[] {
-  return vendorName === "mercedes"
+  return vendorName === Vendor.mercedes
     ? ["info@omniairportparking.com", "Bdc_service@mbso.com"]
     : ["info@omniairportparking.com"];
 } // END generateCC
@@ -123,7 +124,7 @@ export function generateQRCodeData(order_number): string {
  * @param {any} customer object containing customer info
  * @param {string} start_time start of booking datetime as string
  * @param {string} end_time end of booking datetime as string
- * @returns
+ * @returns {boolean} denotes whether or not data is missing from request body
  */
 export function missingData(
   vendor: Vendor,
@@ -134,18 +135,17 @@ export function missingData(
   start_time: string,
   end_time: string
 ): boolean {
-  if (vendor === "general") {
+  if (vendor === Vendor.general) {
     return !bookingTimes?.length || !price || !name || !customer;
-  } else {
-    return !bookingTimes || !start_time || !end_time;
   }
+  return !bookingTimes || !start_time || !end_time;
 } // END missingData
 
 /**
  *  @param {BookingTime[]} bookingTimes an array of objects containing booking time info
  *  @returns {StartAndEndTime} start and end times as string
  */
-export function getStartAndEndTimes(
+export function getStartAndEndBookingTimes(
   bookingTimes: BookingTime[]
 ): StartAndEndTime {
   const result: StartAndEndTime = {
@@ -360,7 +360,7 @@ const getPriceHTML = (total: string, includeDiscount = true): string => {
 }; // END getPriceHTML
 
 const dropAndPickupAnytime = () =>
-  '<span style="font-size: 14px;">(at anytime)</span>';
+  `<span style="${fontSize("14", "px")}">(at anytime)</span>`;
 
 /**
  * Generates HTML markup for email
@@ -499,9 +499,7 @@ export async function sendEmail(
   emailInfo: EmailData
 ): Promise<boolean> {
   try {
-    if (!emailInfo || !emailInfo?.to) {
-      return false;
-    }
+    if (!emailInfo || !emailInfo?.to) return false;
 
     const {
       from: frm,
@@ -597,9 +595,9 @@ export function generateDataForServer(data: DataForServer): string {
     const orderNoFormated: string = `${padding}${n}`;
     const b: string = `ShopQ\\${orderNoFormated}`;
     const st: string = "06.10.202013:00:00";
+    const dataForServer = `${a}${b};${s};${e}${zeros}"${f}";"${l}";"";"${orderNoFormated}";"";${st};1;04;${e};200${q}`;
 
-    // generate string as data for file for ftp server
-    return `${a}${b};${s};${e}${zeros}"${f}";"${l}";"";"${orderNoFormated}";"";${st};1;04;${e};200${q}`;
+    return dataForServer;
   } catch (e) {
     console.error("generateDataForServer => error:", e);
     return "";
@@ -670,13 +668,14 @@ export function generateTimeForSuperSaverPass(): {
 } {
   const startDate = new Date();
   const endDate = new Date();
-  endDate.setDate(endDate.getDate() + 30);
 
   startDate.setHours(0, 1, 0, 0);
+  endDate.setDate(endDate.getDate() + 30);
   endDate.setHours(23, 59, 0, 0);
-  const start = startDate.toISOString();
-  const end = endDate.toISOString();
-  return { start, end };
+
+  const result = { start: startDate.toISOString(), end: endDate.toISOString() };
+
+  return result;
 } // END generateTimeForSuperSaverPass
 
 /**

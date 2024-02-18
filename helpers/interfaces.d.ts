@@ -69,5 +69,3 @@ interface PriceInfoForMercedes {
   tax: string;
   total: string;
 }
-
-type Vendor = "general" | "mercedes";
