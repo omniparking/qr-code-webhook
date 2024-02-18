@@ -10,7 +10,7 @@ import { IncomingHttpHeaders } from "http";
 import { promises as fs } from "fs"; // to read icon file as promise
 
 // Helpers
-import * as h from "../../helpers/index";
+import * as h from "../../helpers";
 import { messages } from "../../helpers/statusMessages";
 // import { sendQRCodeSMSToUser } from "../../helpers/sms";
 
@@ -21,7 +21,7 @@ import path from "path"; // to get path for icon file
 import PromiseFtp from "promise-ftp";
 import QRCode from "qrcode"; // to generate qr code
 
-export const enum Vendor {
+export enum Vendor {
   general = "general",
   mercedes = "mercedes",
 }
@@ -99,7 +99,7 @@ export default async function handler(
     if (h.isMercedesIntegration(body)) {
       return handleWebhook(req, res, Vendor.mercedes);
     } else {
-      return handleWebhook(req, res);
+      return handleWebhook(req, res, Vendor.general);
     }
   } catch (error) {
     // Case where something failed in the code above send a response message indicating webhook failed

@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import Image from "next/image";
-import { convertDateFormat } from "../../helpers";
+
 import QRCode from "qrcode";
+import { convertDateFormat } from "../../helpers";
 
 // SAMPLE DATA URL: https://qr-code-webhook-git-master-omniairportparking.vercel.app/view/qr?startTime=02.02.2022T02:00:00&endTime=02.02.2022T02:00:00&qrcodeData=123123123
 
-export default function QRPage({ startTime, endTime, qrcodeData }) {
+export default function QRPage(): JSX.Element {
+  const router = useRouter();
+  const { startTime, endTime, qrcodeData } = router.query;
   const [qrDataURL, setQRDataURL] = useState<string>("");
   const [error, setError] = useState<boolean>(false);
 
@@ -20,14 +24,16 @@ export default function QRPage({ startTime, endTime, qrcodeData }) {
           version: 9,
         });
         setQRDataURL(qrUrl);
+        setError(false);
       } catch (error) {
         console.error("Error generating qr code image:", error);
         setError(true);
       }
     };
-
-    generateQRCode();
-  }, [qrcodeData]);
+    if (qrcodeData) {
+      generateQRCode();
+    }
+  }, [startTime, endTime, qrcodeData]);
 
   return (
     <div className="flex flex-col justify-center items-center gap-4 w-full">
@@ -35,12 +41,18 @@ export default function QRPage({ startTime, endTime, qrcodeData }) {
 
       <p className="flex flex-row items-center justify-center m-0 p-0 gap-2">
         <span className="text-[18px] font-semibold">Start Time:</span>
-        <span className="text-[22px]">{convertDateFormat(startTime)}</span>
+        <span className="text-[22px]">
+          {convertDateFormat(
+            Array.isArray(startTime) ? startTime[0] : startTime
+          )}
+        </span>
       </p>
 
       <p className="flex flex-row items-center justify-center m-0 p-0 gap-2">
         <span className="text-[18px] font-semibold">End Time:</span>
-        <span className="text-[22px]">{convertDateFormat(endTime)}</span>
+        <span className="text-[22px]">
+          {convertDateFormat(Array.isArray(endTime) ? endTime[0] : endTime)}
+        </span>
       </p>
 
       {qrDataURL && (
@@ -56,14 +68,4 @@ export default function QRPage({ startTime, endTime, qrcodeData }) {
       )}
     </div>
   );
-}
-
-export async function getServerSideProps(context) {
-  const { startTime, endTime, qrcodeData } = context.query;
-
-  if (!startTime || !endTime || !qrcodeData) {
-    return { notFound: true };
-  }
-
-  return { props: { startTime, endTime, qrcodeData } };
 }

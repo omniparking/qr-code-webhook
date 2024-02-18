@@ -31,6 +31,8 @@
     "os": false,
     "path": false,
     "tls": false,
-    "net": false
+    "net": false,
+    "dns": false,
+    "child_process": false
   }
 }
