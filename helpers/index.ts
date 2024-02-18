@@ -302,10 +302,13 @@ export function convertDateFormat(inputDate: string): string {
  * @returns {any} line item properties for booking
  */
 export function checkProperties(lineItems: any): any {
-  return lineItems?.[1]?.properties?.length === 3 ||
-    lineItems?.[1]?.name === "(MCO) SUPER SAVER 30 DAY PASS"
+  return lineItems?.[0]?.name === "(MCO) SUPER SAVER 30 DAY PASS"
+    ? lineItems[0]
+    : lineItems?.[1]?.name === "(MCO) SUPER SAVER 30 DAY PASS"
     ? lineItems[1]
-    : lineItems?.[0];
+    : lineItems?.[1]?.properties?.length === 3
+    ? lineItems[1]
+    : lineItems[0];
 } // END checkProperties
 
 /**
