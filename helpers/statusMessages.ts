@@ -36,4 +36,7 @@ export const messages = {
   sendingSMSFailed: function (source: string, webhookLogged: boolean): string {
     return `Failed to send an SMS to the user! Webhook logged: ${webhookLogged}. Source: ${source}`;
   },
+  notFromTrustedSource: function (): string {
+    return `The incoming request was not sent from a trusted source.`;
+  },
 };

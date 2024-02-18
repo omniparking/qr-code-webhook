@@ -86,9 +86,15 @@ export default async function handler(
     const shopifyTopic = (
       (headers?.["x-shopify-topic"] as string) || ""
     )?.trim();
-    const sourceName = (req["x-hookdeck-source-name"] as string)?.trim();
+    const sourceName = (headers["x-hookdeck-source-name"] as string)?.trim();
 
     const isTrustedSrc = h.isTrustedSource(method, shopifyTopic, sourceName);
+
+    if (!isTrustedSrc) {
+      return res.status(errorCode).send({
+        message: messages.notFromTrustedSource(),
+      });
+    }
 
     if (h.isMercedesIntegration(body)) {
       return handleWebhook(req, res, Vendor.mercedes);

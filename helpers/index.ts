@@ -10,7 +10,9 @@ import { Vendor } from "../pages/api";
 const M_NAME = process.env.M_NAME;
 const M_VENDOR = process.env.M_VENDOR;
 const SHOPIFY_TOPIC = process.env.SHOPIFY_TOPIC;
+const SHOPIFY_TOPIC_ALT = process.env.SHOPIFY_TOPIC_ALT;
 const HOOKDECK_SOURCE = process.env.HOOKDECK_SOURCE;
+const HOOKDECK_SOURCE_ALT = process.env.HOOKDECK_SOURCE_ALT;
 
 // declaring variables for styling HTML markup
 const qrCodeStyles: string =
@@ -213,8 +215,8 @@ export function isTrustedSource(
 ): boolean {
   return (
     method === "POST" &&
-    shopifyTopic === SHOPIFY_TOPIC &&
-    sourceName === HOOKDECK_SOURCE
+    (shopifyTopic === SHOPIFY_TOPIC || shopifyTopic === SHOPIFY_TOPIC_ALT) &&
+    (sourceName === HOOKDECK_SOURCE || sourceName === HOOKDECK_SOURCE_ALT)
   );
 } // END isTrustedSource
 
