@@ -664,12 +664,12 @@ export function calculateDaysBetweenWithTime(
  * Determines the start and end date for super saver pass
  * @returns {{ start: string, end: string }} the start and end dates in ISO String format
  */
-export function generateTimeForSuperSaverPass(): {
+export function generateTimeForSuperSaverPass(startTime: string): {
   start: string;
   end: string;
 } {
-  const startDate = new Date();
-  const endDate = new Date();
+  const startDate = new Date(startTime);
+  const endDate = new Date(startTime);
 
   startDate.setHours(0, 1, 0, 0);
   endDate.setDate(endDate.getDate() + 30);

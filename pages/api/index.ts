@@ -21,7 +21,7 @@ import path from "path"; // to get path for icon file
 import PromiseFtp from "promise-ftp";
 import QRCode from "qrcode"; // to generate qr code
 
-export enum Vendor {
+export const enum Vendor {
   general = "general",
   mercedes = "mercedes",
 }
@@ -157,15 +157,17 @@ const handleWebhook = async (
     const isSuperSavePass = lineItems?.name === "(MCO) SUPER SAVER 30 DAY PASS";
 
     if (isSuperSavePass) {
-      const { start, end } = h.generateTimeForSuperSaverPass();
+      const { start, end } = h.generateTimeForSuperSaverPass(
+        lineItems.properties[0].value
+      );
       start_time = start;
       end_time = end;
     } else {
       // Get start and end times of booking
-      const { start_time: st, end_time: et } =
+      const { start_time: startTime, end_time: endTime } =
         h.getStartAndEndBookingTimes(bookingTimes);
-      start_time = st;
-      end_time = et;
+      start_time = startTime;
+      end_time = endTime;
     }
 
     const isMissingDataFromRequest = h.missingData(
