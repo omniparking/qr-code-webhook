@@ -343,7 +343,7 @@ const handleWebhook = async (
     };
 
     // If webhook_id does not already exist in db
-    if (true || !storedWebhook) {
+    if (!storedWebhook) {
       let emailResponse: boolean;
 
       try {
