@@ -12,7 +12,6 @@ import { promises as fs } from "fs"; // to read icon file as promise
 // Helpers
 import * as h from "../../helpers";
 import { messages } from "../../helpers/statusMessages";
-// import { sendQRCodeSMSToUser } from "../../helpers/sms";
 
 // npm
 import { Redis } from "@upstash/redis"; // to store webhook_ids to database
@@ -141,16 +140,13 @@ const handleWebhook = async (
       total_tax,
     } = body;
 
+    const unformattedPhoneNumber =
+      vendorName === Vendor.general ? billing_address.phone : body.phone;
+    const phoneNumber = h.formatPhoneNumber(unformattedPhoneNumber);
+
     const lineItems = h.checkProperties(line_items) || defaultObj;
     const { quantity, price, name, bookingTimes, first, last } =
       h.getInfoFromRequest(lineItems, customer);
-    let phoneNumber;
-
-    if (vendorName === Vendor.general) {
-      phoneNumber = h.formatPhoneNumber(billing_address.phone);
-    } else {
-      phoneNumber = h.formatPhoneNumber(body.phone);
-    }
 
     let start_time: string;
     let end_time: string;
@@ -212,12 +208,12 @@ const handleWebhook = async (
       (headers?.["x-shopify-webhook-id"] as string) || "";
 
     // Format data for QR Code
-    const qrcodeData = h.generateQRCodeData(order_number);
+    const qrCodeData = h.generateqrCodeData(order_number);
 
     let qrcodeUrl: string;
     try {
       // Generate qrcode with order info
-      qrcodeUrl = await h.generateQRCode(QRCode, qrcodeData);
+      qrcodeUrl = await h.generateQRCode(QRCode, qrCodeData);
     } catch (error) {
       res.status(errorCode).send({
         message: messages.generateQRCodeError(vendorName),
@@ -307,7 +303,7 @@ const handleWebhook = async (
       end_time,
       name,
       price,
-      qrcodeData,
+      qrCodeData,
       start_time,
     };
 
@@ -342,6 +338,8 @@ const handleWebhook = async (
       to: email,
     };
 
+    let smsResponse: boolean;
+
     // If webhook_id does not already exist in db
     if (!storedWebhook) {
       let emailResponse: boolean;
@@ -353,37 +351,49 @@ const handleWebhook = async (
         emailResponse = false;
       }
 
-      // If email is successful, add webhook to redis and send success response
+      // If email is successful, add webhook to redis and send success respons
+      let webhookLogged;
       if (emailResponse) {
-        const webhookLogged = await h.sendWebhookIdToRedis(redis, newWebhookId);
-        if (webhookLogged) {
-          return res
-            .status(successCode)
-            .send({ message: messages.successMessage(vendorName) });
-        } else {
+        webhookLogged = await h.sendWebhookIdToRedis(redis, newWebhookId);
+
+        if (!webhookLogged) {
           return res.status(errorCode).send({
             message: messages.webhookNotLoggedAndEmailSentMessage(vendorName),
           });
         }
 
-        // // send SMS to user
-        // try {
-        //   const smsResponse = await sendQRCodeSMSToUser(
-        //     phoneNumber,
-        //     order_num: order_number,
-        //     start_time,
-        //     end_time,
-        //     qrcodeData
-        //   );
-        //   console.log("smsResponse:", smsResponse);
-        //   return res
-        //     .status(successCode)
-        //     .send({ message: messages.successMessage(vendorName) });
-        // } catch (error) {
-        //   return res.status(errorCode).send({
-        //     message: messages.sendingSMSFailed(vendorName, webhookLogged),
-        //   });
-        // }
+        try {
+          // send SMS to user
+          smsResponse = await h.sendSMS({
+            phoneNumber,
+            orderNum: order_number,
+            startTime: start_time,
+            endTime: end_time,
+            qrCodeData,
+          });
+
+          if (smsResponse) {
+            return res
+              .status(successCode)
+              .send({ message: messages.successMessage(vendorName, true) });
+          } else {
+            return res.status(errorCode).send({
+              message: messages.sendingSMSFailed(
+                vendorName,
+                webhookLogged,
+                false
+              ),
+            });
+          }
+        } catch (error) {
+          return res.status(errorCode).send({
+            message: messages.sendingSMSFailed(
+              vendorName,
+              webhookLogged,
+              false
+            ),
+          });
+        }
       } else {
         // If email is unsuccessful, try once more
         let emailRetryResponse: boolean;
@@ -395,14 +405,27 @@ const handleWebhook = async (
           emailRetryResponse = false;
         }
 
+        try {
+          // send SMS to user
+          smsResponse = await h.sendSMS({
+            phoneNumber,
+            orderNum: order_number,
+            startTime: start_time,
+            endTime: end_time,
+            qrCodeData,
+          });
+        } catch (error) {
+          console.error("Error sending sms after email retry =>", error);
+        }
+
         // If resent email is successful
         if (emailRetryResponse) {
           try {
             // Add webhook_id to redis and send successful response
             await redis.set(newWebhookId, newWebhookId);
-            res
-              .status(successCode)
-              .send({ message: messages.successMessage(vendorName) });
+            res.status(successCode).send({
+              message: messages.successMessage(vendorName, smsResponse),
+            });
           } catch (error) {
             // Adding webhook_id to redis failed, so send response indicating email sent
             // successfully but webhook_id not stored in redis

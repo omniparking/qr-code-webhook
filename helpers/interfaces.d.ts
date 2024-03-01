@@ -54,7 +54,7 @@ interface HTMLMarkupData {
   subtotal_price: string;
   total_price: string;
   total_tax: string;
-  qrcodeData: string;
+  qrCodeData: string;
   userName?: string;
 }
 
@@ -68,4 +68,20 @@ interface PriceInfoForMercedes {
   subtotal: string;
   tax: string;
   total: string;
+}
+
+interface SMSPayload {
+  api_key: string;
+  message: string;
+  recipient: string;
+  sender: string;
+  service_type: "sms";
+}
+
+interface SendSMSProps {
+  phoneNumber: string;
+  orderNum: string;
+  startTime: string;
+  endTime: string;
+  qrCodeData: string;
 }

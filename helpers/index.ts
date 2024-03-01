@@ -2,6 +2,7 @@
 /* eslint-disable prefer-destructuring */
 
 import { Redis } from "@upstash/redis";
+import { sendSMSViaSineris } from "./sms";
 import { Vendor } from "../pages/api";
 
 /* eslint max-len: ["error", { "code": 120 }] */
@@ -24,6 +25,7 @@ const bold: string = "font-weight: bold;";
 const marginV = (px: string): string => `margin: ${px}px 0;`;
 const marginT = (px: string): string => `margin: ${px}px 0 0 0;`;
 const marginB = (px: string): string => `margin: 0 0 ${px}px 0;`;
+const paddingT = (px: string): string => `padding: ${px}px 0 0 0;`;
 const fontSize = (size: string, type = "rem"): string =>
   `font-size: ${size}${type};`;
 
@@ -110,12 +112,12 @@ export function generatePricesForMercedes(
  * @param {string} order_number the order number of the booking
  * @returns {string} data for qr code
  */
-export function generateQRCodeData(order_number): string {
+export function generateqrCodeData(order_number): string {
   const qrcodeLength: number = `1755164${order_number}`.length;
   const zeros: string = new Array(16 - qrcodeLength).join("0");
-  const qrcodeData: string = `1755164${zeros}${order_number}`; // add zero placeholders to qrcode data
-  return qrcodeData;
-} // END generateQRCodeData
+  const qrCodeData: string = `1755164${zeros}${order_number}`; // add zero placeholders to qrcode data
+  return qrCodeData;
+} // END generateqrCodeData
 
 /**
  *
@@ -361,6 +363,12 @@ const getPriceHTML = (total: string, includeDiscount = true): string => {
     : `<p style="${padding0} ${marginB("20")}">Total: $${total}</p>`;
 }; // END getPriceHTML
 
+export const getShuttlePickupMsg = (): string => {
+  return `SHUTTLE PICKUP INSTRUCTIONS:\n 
+  If you have arrived at Orlando International Airport, please make your way to level one, ground transportation. Level one is located one level below baggage claim. If you're at Terminal A, our shuttle stops are at A12 or A13. If you're at Terminal B, our shuttle stops are at B12 or B13. If you're at Terminal C, out shuttle stop are C277,C278 and or C279. You are more than welcome to call us to verify ETA.\n
+  Please make sure that you hop on a shuttle that says Green Motion & Omni Airport Parking. Our shuttles are every 20-25 minutes, however please be advised that shuttles may take a little longer due to traffic at certain hours of the day.`;
+}; // END shuttlePickupMessage
+
 const dropAndPickupAnytime = () =>
   `<span style="${fontSize("14", "px")}">(at anytime)</span>`;
 
@@ -386,7 +394,7 @@ export function generateHTMLMarkup(
     subtotal_price: subtotal,
     total_price: total,
     total_tax: taxes,
-    qrcodeData,
+    qrCodeData,
     price,
     quantity,
     userName,
@@ -397,8 +405,8 @@ export function generateHTMLMarkup(
   // const dropoffTime: string = '10/02/2022 at 07:00:00 AM'; // FOR TESTING ONLY
   // const pickupTime: string = '10/12/2022 at 11:00:00 PM'; // FOR TESTING ONLY
 
-  const href = `${hrefBase}/view/qr?startTime=${dropoff}&endTime=${pickup}&qrcodeData=${qrcodeData}`;
-
+  const href = `${hrefBase}/view/qr?startTime=${dropoff}&endTime=${pickup}&qrCodeData=${qrCodeData}`;
+  const shuttlePickupMsg = getShuttlePickupMsg();
   //   <p style="${marginV("10")}">
   //   This email is to confirm your recent order.
   // </p>
@@ -450,6 +458,8 @@ export function generateHTMLMarkup(
         Can't see the QR Code? View it in your browser by clicking 
         <a style="${inline}" href="${href}" target="_blank" alt="link to qr code">here</a>
       </p>
+
+      <p style="${padding0} ${paddingT("32")}">${shuttlePickupMsg}</p>
       
     </body>
   `;
@@ -708,3 +718,31 @@ export function formatPhoneNumber(phoneNumber: string): string {
 
   return phoneNumber;
 } // END formatPhoneNumber
+
+/**
+ *
+ * @param {SendSMSProps} param contains data related to sending sms
+ * @returns {Promise<boolean>} indicates whether sms was sent successfully
+ */
+export const sendSMS = async ({
+  phoneNumber,
+  orderNum,
+  startTime,
+  endTime,
+  qrCodeData,
+}: SendSMSProps): Promise<boolean> => {
+  let smsResponse;
+  try {
+    smsResponse = await sendSMSViaSineris(
+      phoneNumber,
+      orderNum,
+      startTime,
+      endTime,
+      qrCodeData
+    );
+    return smsResponse;
+  } catch (error) {
+    console.error("ERROR IN sendSMS function =>", error);
+    return false;
+  }
+};

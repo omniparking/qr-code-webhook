@@ -24,8 +24,8 @@ export const messages = {
   errorFromMainTryCatchMessage: function (source: string): string {
     return `Webhook Event failed. Error from main try/catch. Source: ${source}`;
   },
-  successMessage: function (source: string): string {
-    return `Webhook Event logged and Email Successfully logged! Source: ${source}`;
+  successMessage: function (source: string, smsSent: boolean): string {
+    return `Webhook Event logged and Email Successfully logged! Was sms sent: ${smsSent}. Source: ${source}`;
   },
   failedToConnectToFTPServerMessage: function (source: string): string {
     return `Failed to connect to ftp server. Source: ${source}`;
@@ -33,8 +33,12 @@ export const messages = {
   generateQRCodeError: function (source: string): string {
     return `Failed to generate a QR code! Source: ${source}`;
   },
-  sendingSMSFailed: function (source: string, webhookLogged: boolean): string {
-    return `Failed to send an SMS to the user! Webhook logged: ${webhookLogged}. Source: ${source}`;
+  sendingSMSFailed: function (
+    source: string,
+    webhookLogged: boolean,
+    emailSent: boolean
+  ): string {
+    return `Failed to send an SMS to the user! Was webhook logged: ${webhookLogged}. Was email sent: ${emailSent} Source: ${source}`;
   },
   notFromTrustedSource: function (): string {
     return `The incoming request was not sent from a trusted source.`;

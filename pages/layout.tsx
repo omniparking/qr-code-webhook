@@ -1,8 +1,8 @@
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}): JSX.Element {
+}>): JSX.Element {
   return (
     <html lang="en">
       <body>{children}</body>

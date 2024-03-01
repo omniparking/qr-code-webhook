@@ -6,6 +6,7 @@ const nextConfig = {
   serverRuntimeConfig: {
     PROJECT_ROOT: __dirname,
   },
+  pageExtensions: ["ts", "tsx", "d.ts"],
   // experimental: {
   //   forceSwcTransforms: true,
   // },
