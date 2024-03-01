@@ -82,9 +82,9 @@ export default function QRPage(): JSX.Element {
           level below baggage claim.
         </p>
         <p className="text-center">
-          If you're at Terminal A, our shuttle stops are at A12 or A13. If
-          you're at Terminal B, our shuttle stops are at B12 or B13. If you're
-          at Terminal C, out shuttle stop are C277,C278 and or C279.
+          If you&apos;re at Terminal A, our shuttle stops are at A12 or A13. If
+          you&apos;re at Terminal B, our shuttle stops are at B12 or B13. If
+          you&apos;re at Terminal C, out shuttle stop are C277,C278 and or C279.
         </p>
         <p className="text-center">
           You are more than welcome to call us to verify ETA. Please make sure
