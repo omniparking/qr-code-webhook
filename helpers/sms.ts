@@ -23,7 +23,7 @@ export const sendSMSViaSineris = async (
   const service_type = "sms";
   const api_key = process.env.SEND_MESSAGE_API_KEY;
   const sender = process.env.SEND_MESSAGE_SENDER;
-  const message = `OMNI AIRPORT PARKING\n\n[ORDER #${orderNum}]\n\nPlease click on the following link for the QR code needed to scan for entry and for exit at our facility.\n\n${hrefBase}view/qr?startTime=${startTime}&endTime=${endTime}&qrCodeData=${qrCodeData}\n\nAny further questions can be responded to this number, via phone call or text message.\n\nThank you for choosing Omni.`;
+  const message = `OMNI AIRPORT PARKING\n\n[ORDER #${orderNum}]\n\nPlease click on the following link for the QR code needed to scan for entry and for exit at our facility.\n\n${hrefBase}view/qr?startTime=${startTime}&endTime=${endTime}&qrcodeData=${qrCodeData}\n\nAny further questions can be responded to this number, via phone call or text message.\n\nThank you for choosing Omni.`;
 
   const payload: SMSPayload = {
     api_key,
@@ -60,7 +60,7 @@ const generateSMSMessage = (
   endTime: string,
   qrCodeData: string
 ): string => {
-  const href = `${hrefBase}/view/qr?startTime=${startTime}&endTime=${endTime}&qrCodeData=${qrCodeData}`;
+  const href = `${hrefBase}/view/qr?startTime=${startTime}&endTime=${endTime}&qrcodeData=${qrCodeData}`;
 
   const message = `OMNI AIRPORT PARKING
     [ORDER #${orderNum}]

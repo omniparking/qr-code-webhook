@@ -405,7 +405,7 @@ export function generateHTMLMarkup(
   // const dropoffTime: string = '10/02/2022 at 07:00:00 AM'; // FOR TESTING ONLY
   // const pickupTime: string = '10/12/2022 at 11:00:00 PM'; // FOR TESTING ONLY
 
-  const href = `${hrefBase}/view/qr?startTime=${dropoff}&endTime=${pickup}&qrCodeData=${qrCodeData}`;
+  const href = `${hrefBase}/view/qr?startTime=${dropoff}&endTime=${pickup}&qrcodeData=${qrCodeData}`;
   const shuttlePickupMsg = getShuttlePickupMsg();
   //   <p style="${marginV("10")}">
   //   This email is to confirm your recent order.
