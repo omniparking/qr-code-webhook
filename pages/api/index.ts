@@ -25,9 +25,9 @@ export const enum Vendor {
   mercedes = "mercedes",
 }
 
-const errorCode: number = 400;
-const successCode: number = 201;
-const ftpPort: number = 21;
+export const errorCode: number = 400;
+export const successCode: number = 201;
+export const ftpPort: number = 21;
 
 const defaultObj = {
   name: "NA",
@@ -276,10 +276,15 @@ const handleWebhook = async (
       process.cwd(),
       "public/img/omni-parking-logo.png"
     );
+    let logoImageBase64 = "";
 
-    const logoImageBase64: string = await fs.readFile(iconPath, {
-      encoding: "base64",
-    });
+    try {
+      logoImageBase64 = await fs.readFile(iconPath, {
+        encoding: "base64",
+      });
+    } catch (error) {
+      console.error("Error getting logoImageBase64", error);
+    }
 
     // Generate markup for user's billing address to display in email
     const billingAddressMarkup: string =
@@ -358,39 +363,33 @@ const handleWebhook = async (
 
         if (!webhookLogged) {
           return res.status(errorCode).send({
-            message: messages.webhookNotLoggedAndEmailSentMessage(vendorName),
+            message: messages.emailSentButWebhookIDNotRegistered(vendorName),
           });
         }
 
-        try {
-          // send SMS to user
-          smsResponse = await h.sendSMS({
+        smsResponse = await h.sendSMSToUser(
+          res,
+          {
             phoneNumber,
             orderNum: order_number,
             startTime: start_time,
             endTime: end_time,
             qrCodeData,
-          });
+          },
+          { webhookLogged, emailResponse },
+          vendorName
+        );
 
-          if (smsResponse) {
-            return res
-              .status(successCode)
-              .send({ message: messages.successMessage(vendorName, true) });
-          } else {
-            return res.status(errorCode).send({
-              message: messages.sendingSMSFailed(
-                vendorName,
-                webhookLogged,
-                false
-              ),
-            });
-          }
-        } catch (error) {
+        if (smsResponse) {
+          return res
+            .status(successCode)
+            .send({ message: messages.successMessage(vendorName, true) });
+        } else {
           return res.status(errorCode).send({
             message: messages.sendingSMSFailed(
               vendorName,
               webhookLogged,
-              false
+              emailResponse
             ),
           });
         }
@@ -406,7 +405,7 @@ const handleWebhook = async (
         }
 
         try {
-          // send SMS to user
+          // re-send SMS to user
           smsResponse = await h.sendSMS({
             phoneNumber,
             orderNum: order_number,
@@ -416,10 +415,11 @@ const handleWebhook = async (
           });
         } catch (error) {
           console.error("Error sending sms after email retry =>", error);
+          smsResponse = false;
         }
 
         // If resent email is successful
-        if (emailRetryResponse) {
+        if (emailRetryResponse || smsResponse) {
           try {
             // Add webhook_id to redis and send successful response
             await redis.set(newWebhookId, newWebhookId);
@@ -431,14 +431,16 @@ const handleWebhook = async (
             // successfully but webhook_id not stored in redis
             console.error("Error saving webhook but email sent =>", error);
             return res.status(errorCode).send({
-              message: messages.webhookNotLoggedAndEmailSentMessage(vendorName),
+              message: messages.emailSentButWebhookIDNotRegistered(vendorName),
             });
           }
         } else {
           // If retry email is not successful, send response message indicating webhook event logged but email not sent
           return res.status(errorCode).send({
             message:
-              messages.webhookNotLoggedAndEmailNotSentMessage(vendorName),
+              messages.webhookNotLoggedAndEmailAndOrSMSNotSentMessage(
+                vendorName
+              ),
           });
         }
       }
@@ -446,9 +448,9 @@ const handleWebhook = async (
       console.error("Hit case where webhook id already exists in database");
       // Case where webhook_id is already stored, meaning an email has already been
       // sent send response message indicating that webhook failed bc it was already successfully handled
-      return res
-        .status(errorCode)
-        .send({ message: messages.webhookAlreadyLoggedMessage(vendorName) });
+      return res.status(errorCode).send({
+        message: messages.webhookAlreadyLoggedMessage(vendorName, newWebhookId),
+      });
     }
   } catch (error) {
     console.error(`Error with main webhook. Source ${vendorName} =>`, error);

@@ -3,7 +3,8 @@
 
 import { Redis } from "@upstash/redis";
 import { sendSMSViaSineris } from "./sms";
-import { Vendor } from "../pages/api";
+import { Vendor, errorCode, successCode } from "../pages/api";
+import { messages } from "./statusMessages";
 
 /* eslint max-len: ["error", { "code": 120 }] */
 
@@ -47,6 +48,30 @@ Cancellation/Refund Policy\n
 Sales orders will be refunded in full if cancelled 7 days or more in advance via email to info@OmniAirportParking.com Any reservation made within less than 7 days from arrival date, will not qualify to be refunded regardless of circumstance. 
 Please note there is no refund or credit for early termination of the services.
 `;
+
+/**
+ *
+ */
+export async function sendSMSToUser(res, userData, appState, vendorName) {
+  let smsResponse = false;
+  const { phoneNumber, orderNum, startTime, endTime, qrCodeData } = userData;
+  const { webhookLogged, emailResponse } = appState;
+
+  try {
+    // send SMS to user
+    smsResponse = await sendSMS({
+      phoneNumber,
+      orderNum,
+      startTime,
+      endTime,
+      qrCodeData,
+    });
+    return smsResponse;
+  } catch (error) {
+    console.error("sendSMSToUser Error =>", error);
+    return smsResponse;
+  }
+}
 
 /**
  *

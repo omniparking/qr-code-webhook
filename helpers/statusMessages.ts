@@ -6,17 +6,22 @@ export const messages = {
   failedToLoadDataToServerMessage: function (source: string): string {
     return `Failed to load data to server! Source: ${source}`;
   },
-  webhookNotLoggedAndEmailSentMessage: function (source: string): string {
+  emailSentButWebhookIDNotRegistered: function (source: string): string {
     return `Webhook event not logged but email sent successfully. Source: ${source}`;
   },
-  webhookNotLoggedAndEmailNotSentMessage: function (source: string): string {
+  webhookNotLoggedAndEmailAndOrSMSNotSentMessage: function (
+    source: string
+  ): string {
     return `Webhook event not logged and email not sent! Source: ${source}`;
   },
   missingTimeInfoMessage: function (source: string): string {
     return `Webhook Event failed due to missing start/end booking times! Source: ${source}`;
   },
-  webhookAlreadyLoggedMessage: function (source: string): string {
-    return `Webhook Event failed as it has previously been successfully logged. Source: ${source}`;
+  webhookAlreadyLoggedMessage: function (
+    source: string,
+    webhookId: string
+  ): string {
+    return `Webhook Event failed as webhook Id has previously been successfully stored. Source: ${source}. Webhook ID: ${webhookId}`;
   },
   requestNotPostMethodMessage: function (source: string): string {
     return `Webhook Event failed as request not coming from trusted source. Source: ${source}`;
