@@ -3,18 +3,17 @@
 
 import { Redis } from "@upstash/redis";
 import { sendSMSViaSineris } from "./sms";
-import { Vendor, errorCode, successCode } from "../pages/api";
-import { messages } from "./statusMessages";
+import { Vendor } from "../pages/api";
 
 /* eslint max-len: ["error", { "code": 120 }] */
 
 // Get environment variables from process.env
+const HOOKDECK_SOURCE = process.env.HOOKDECK_SOURCE;
+const HOOKDECK_SOURCE_ALT = process.env.HOOKDECK_SOURCE_ALT;
 const M_NAME = process.env.M_NAME;
 const M_VENDOR = process.env.M_VENDOR;
 const SHOPIFY_TOPIC = process.env.SHOPIFY_TOPIC;
 const SHOPIFY_TOPIC_ALT = process.env.SHOPIFY_TOPIC_ALT;
-const HOOKDECK_SOURCE = process.env.HOOKDECK_SOURCE;
-const HOOKDECK_SOURCE_ALT = process.env.HOOKDECK_SOURCE_ALT;
 
 // declaring variables for styling HTML markup
 const qrCodeStyles: string =
@@ -27,6 +26,8 @@ const marginV = (px: string): string => `margin: ${px}px 0;`;
 const marginT = (px: string): string => `margin: ${px}px 0 0 0;`;
 const marginB = (px: string): string => `margin: 0 0 ${px}px 0;`;
 const paddingT = (px: string): string => `padding: ${px}px 0 0 0;`;
+const paddingXY = (px: string, py: string): string =>
+  `padding: ${py}px ${px}px;`;
 const fontSize = (size: string, type = "rem"): string =>
   `font-size: ${size}${type};`;
 
@@ -501,8 +502,12 @@ export function generateHTMLMarkup(
         <a style="${inline}" href="${href}" target="_blank" alt="link to qr code">here</a>
       </p>
 
-      <p style="${padding0} ${paddingT("32")}">${shuttlePickupMsg}</p>
-      <p style="${padding0} ${paddingT("20")}">${policyMessage}</p>
+      <p style="${padding0} ${paddingT(
+    "32"
+  )} padding-left: 12px; padding-right: 12px;">${shuttlePickupMsg}</p>
+      <p style="${padding0} ${paddingT(
+    "20"
+  )} padding-left: 12px; padding-right: 12px;">${policyMessage}</p>
     </body>
   `;
 } // END generateHTMLMarkup
