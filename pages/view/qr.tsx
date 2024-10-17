@@ -13,8 +13,16 @@ import QRCode from "qrcode";
 export default function QRPage(): JSX.Element {
   const router = useRouter();
   const { startTime, endTime, qrcodeData: qrCodeData } = router.query;
+
   const [qrCodeDataURL, setQRCodeDataURL] = useState<string>("");
   const [error, setError] = useState<boolean>(false);
+
+  const startDisplayTime = startTime
+    ? convertDateFormat(Array.isArray(startTime) ? startTime[0] : startTime)
+    : "";
+  const endDisplayTime = endTime
+    ? convertDateFormat(Array.isArray(endTime) ? endTime[0] : endTime)
+    : "";
 
   useEffect(() => {
     // Generate QR code as a data URL
@@ -46,22 +54,12 @@ export default function QRPage(): JSX.Element {
 
       <p className="flex flex-row items-center justify-center m-0 p-0 gap-2">
         <span className="text-18 font-semibold">Start Time:</span>
-        <span className="text-22">
-          {startTime
-            ? convertDateFormat(
-                Array.isArray(startTime) ? startTime[0] : startTime
-              )
-            : ""}
-        </span>
+        <span className="text-22">{startDisplayTime}</span>
       </p>
 
       <p className="flex flex-row items-center justify-center m-0 p-0 gap-2">
         <span className="text-18 font-semibold">End Time:</span>
-        <span className="text-22">
-          {endTime
-            ? convertDateFormat(Array.isArray(endTime) ? endTime[0] : endTime)
-            : ""}
-        </span>
+        <span className="text-22">{endDisplayTime}</span>
       </p>
 
       {qrCodeDataURL && (
