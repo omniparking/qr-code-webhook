@@ -446,7 +446,10 @@ const handleWebhook = async (
         }
       }
     } else {
-      console.error("Hit case where webhook id already exists in database");
+      console.error(
+        "Hit case where webhook id already exists in database:",
+        newWebhookId
+      );
       // Case where webhook_id is already stored, meaning an email has already been
       // sent send response message indicating that webhook failed bc it was already successfully handled
       return res.status(errorCode).send({
