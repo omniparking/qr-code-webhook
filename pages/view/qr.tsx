@@ -47,16 +47,20 @@ export default function QRPage(): JSX.Element {
       <p className="flex flex-row items-center justify-center m-0 p-0 gap-2">
         <span className="text-18 font-semibold">Start Time:</span>
         <span className="text-22">
-          {convertDateFormat(
-            Array.isArray(startTime) ? startTime[0] : startTime
-          )}
+          {startTime
+            ? convertDateFormat(
+                Array.isArray(startTime) ? startTime[0] : startTime
+              )
+            : ""}
         </span>
       </p>
 
       <p className="flex flex-row items-center justify-center m-0 p-0 gap-2">
         <span className="text-18 font-semibold">End Time:</span>
         <span className="text-22">
-          {convertDateFormat(Array.isArray(endTime) ? endTime[0] : endTime)}
+          {endTime
+            ? convertDateFormat(Array.isArray(endTime) ? endTime[0] : endTime)
+            : ""}
         </span>
       </p>
 
