@@ -32,8 +32,7 @@ const fontSize = (size: string, type = "rem"): string =>
 export const hrefBase = "https://qr-code-webhook.vercel.app/";
 
 const shuttlePickupLabel = "SHUTTLE PICKUP INSTRUCTIONS:\n";
-const shuttlePickupInfo = `
-When you have arrived at Orlando International Airport, please make your way to level one, ground transportation. Level one is located one level below baggage claim. 
+const shuttlePickupInfo = `When you have arrived at Orlando International Airport, please make your way to level one, ground transportation. Level one is located one level below baggage claim. 
 If you're at Terminal A, our shuttle stops are at A12 or A13. If you're at Terminal B, our shuttle stops are at B12 or B13. 
 If you're at Terminal C, out shuttle stop are C277,C278 and or C279. 
 Please make sure that you hop on the shuttle that says Green Motion & Omni Airport Parking. 
@@ -403,9 +402,15 @@ const getPriceHTML = (total: string, includeDiscount = true): string => {
 }; // END getPriceHTML
 
 export const getShuttlePickupMsg = (): string => {
-  return `SHUTTLE PICKUP INSTRUCTIONS:\n 
-  If you have arrived at Orlando International Airport, please make your way to level one, ground transportation. Level one is located one level below baggage claim. If you're at Terminal A, our shuttle stops are at A12 or A13. If you're at Terminal B, our shuttle stops are at B12 or B13. If you're at Terminal C, out shuttle stop are C277,C278 and or C279. You are more than welcome to call us to verify ETA.\n
-  Please make sure that you hop on a shuttle that says Green Motion & Omni Airport Parking. Our shuttles are every 20-25 minutes, however please be advised that shuttles may take a little longer due to traffic at certain hours of the day.`;
+  return `
+  <p style="${padding0} ${paddingT("32")}">SHUTTLE PICKUP INSTRUCTIONS:\n </p>
+  <p style="${padding0} ${paddingT("32")}">
+    If you have arrived at Orlando International Airport, please make your way to level one, ground transportation. Level one is located one level below baggage claim. 
+    If you're at Terminal A, our shuttle stops are at A12 or A13. If you're at Terminal B, our shuttle stops are at B12 or B13. If you're at Terminal C, out shuttle stop are C277,C278 and or C279. 
+    You are more than welcome to call us to verify ETA.\n
+    Please make sure that you hop on a shuttle that says Green Motion & Omni Airport Parking. Our shuttles are every 20-25 minutes, however please be advised that shuttles may take a little longer due 
+    to traffic at certain hours of the day.</p>
+  `;
 }; // END shuttlePickupMessage
 
 const dropAndPickupAnytime = () =>
@@ -498,7 +503,7 @@ export function generateHTMLMarkup(
         <a style="${inline}" href="${href}" target="_blank" alt="link to qr code">here</a>
       </p>
 
-      <p style="${padding0} ${paddingT("32")}">${shuttlePickupMsg}</p>
+      ${shuttlePickupMsg}
       <p style="${padding0} ${paddingT("20")}">${shuttlePickupLabel}</p>
       <p style="${padding0} ${paddingT("4")}">${shuttlePickupInfo}</p>
       <p style="${padding0} ${paddingT("12")}">${shuttleDispatchLabel}</p>
