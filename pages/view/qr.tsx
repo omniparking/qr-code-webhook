@@ -72,8 +72,8 @@ export default function QRPage(): JSX.Element {
         </p>
       )}
 
-      <div className="max-w-[400px] flex flex-col items-center justify-center gap-2 pb-2 px-2">
-        <p className="text-18 text-center font-medium">
+      <div className="max-w-[400px] flex flex-col items-center justify-center gap-2 pb-2 px-4">
+        <p className="text-18 text-center font-bold capitalize">
           SHUTTLE PICKUP INSTRUCTIONS:
         </p>
         <p className="text-center">
@@ -84,7 +84,8 @@ export default function QRPage(): JSX.Element {
         <p className="text-center">
           If you&apos;re at Terminal A, our shuttle stops are at A12 or A13. If
           you&apos;re at Terminal B, our shuttle stops are at B12 or B13. If
-          you&apos;re at Terminal C, out shuttle stop are C277,C278 and or C279.
+          you&apos;re at Terminal C, out shuttle stop are C277, C278 and or
+          C279.
         </p>
         <p className="text-center">
           You are more than welcome to call us to verify ETA. Please make sure
