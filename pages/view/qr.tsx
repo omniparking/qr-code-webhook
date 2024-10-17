@@ -72,7 +72,7 @@ export default function QRPage(): JSX.Element {
         </p>
       )}
 
-      <div className="max-w-[400px] flex flex-col items-center justify-center gap-2 pb-2">
+      <div className="max-w-[400px] flex flex-col items-center justify-center gap-2 pb-2 px-2">
         <p className="text-18 text-center font-medium">
           SHUTTLE PICKUP INSTRUCTIONS:
         </p>

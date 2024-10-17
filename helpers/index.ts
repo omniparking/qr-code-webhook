@@ -26,8 +26,6 @@ const marginV = (px: string): string => `margin: ${px}px 0;`;
 const marginT = (px: string): string => `margin: ${px}px 0 0 0;`;
 const marginB = (px: string): string => `margin: 0 0 ${px}px 0;`;
 const paddingT = (px: string): string => `padding: ${px}px 0 0 0;`;
-const paddingXY = (px: string, py: string): string =>
-  `padding: ${py}px ${px}px;`;
 const fontSize = (size: string, type = "rem"): string =>
   `font-size: ${size}${type};`;
 
@@ -502,12 +500,8 @@ export function generateHTMLMarkup(
         <a style="${inline}" href="${href}" target="_blank" alt="link to qr code">here</a>
       </p>
 
-      <p style="${padding0} ${paddingT(
-    "32"
-  )} padding-left: 12px; padding-right: 12px;">${shuttlePickupMsg}</p>
-      <p style="${padding0} ${paddingT(
-    "20"
-  )} padding-left: 12px; padding-right: 12px;">${policyMessage}</p>
+      <p style="${padding0} ${paddingT("32")}">${shuttlePickupMsg}</p>
+      <p style="${padding0} ${paddingT("20")}">${policyMessage}</p>
     </body>
   `;
 } // END generateHTMLMarkup
