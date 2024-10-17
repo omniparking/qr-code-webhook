@@ -31,7 +31,8 @@ const fontSize = (size: string, type = "rem"): string =>
 
 export const hrefBase = "https://qr-code-webhook.vercel.app/";
 
-const shuttlePickupInfo = `SHUTTLE PICKUP INSTRUCTIONS:\n
+const shuttlePickupLabel = "SHUTTLE PICKUP INSTRUCTIONS:\n";
+const shuttlePickupInfo = `
 When you have arrived at Orlando International Airport, please make your way to level one, ground transportation. Level one is located one level below baggage claim. 
 If you're at Terminal A, our shuttle stops are at A12 or A13. If you're at Terminal B, our shuttle stops are at B12 or B13. 
 If you're at Terminal C, out shuttle stop are C277,C278 and or C279. 
@@ -39,11 +40,11 @@ Please make sure that you hop on the shuttle that says Green Motion & Omni Airpo
 Our shuttles are every 15-25 minutes, however please be advised that shuttles may take a little longer due to traffic conditions at certain hours of the day.
 Please be advised that our live call center service hours are now Monday-Friday, 6AM-6PM.`;
 
-const shuttleDispatchInfo = `SHUTTLE DISPATCH TEXT MESSAGE:\n
-If you are at the airport now and need a shuttle, please text 689-267-2990 and indicate if you are at A12/A13, B12/B13 or C277/C278 and the number of people in your party to expedite and re-route the nearest shuttle to you. `;
+const shuttleDispatchLabel = "SHUTTLE DISPATCH TEXT MESSAGE:\n";
+const shuttleDispatchInfo = `If you are at the airport now and need a shuttle, please text 689-267-2990 and indicate if you are at A12/A13, B12/B13 or C277/C278 and the number of people in your party to expedite and re-route the nearest shuttle to you. `;
 
-const cancellationRefundInfo = `Cancellation/Refund Policy:\n
-Sales orders will be refunded in full if cancelled 7 days or more in advance via email to info@OmniAirportParking.com Any reservation made within less than 7 days from arrival date, will not qualify to be refunded regardless of circumstance. 
+const cancellationRefundLabel = "Cancellation/Refund Policy:\n";
+const cancellationRefundInfo = `Sales orders will be refunded in full if cancelled 7 days or more in advance via email to info@OmniAirportParking.com Any reservation made within less than 7 days from arrival date, will not qualify to be refunded regardless of circumstance. 
 Please note there is no refund or credit for early termination of the services.`;
 /**
  *
@@ -498,9 +499,12 @@ export function generateHTMLMarkup(
       </p>
 
       <p style="${padding0} ${paddingT("32")}">${shuttlePickupMsg}</p>
-      <p style="${padding0} ${paddingT("20")}">${shuttlePickupInfo}</p>
-      <p style="${padding0} ${paddingT("12")}">${shuttleDispatchInfo}</p>
-      <p style="${padding0} ${paddingT("12")}">${cancellationRefundInfo}</p>
+      <p style="${padding0} ${paddingT("20")}">${shuttlePickupLabel}</p>
+      <p style="${padding0} ${paddingT("4")}">${shuttlePickupInfo}</p>
+      <p style="${padding0} ${paddingT("12")}">${shuttleDispatchLabel}</p>
+      <p style="${padding0} ${paddingT("4")}">${shuttleDispatchInfo}</p>
+      <p style="${padding0} ${paddingT("12")}">${cancellationRefundLabel}</p>
+      <p style="${padding0} ${paddingT("4")}">${cancellationRefundInfo}</p>
     </body>
   `;
 } // END generateHTMLMarkup
