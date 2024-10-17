@@ -68,6 +68,10 @@ const transporter: any = nodemailer.createTransport({
   secure: true,
 });
 
+const turnOffWebhook = (res: NextApiResponse): void => {
+  return res.status(successCode).send({ message: "Webhook turned off!" });
+};
+
 /**
  * Handler function which handles http request coming in (webhook calls from shopify)
  * @param {NextApiRequest} req request object
@@ -77,7 +81,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // return res.status(successCode).send({ message: 'Webhook turned off!' }); // TO TURN OFF WEBHOOK
+  // return turnOffWebhook(res) // ** CAUTION: UNCOMMENT TO TURN OFF WEBHOOK **
 
   try {
     const {
@@ -390,7 +394,8 @@ const handleWebhook = async (
             message: messages.sendingSMSFailed(
               vendorName,
               webhookLogged,
-              emailResponse
+              emailResponse,
+              phoneNumber
             ),
           });
         }
