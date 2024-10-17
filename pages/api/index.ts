@@ -372,18 +372,13 @@ const handleWebhook = async (
           });
         }
 
-        smsResponse = await h.sendSMSToUser(
-          res,
-          {
-            phoneNumber,
-            orderNum: order_number,
-            startTime: start_time,
-            endTime: end_time,
-            qrCodeData,
-          },
-          { webhookLogged, emailResponse },
-          vendorName
-        );
+        smsResponse = await h.sendSMSToUser({
+          phoneNumber,
+          orderNum: order_number,
+          startTime: start_time,
+          endTime: end_time,
+          qrCodeData,
+        });
 
         if (smsResponse) {
           return res

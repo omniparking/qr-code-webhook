@@ -48,10 +48,9 @@ Please note there is no refund or credit for early termination of the services.`
 /**
  *
  */
-export async function sendSMSToUser(res, userData, appState, vendorName) {
+export async function sendSMSToUser(userData) {
   let smsResponse = false;
   const { phoneNumber, orderNum, startTime, endTime, qrCodeData } = userData;
-  const { webhookLogged, emailResponse } = appState;
 
   try {
     // send SMS to user
