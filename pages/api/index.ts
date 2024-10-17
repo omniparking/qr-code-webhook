@@ -49,6 +49,14 @@ const {
   SERVER_USER: SERVER_USER,
 } = process.env;
 
+const ftpClientConfig = {
+  host: SERVER_IP,
+  user: SERVER_USER,
+  password: SERVER_PASS,
+  port: ftpPort,
+  secure: false,
+};
+
 // Initialize redis (to store webhook ids)
 const redis: Redis = new Redis({ url, token });
 
@@ -95,11 +103,11 @@ export default async function handler(
       });
     }
 
-    if (h.isMercedesIntegration(body)) {
-      return handleWebhook(req, res, Vendor.mercedes);
-    } else {
-      return handleWebhook(req, res, Vendor.general);
-    }
+    return handleWebhook(
+      req,
+      res,
+      h.isMercedesIntegration(body) ? Vendor.mercedes : Vendor.general
+    );
   } catch (error) {
     // Case where something failed in the code above send a response message indicating webhook failed
     console.error("Error main try/catch in handler =>", error);
@@ -205,7 +213,7 @@ const handleWebhook = async (
 
     // Grab unique webhook_id
     const newWebhookId: string =
-      (headers?.["x-shopify-webhook-id"] as string) || "";
+      (headers?.["x-shopify-event-id"] as string) || "";
 
     // Format data for QR Code
     const qrCodeData = h.generateqrCodeData(order_number);
@@ -233,13 +241,7 @@ const handleWebhook = async (
     const ftpClient: PromiseFtp = new PromiseFtp();
 
     try {
-      await ftpClient.connect({
-        host: SERVER_IP,
-        user: SERVER_USER,
-        password: SERVER_PASS,
-        port: ftpPort,
-        secure: false,
-      });
+      await ftpClient.connect(ftpClientConfig);
     } catch (error) {
       // If we fail to connect to ftp server, send error response
       console.error("Error connecting to ftp server =>", error);
@@ -328,7 +330,6 @@ const handleWebhook = async (
       console.error("Error getting stored webhook from redis =>", error);
     }
 
-    const cc: string[] = h.generateCC(vendorName);
     const attachments: MailAttachment[] = h.generateAttachments(
       qrcodeUrl,
       logoImageBase64
@@ -339,7 +340,7 @@ const handleWebhook = async (
       html: htmlMarkup,
       orderNum: order_number,
       attachments,
-      cc,
+      cc: h.generateCC(vendorName),
       to: email,
     };
 
