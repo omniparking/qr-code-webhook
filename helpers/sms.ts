@@ -4,6 +4,11 @@ import { hrefBase } from ".";
 // const authToken = process.env.TWILIO_AUTH_TOKEN;
 // const client = require("twilio")(accountSid, authToken);
 
+const twilio = require("twilio");
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const client = twilio(accountSid, authToken);
+
 /**
  *
  * @param {string} recipient user phone number
@@ -13,7 +18,7 @@ import { hrefBase } from ".";
  * @param {string} qrCodeData the qr code data of the order
  * @returns {Promise<boolean>} flag which denotes whether or not sms was sent
  */
-export const sendSMSViaSineris = async (
+export const sendSMS = async (
   recipient: string,
   orderNum: string,
   startTime: string,
@@ -44,7 +49,7 @@ export const sendSMSViaSineris = async (
   } catch (error) {
     console.error("ERROR SENDING SMS =>", error);
   }
-}; // END sendSMSViaSineris
+}; // END sendSMS
 
 /**
  * Generates text that gets sent in SMS to user
@@ -75,24 +80,37 @@ const generateSMSMessage = (
 
 /**
  *
- * @param {string} to the users phone number
+ * @param {string} receipient the users phone number
  * @param {string} OrderNum the order number
- * @param {string} qrcodeLink the url to the qr code
+ * * @param {string} startTime the start time of the reservation
+ * * @param {string} endTime the end time of the reservation
+ * @param {string} qrCodeData the ID used to reference this order, utilizes order_number of the reservation
  * @returns {Promise<any>} response from twilio api
  */
-export const sendQRCodeSMSToUser = async (
-  to: string,
+export const sendSMSViaTwilio = async (
+  recipient: string,
   orderNum: string,
   startTime: string,
   endTime: string,
   qrCodeData: string
-): Promise<any> => {
+): Promise<boolean> => {
   try {
     const body = generateSMSMessage(orderNum, startTime, endTime, qrCodeData);
-    const from = process.env.TWILIO_PHONE_NUMBER;
-    // const response = await client.messages.create({ to, body, from });
-    // return response;
+    const from = process.env.SEND_MESSAGE_SENDER;
+    const message = await client.messages.create({
+      body,
+      from,
+      to: recipient,
+    });
+
+    console.log("\n\n\n\nmessage response from twilio sms:", message);
+    if (!message.error_code) {
+      return true;
+    } else {
+      return false;
+    }
   } catch (error) {
-    console.error("sendQRCodeSMSToUser Error =>", error);
+    console.error("sendSMSViaTwilio Error =>", error);
+    return false;
   }
-}; // END sendQRCodeSMSToUser
+}; // END sendSMSViaTwilio

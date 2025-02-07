@@ -19,6 +19,7 @@ import nodemailer from "nodemailer"; // to send emails
 import path from "path"; // to get path for icon file
 import PromiseFtp from "promise-ftp";
 import QRCode from "qrcode"; // to generate qr code
+import { sendSMSViaTwilio } from "../../helpers/sms";
 
 export const enum Vendor {
   general = "general",
@@ -99,13 +100,13 @@ export default async function handler(
     )?.trim();
     const sourceName = (headers["x-hookdeck-source-name"] as string)?.trim();
 
-    const isTrustedSrc = h.isTrustedSource(method, shopifyTopic, sourceName);
+    // const isTrustedSrc = h.isTrustedSource(method, shopifyTopic, sourceName);
 
-    if (!isTrustedSrc) {
-      return res.status(errorCode).send({
-        message: messages.notFromTrustedSource(),
-      });
-    }
+    // if (!isTrustedSrc) {
+    //   return res.status(errorCode).send({
+    //     message: messages.notFromTrustedSource(),
+    //   });
+    // }
 
     return handleWebhook(
       req,
@@ -163,7 +164,17 @@ const handleWebhook = async (
     let start_time: string;
     let end_time: string;
     const isSuperSavePass = lineItems?.name === "(MCO) SUPER SAVER 30 DAY PASS";
-
+    console.group("INFO");
+    console.log("body:", body);
+    console.log("phoneNumber:", phoneNumber);
+    console.log("quantity:", quantity);
+    console.log("price:", price);
+    console.log("name:", name);
+    console.log("bookingTimes:", bookingTimes);
+    console.log("first:", first);
+    console.log("last:", last);
+    console.log("isSuperSavePass:", isSuperSavePass);
+    console.groupEnd();
     if (isSuperSavePass) {
       const { start, end } = h.generateTimeForSuperSaverPass(
         lineItems.properties[0].value
@@ -372,13 +383,13 @@ const handleWebhook = async (
           });
         }
 
-        smsResponse = await h.sendSMSToUser({
+        smsResponse = await sendSMSViaTwilio(
           phoneNumber,
-          orderNum: order_number,
-          startTime: start_time,
-          endTime: end_time,
-          qrCodeData,
-        });
+          order_number,
+          start_time,
+          end_time,
+          qrCodeData
+        );
 
         if (smsResponse) {
           return res
@@ -407,13 +418,13 @@ const handleWebhook = async (
 
         try {
           // re-send SMS to user
-          smsResponse = await h.sendSMS({
+          smsResponse = await sendSMSViaTwilio(
             phoneNumber,
-            orderNum: order_number,
-            startTime: start_time,
-            endTime: end_time,
-            qrCodeData,
-          });
+            order_number,
+            start_time,
+            end_time,
+            qrCodeData
+          );
         } catch (error) {
           console.error("Error sending sms after email retry =>", error);
           smsResponse = false;

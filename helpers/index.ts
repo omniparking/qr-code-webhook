@@ -2,7 +2,7 @@
 /* eslint-disable prefer-destructuring */
 
 import { Redis } from "@upstash/redis";
-import { sendSMSViaSineris } from "./sms";
+import { sendSMS } from "./sms";
 import { Vendor } from "../pages/api";
 
 /* eslint max-len: ["error", { "code": 120 }] */
@@ -45,28 +45,6 @@ const shuttleDispatchInfo = `If you are at the airport now and need a shuttle, p
 const cancellationRefundLabel = "Cancellation/Refund Policy:\n";
 const cancellationRefundInfo = `Sales orders will be refunded in full if cancelled 7 days or more in advance via email to info@OmniAirportParking.com Any reservation made within less than 7 days from arrival date, will not qualify to be refunded regardless of circumstance. 
 Please note there is no refund or credit for early termination of the services.`;
-/**
- *
- */
-export async function sendSMSToUser(userData) {
-  let smsResponse = false;
-  const { phoneNumber, orderNum, startTime, endTime, qrCodeData } = userData;
-
-  try {
-    // send SMS to user
-    smsResponse = await sendSMS({
-      phoneNumber,
-      orderNum,
-      startTime,
-      endTime,
-      qrCodeData,
-    });
-    return smsResponse;
-  } catch (error) {
-    console.error("sendSMSToUser Error =>", error);
-    return smsResponse;
-  }
-}
 
 /**
  *
@@ -150,6 +128,8 @@ export function generatePricesForMercedes(
  * @returns {string} data for qr code
  */
 export function generateqrCodeData(order_number): string {
+  if (!!!order_number) return order_number;
+
   const qrcodeLength: number = `1755164${order_number}`.length;
   const zeros: string = new Array(16 - qrcodeLength).join("0");
   const qrCodeData: string = `1755164${zeros}${order_number}`; // add zero placeholders to qrcode data
@@ -158,10 +138,10 @@ export function generateqrCodeData(order_number): string {
 
 /**
  *
- * @param {Vendor} vendor vendor name either 'general' or 'mercedes'
+ * @param {Vendor} vendor values are either 'general' or 'mercedes'
  * @param {BookingTime[]} bookingTimes Booking Time info
- * @param {string} price order price
- * @param {string} name name of product
+ * @param {string} price price of the reservation
+ * @param {string} name name of the type of reservation
  * @param {any} customer object containing customer info
  * @param {string} start_time start of booking datetime as string
  * @param {string} end_time end of booking datetime as string
@@ -501,7 +481,7 @@ export function generateHTMLMarkup(
 
       <img height="250" width="250" style="${qrCodeStyles}" src="cid:unique-qrcode" alt="QR Code" title="QR Code" />
       
-      <p style="${padding0} ${marginT("2")}">
+      <p style="${padding0} ${marginT("2")} ${bold};">
         Can't see the QR Code? View it in your browser by clicking 
         <a style="${inline}" href="${href}" target="_blank" alt="link to qr code">here</a>
       </p>
@@ -626,7 +606,6 @@ export async function generateQRCode(
   data: string
 ): Promise<string> {
   try {
-    // converts data into QR Code
     const qrcodeUrl: string = await QRCode.toDataURL(data, {
       errorCorrectionLevel: "L",
       version: 9,
@@ -776,7 +755,7 @@ export function formatPhoneNumber(phoneNumber: string): string {
  * @param {SendSMSProps} param contains data related to sending sms
  * @returns {Promise<boolean>} indicates whether sms was sent successfully
  */
-export const sendSMS = async ({
+export const sendSMSToUser = async ({
   phoneNumber,
   orderNum,
   startTime,
@@ -785,7 +764,7 @@ export const sendSMS = async ({
 }: SendSMSProps): Promise<boolean> => {
   let smsResponse;
   try {
-    smsResponse = await sendSMSViaSineris(
+    smsResponse = await sendSMS(
       phoneNumber,
       orderNum,
       startTime,
