@@ -2,7 +2,6 @@
 /* eslint-disable prefer-destructuring */
 
 import { Redis } from "@upstash/redis";
-import { sendSMS } from "./sms";
 import { Vendor } from "../pages/api";
 
 /* eslint max-len: ["error", { "code": 120 }] */
@@ -110,13 +109,13 @@ export function generatePricesForMercedes(
   startTime: string,
   endTime: string
 ): PriceInfoForMercedes {
-  const qty = calculateDaysBetweenWithTime(startTime, endTime);
-  const sub = +(12.99 * qty + 4.99).toFixed(2);
-  const tax = +(sub * 0.165).toFixed(2);
-  const total = parseFloat((sub + tax).toFixed(2));
+  const quantity = calculateDaysBetweenWithTime(startTime, endTime);
+  const subtotal = +(12.99 * quantity + 4.99).toFixed(2);
+  const tax = +(subtotal * 0.165).toFixed(2);
+  const total = parseFloat((subtotal + tax).toFixed(2));
   return {
-    quantity: `${qty}`,
-    subtotal: `${sub}`,
+    quantity: `${quantity}`,
+    subtotal: `${subtotal}`,
     tax: `${tax}`,
     total: `${total}`,
   };
@@ -749,31 +748,3 @@ export function formatPhoneNumber(phoneNumber: string): string {
 
   return phoneNumber;
 } // END formatPhoneNumber
-
-/**
- *
- * @param {SendSMSProps} param contains data related to sending sms
- * @returns {Promise<boolean>} indicates whether sms was sent successfully
- */
-export const sendSMSToUser = async ({
-  phoneNumber,
-  orderNum,
-  startTime,
-  endTime,
-  qrCodeData,
-}: SendSMSProps): Promise<boolean> => {
-  let smsResponse;
-  try {
-    smsResponse = await sendSMS(
-      phoneNumber,
-      orderNum,
-      startTime,
-      endTime,
-      qrCodeData
-    );
-    return smsResponse;
-  } catch (error) {
-    console.error("ERROR IN sendSMS function =>", error);
-    return false;
-  }
-};

@@ -45,7 +45,7 @@ export const messages = {
     phoneNumber: string
   ): string {
     return (
-      `Failed to send an SMS to phone number ${phoneNumber}.` +
+      `Failed to send an SMS to phone number ${phoneNumber}. ` +
       `Was webhook logged: ${webhookLogged}. Was email sent: ${emailSent} Source: ${source}`
     );
   },
