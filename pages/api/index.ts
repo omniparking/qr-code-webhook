@@ -1,5 +1,5 @@
 /*jshint esversion: 8 */
-
+"use sever";
 /* eslint max-len: ["error", { "code": 120 }] */
 
 // Types
@@ -59,7 +59,10 @@ const ftpClientConfig = {
 };
 
 // Initialize redis (to store webhook ids)
-const redis: Redis = new Redis({ url, token });
+const redis: Redis = new Redis({
+  url,
+  token,
+});
 
 // Initialize nodemailer (to send emails)
 const transporter: any = nodemailer.createTransport({

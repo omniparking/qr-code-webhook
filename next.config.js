@@ -28,6 +28,7 @@ const nextConfig = {
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     WEBHOOK_NAME: process.env.WEBHOOK_NAME,
     TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER,
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
   },
   webpack: (
     config,

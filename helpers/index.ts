@@ -726,6 +726,8 @@ export function generateTimeForSuperSaverPass(startTime: string): {
  * @returns {string} user phone number with +1 in the beginning
  */
 export function formatPhoneNumber(phoneNumber: string): string {
+  if (!phoneNumber) return "";
+
   if (phoneNumber.startsWith("+1")) {
     return phoneNumber;
   }
