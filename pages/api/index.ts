@@ -50,16 +50,6 @@ const {
   SERVER_USER: SERVER_USER,
 } = process.env;
 
-console.group("ENVS");
-console.log("pass:", pass);
-console.log("user:", user);
-console.log("host:", host);
-console.log("emailPort:", emailPort);
-console.log("token:", token);
-console.log("url:", url);
-console.log("SERVER_IP:", SERVER_IP);
-console.log("SERVER_USER:", SERVER_USER);
-console.groupEnd();
 const ftpClientConfig = {
   host: SERVER_IP,
   user: SERVER_USER,
@@ -110,13 +100,13 @@ export default async function handler(
     )?.trim();
     const sourceName = (headers["x-hookdeck-source-name"] as string)?.trim();
 
-    // const isTrustedSrc = h.isTrustedSource(method, shopifyTopic, sourceName);
+    const isTrustedSrc = h.isTrustedSource(method, shopifyTopic, sourceName);
 
-    // if (!isTrustedSrc) {
-    //   return res.status(errorCode).send({
-    //     message: messages.notFromTrustedSource(),
-    //   });
-    // }
+    if (!isTrustedSrc) {
+      return res.status(errorCode).send({
+        message: messages.notFromTrustedSource(),
+      });
+    }
 
     return handleWebhook(
       req,
