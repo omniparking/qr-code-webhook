@@ -1,55 +1,36 @@
 // declaring messages for server response
 export const messages = {
-  dataMissingMessage: function (source: string): string {
-    return `Webhook event failed from ${source}. Critical data is missing from request body!`;
-  },
-  failedToLoadDataToServerMessage: function (source: string): string {
-    return `Failed to load data to server! Source: ${source}`;
-  },
-  emailSentButWebhookIDNotRegistered: function (source: string): string {
-    return `Webhook event not logged but email sent successfully. Source: ${source}`;
-  },
-  webhookNotLoggedAndEmailAndOrSMSNotSentMessage: function (
-    source: string
-  ): string {
-    return `Webhook event not logged and email not sent! Source: ${source}`;
-  },
-  missingTimeInfoMessage: function (source: string): string {
-    return `Webhook Event failed due to missing start/end booking times! Source: ${source}`;
-  },
-  webhookAlreadyLoggedMessage: function (
-    source: string,
-    webhookId: string
-  ): string {
-    return `Webhook Event failed as webhook Id has previously been successfully stored. Source: ${source}. Webhook ID: ${webhookId}`;
-  },
-  requestNotPostMethodMessage: function (source: string): string {
-    return `Webhook Event failed as request not coming from trusted source. Source: ${source}`;
-  },
-  errorFromMainTryCatchMessage: function (source: string): string {
-    return `Webhook Event failed. Error from main try/catch. Source: ${source}`;
-  },
-  successMessage: function (source: string, smsSent: boolean): string {
-    return `Webhook Event logged and Email Successfully logged! Was sms sent: ${smsSent}. Source: ${source}`;
-  },
-  failedToConnectToFTPServerMessage: function (source: string): string {
-    return `Failed to connect to ftp server. Source: ${source}`;
-  },
-  generateQRCodeError: function (source: string): string {
-    return `Failed to generate a QR code! Source: ${source}`;
-  },
-  sendingSMSFailed: function (
-    source: string,
-    webhookLogged: boolean,
-    emailSent: boolean,
-    phoneNumber: string
-  ): string {
-    return (
-      `Failed to send an SMS to phone number ${phoneNumber}. ` +
-      `Was webhook logged: ${webhookLogged}. Was email sent: ${emailSent} Source: ${source}`
-    );
-  },
-  notFromTrustedSource: function (): string {
-    return `The incoming request was not sent from a trusted source.`;
-  },
+  // Existing messages
+  notFromTrustedSource: () => "Request not from trusted source",
+
+  errorFromMainTryCatchMessage: (vendor: string) =>
+    `Error processing ${vendor} webhook - main exception`,
+
+  webhookAlreadyLoggedMessage: (vendor: string, webhookId: string) =>
+    `Webhook ${webhookId} for ${vendor} order has already been processed`,
+
+  dataMissingMessage: (vendor: string) =>
+    `Missing required data in ${vendor} order`,
+
+  missingTimeInfoMessage: (vendor: string) =>
+    `Missing start or end time in ${vendor} order`,
+
+  emailSentButWebhookIDNotRegistered: (vendor: string) =>
+    `${vendor} order processed but webhook ID not registered in database`,
+
+  // New messages for NetParks integration
+  missingWebhookIdMessage: (vendor: string) =>
+    `Missing Shopify webhook ID for ${vendor} order`,
+
+  failedToTransformOrder: (vendor: string) =>
+    `Failed to transform ${vendor} order data into NetParks reservation format`,
+
+  failedToPostReservationToNetpark: (vendor: string) =>
+    `Failed to create reservation in NetParks system for ${vendor} order after retry`,
+
+  reservationCreatedButWebhookNotLogged: (vendor: string) =>
+    `Reservation created successfully for ${vendor} order but webhook ID was not stored in Redis`,
+
+  reservationCreatedSuccessfully: (vendor: string) =>
+    `Successfully created ${vendor} reservation in NetParks system`,
 };
