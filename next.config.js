@@ -32,7 +32,7 @@ const nextConfig = {
   },
   webpack: (
     config,
-    { buildId, dev, isServer, defaultLoaders, nextRuntime, webpack }
+    { buildId, dev, isServer, defaultLoaders, nextRuntime, webpack },
   ) => {
     // config.resolve.fallback = { tls: false };
     // Important: return the modified config

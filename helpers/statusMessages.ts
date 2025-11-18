@@ -33,4 +33,7 @@ export const messages = {
 
   reservationCreatedSuccessfully: (vendor: string) =>
     `Successfully created ${vendor} reservation in NetParks system`,
+
+  reservationQuoteFailed: (vendor: string) =>
+    `Failed to create reservation quote for ${vendor}`,
 };

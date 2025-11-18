@@ -1,24 +1,19 @@
 /*jshint esversion: 8 */
-"use sever";
+"use server";
 /* eslint max-len: ["error", { "code": 120 }] */
 
-// Types
 import type { NextApiRequest, NextApiResponse } from "next";
-import { IncomingHttpHeaders } from "http";
 
-// Helpers
-import * as h from "../../helpers";
-import { messages } from "../../helpers/statusMessages";
-
-// npm
-import { Redis } from "@upstash/redis";
+import * as h from "@/helpers/index";
+import { messages } from "@/helpers/statusMessages";
+import { ReservationPayload, ShopifyOrder } from "@/helpers/interfaces";
 import {
-  ReservationPayload,
-  type ShopifyOrder,
   isMercedesOrder,
   transformShopifyOrderToReservation,
-  transformShopifyOrderToReservationWithOptions,
-} from "../../helpers/reservationTransform";
+} from "@/helpers/reservationTransform";
+
+import { Redis } from "@upstash/redis";
+import { IncomingHttpHeaders } from "http";
 
 export const enum Vendor {
   general = "general",
@@ -31,8 +26,7 @@ export const successCode: number = 201;
 // Env variables
 const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 const url = process.env.UPSTASH_REDIS_REST_URL;
-const netparksApiUrl = process.env.NETPARKS_API_URL;
-const netparksApiToken = process.env.NETPARKS_API_TOKEN;
+// const netparksApiUrl = process.env.NETPARK_API_URL;
 const netparksSourceId = process.env.NETPARKS_SOURCE_ID;
 
 // Initialize redis (to store webhook ids)
@@ -52,7 +46,7 @@ const turnOffWebhook = (res: NextApiResponse): void => {
  */
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   // return turnOffWebhook(res) // ** CAUTION: UNCOMMENT TO TURN OFF WEBHOOK **
 
@@ -99,7 +93,7 @@ export default async function handler(
 const handleWebhook = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  vendorName: Vendor = Vendor.general
+  vendorName: Vendor = Vendor.general,
 ): Promise<void> => {
   let newWebhookId = "";
 
@@ -124,7 +118,7 @@ const handleWebhook = async (
 
     console.log(`\n=== Processing Shopify Webhook ===`);
     console.log(`Webhook ID: ${newWebhookId}`);
-    console.log(`Order Number: ${body.name}`);
+    console.log(`Order Number: ${body.order_number}`);
     console.log(`Vendor: ${vendorName}`);
     console.log(`Customer: ${body.email}`);
 
@@ -139,7 +133,7 @@ const handleWebhook = async (
     // If webhook_id already exists in db, it's a duplicate
     if (storedWebhook) {
       console.error(
-        `Duplicate webhook detected - already processed: ${newWebhookId}`
+        `Duplicate webhook detected - already processed: ${newWebhookId}`,
       );
       return res.status(errorCode).send({
         message: messages.webhookAlreadyLoggedMessage(vendorName, newWebhookId),
@@ -153,16 +147,7 @@ const handleWebhook = async (
     console.log("Transforming Shopify order to NetParks reservation format...");
     const reservationPayload = transformShopifyOrderToReservation(
       body,
-      sourceId
-    );
-    // Option 2: Configurable version
-    const reservationPayload2 = transformShopifyOrderToReservationWithOptions(
-      body,
       sourceId,
-      {
-        includeFacilityChargeInPrice: true,
-        includeFacilityChargeAsOption: true,
-      }
     );
 
     if (!reservationPayload) {
@@ -174,11 +159,11 @@ const handleWebhook = async (
 
     console.log("Transformation successful");
     console.log(
-      `Processing ${vendorName} order #${body.name} - Webhook ID: ${newWebhookId}`
+      `Processing ${vendorName} order #${body.name} - Webhook ID: ${newWebhookId}`,
     );
     console.log(
       "Reservation payload:",
-      JSON.stringify(reservationPayload, null, 2)
+      JSON.stringify(reservationPayload, null, 2),
     );
 
     // Post reservation to NetParks API
@@ -190,11 +175,7 @@ const handleWebhook = async (
     try {
       attemptCount = 1;
       console.log(`Attempt ${attemptCount}: Calling NetParks API...`);
-      netparksResponse = await postReservationToNetparks(
-        reservationPayload,
-        netparksApiUrl || "",
-        netparksApiToken || ""
-      );
+      netparksResponse = await postReservationToNetparks(reservationPayload);
       apiCallSuccess = true;
       console.log("✓ NetParks API call successful");
       console.log("Response:", JSON.stringify(netparksResponse, null, 2));
@@ -209,11 +190,7 @@ const handleWebhook = async (
       try {
         attemptCount = 2;
         console.log(`Attempt ${attemptCount}: Calling NetParks API...`);
-        netparksResponse = await postReservationToNetparks(
-          reservationPayload,
-          netparksApiUrl || "",
-          netparksApiToken || ""
-        );
+        netparksResponse = await postReservationToNetparks(reservationPayload);
         apiCallSuccess = true;
         console.log("✓ NetParks API retry successful");
         console.log("Response:", JSON.stringify(netparksResponse, null, 2));
@@ -239,7 +216,7 @@ const handleWebhook = async (
 
       if (!webhookLogged) {
         console.warn(
-          `⚠ Reservation created but webhook ID not stored: ${newWebhookId}`
+          `⚠ Reservation created but webhook ID not stored: ${newWebhookId}`,
         );
         return res.status(successCode).send({
           message: messages.reservationCreatedButWebhookNotLogged(vendorName),
@@ -278,35 +255,41 @@ const handleWebhook = async (
  */
 async function postReservationToNetparks(
   payload: ReservationPayload,
-  apiUrl: string,
-  apiToken: string
 ): Promise<any> {
+  const apiUrl = process.env.NETPARK_API_URL;
+  const apiToken = process.env.NETPARKS_API_TOKEN;
   if (!apiUrl) {
     throw new Error("NetParks API URL not configured in environment variables");
+  }
+
+  if (!apiToken) {
+    throw new Error(
+      "NetParks API Token not configured in environment variables",
+    );
   }
 
   const endpoint = `${apiUrl}/reservations`;
 
   console.log(`Making POST request to: ${endpoint}`);
-
+  console.log("POST PAYLOAD:", JSON.stringify(payload), "\n\n");
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(apiToken && { Authorization: `Bearer ${apiToken}` }),
+      "X-Api-Key": apiToken,
     },
     body: JSON.stringify(payload),
   });
 
-  const responseText = await response.text();
+  const responseText = await response.json();
 
   if (!response.ok) {
     console.error(
       `NetParks API error response (${response.status}):`,
-      responseText
+      JSON.stringify(responseText),
     );
     throw new Error(
-      `NetParks API request failed with status ${response.status}: ${responseText}`
+      `NetParks API request failed with status ${response.status}:`,
     );
   }
 

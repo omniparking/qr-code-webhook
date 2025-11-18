@@ -13,7 +13,13 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["./*"], // Alias for the 'src' directory
+      "@/helpers": ["./helpers/*"], // Alias for a specific subdirectory
+      "@components": ["./components/*"] // Alias for a specific file
+    }
   },
   "include": [
     "next-env.d.ts",

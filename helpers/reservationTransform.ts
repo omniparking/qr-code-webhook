@@ -1,475 +1,17 @@
-// lib/reservationTransform.ts
-
-// ============================================
-// NETPARKS API TYPES
-// ============================================
-
-interface CustomRateCharge {
-  unit: "day" | "hour" | "week" | "month";
-  duration: number;
-  fee?: number;
-  fpp?: number;
-}
-
-interface Service {
-  service?: number;
-  description?: string;
-  ws_description?: string;
-  ws_notes?: string;
-  ws_order?: string;
-  price?: number;
-}
-
-interface OptionInventory {
-  option?: number;
-  description?: string;
-  gratuity?: "none" | "parking" | "service";
-  price?: number;
-  adjustable?: boolean;
-  airport_taxable?: boolean;
-  sales_taxable?: boolean;
-  overridable?: boolean;
-  coupon_override?: boolean;
-  mandatory?: boolean;
-  active?: boolean;
-}
-
-interface Option {
-  id?: number;
-  option?: number;
-  description?: string;
-  gratuity?: "none" | "parking" | "service";
-  price?: number;
-  inventory_obj?: OptionInventory[];
-}
-
-interface Coupon {
-  id?: number;
-  coupon?: number;
-  description?: string;
-  notes?: string;
-  code?: string;
-  amount?: number;
-  free_days?: number;
-  min_days?: number;
-  tax_on_gross?: boolean;
-  type?: "inventory" | "ticket";
-}
-
-interface Payment {
-  amount: number;
-  type: "AX" | "MC" | "VI" | "DI" | "DC" | "JC" | "CA" | "AR" | "GC" | "PC";
-  notes: string;
-  id?: number;
-  dbr_date?: string;
-  onfile?:
-    | "customer-primary"
-    | "customer-secondary"
-    | "ticket-primary"
-    | "ticket-secondary"
-    | "reservation";
-  customer?: number | null;
-  company?: number | null;
-  ar_code?: number | null;
-  card?: number | null;
-  ticket?: number | null;
-  tt_id?: number;
-  user?: number;
-  status?: "active" | "voided";
-  credited?: boolean;
-  captcha_token?: string;
-  cc_address?: string;
-  cc_auth?: string;
-  cc_batch?: number;
-  cc_expiration?: string;
-  cc_name?: string;
-  cc_number?: string;
-  cc_processor?: number;
-  cc_source?: number;
-  cc_swipe?: string;
-  cc_token?: string;
-  cc_ttid?: string;
-  cc_zip?: string;
-  terminal_id?: string;
-  location?: number;
-}
-
-interface Coupon {
-  id?: number;
-  coupon?: number;
-  description?: string;
-  notes?: string;
-  code?: string;
-  amount?: number;
-  free_days?: number;
-  min_days?: number;
-  tax_on_gross?: boolean;
-  type?: "inventory" | "ticket";
-}
-
-interface CustomRateCalendar {
-  date: string;
-  daily_rate: number;
-  hourly_rate?: number;
-  blackout?: boolean;
-  day_based?: boolean;
-}
-
-interface CreateReservationParams {
-  sourceId: number;
-  startDate: string;
-  endDate: string;
-  lastName: string;
-  email: string;
-  reservationId: string;
-  customRateCharges: CustomRateCharge[];
-
-  // Optional customer info
-  firstName?: string;
-  address?: string;
-  address2?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  phone?: string;
-  phone2?: string;
-  phone3?: string;
-
-  // Optional reservation details
-  customerId?: number | null;
-  location?: number;
-  notes?: string;
-  rate?: number;
-  rateHistoryId?: number;
-  discount?: number | null;
-  promoCode?: string | null;
-  parkingZone?: number | null;
-  quoteName?: string;
-  allowDup?: boolean;
-  otherId?: string;
-
-  // Optional arrays
-  services?: Service[];
-  options?: Option[];
-  payments?: Payment[];
-  coupons?: Coupon[];
-  customRateCalendar?: CustomRateCalendar[];
-}
-
-export interface ReservationPayload {
-  data: {
-    custom_rate_charges: CustomRateCharge[];
-    email: string;
-    end_date: string;
-    last_name: string;
-    reservation: string;
-    source_id: number;
-    start_date: string;
-    address?: string;
-    address2?: string;
-    allow_dup?: boolean;
-    auto_key?: number | null;
-    city?: string;
-    coupons?: Coupon[];
-    custom_rate_calendar?: CustomRateCalendar[];
-    customer_id?: number | null;
-    discount?: number | null;
-    first_name?: string;
-    location?: number;
-    notes?: string;
-    options?: Option[];
-    other_id?: string;
-    parking_zone?: number | null;
-    payments?: Payment[];
-    phone?: string;
-    phone2?: string;
-    phone3?: string;
-    points?: number | null;
-    promo_code?: string | null;
-    quote_name?: string;
-    rate_history_id?: number;
-    rate?: number;
-    services?: Service[];
-    state?: string;
-    zip?: string;
-  };
-}
-
-// ============================================
-// SHOPIFY ORDER TYPES
-// ============================================
-
-export interface ShopifyOrder {
-  id: number;
-  admin_graphql_api_id: string;
-  app_id: number;
-  browser_ip?: string | null;
-  buyer_accepts_marketing: boolean;
-  cancel_reason: string | null;
-  cancelled_at: string | null;
-  cart_token?: string | null;
-  checkout_id?: number | null;
-  checkout_token?: string | null;
-  client_details?: {
-    accept_language?: string;
-    browser_height?: number | null;
-    browser_ip?: string;
-    browser_width?: number | null;
-    session_hash?: string | null;
-    user_agent?: string;
-  } | null;
-  closed_at: string | null;
-  confirmation_number?: string;
-  confirmed: boolean;
-  contact_email?: string;
-  created_at: string;
-  currency: string;
-  current_subtotal_price: string;
-  current_subtotal_price_set: PriceSet;
-  current_total_additional_fees_set: any | null;
-  current_total_discounts: string;
-  current_total_discounts_set: PriceSet;
-  current_total_duties_set: any | null;
-  current_total_price: string;
-  current_total_price_set: PriceSet;
-  current_total_tax: string;
-  current_total_tax_set: PriceSet;
-  customer_locale?: string | null;
-  device_id: string | null;
-  discount_codes?: DiscountCode[];
-  email: string;
-  estimated_taxes: boolean;
-  financial_status: string;
-  fulfillment_status: string | null;
-  landing_site?: string | null;
-  landing_site_ref: string | null;
-  location_id: number | null;
-  merchant_of_record_app_id: number | null;
-  name: string;
-  note: string | null;
-  note_attributes?: NoteAttribute[];
-  number: number;
-  order_number: number;
-  order_status_url: string;
-  original_total_additional_fees_set: any | null;
-  original_total_duties_set: any | null;
-  payment_gateway_names: string[];
-  phone?: string | null;
-  po_number?: string | null;
-  presentment_currency: string;
-  processed_at: string;
-  reference?: string | null;
-  referring_site: string | null;
-  source_identifier?: string | null;
-  source_name: string;
-  source_url: string | null;
-  subtotal_price: string;
-  subtotal_price_set: PriceSet;
-  tags: string;
-  tax_exempt?: boolean;
-  tax_lines?: TaxLine[];
-  taxes_included: boolean;
-  test: boolean;
-  token: string;
-  total_discounts: string;
-  total_discounts_set: PriceSet;
-  total_line_items_price: string;
-  total_line_items_price_set: PriceSet;
-  total_outstanding: string;
-  total_price: string;
-  total_price_set: PriceSet;
-  total_shipping_price_set: PriceSet;
-  total_tax: string;
-  total_tax_set: PriceSet;
-  total_tip_received: string;
-  total_weight: number;
-  updated_at: string;
-  user_id: number | null;
-  billing_address?: BillingAddress | null;
-  customer?: Customer;
-  discount_applications?: DiscountApplication[];
-  fulfillments: any[];
-  line_items: LineItem[];
-  payment_terms: any | null;
-  refunds: any[];
-  shipping_address: any | null;
-  shipping_lines: any[];
-}
-
-interface PriceSet {
-  shop_money: {
-    amount: string;
-    currency_code: string;
-  };
-  presentment_money: {
-    amount: string;
-    currency_code: string;
-  };
-}
-
-interface DiscountCode {
-  code: string;
-  amount: string;
-  type: string;
-}
-
-interface NoteAttribute {
-  name: string;
-  value: string;
-}
-
-interface TaxLine {
-  price: string;
-  rate: number;
-  title: string;
-  price_set: PriceSet;
-  channel_liable: boolean;
-}
-
-// interface BillingAddress {
-//   first_name: string;
-//   address1: string;
-//   phone?: string;
-//   city: string;
-//   zip: string;
-//   province: string;
-//   country: string;
-//   last_name: string;
-//   address2?: string | null;
-//   company?: string | null;
-//   latitude?: number;
-//   longitude?: number;
-//   name: string;
-//   country_code: string;
-//   province_code: string;
-// }
-
-interface BillingAddress {
-  first_name: string;
-  last_name: string;
-  address1: string;
-  address2?: string | null;
-  city: string;
-  province: string;
-  zip: string;
-  phone?: string;
-}
-
-interface Customer {
-  id: number;
-  email: string;
-  accepts_marketing: boolean;
-  created_at: string;
-  updated_at: string;
-  first_name: string;
-  last_name: string;
-  state: string;
-  note: string | null;
-  verified_email: boolean;
-  multipass_identifier: string | null;
-  tax_exempt: boolean;
-  phone: string | null;
-  email_marketing_consent?: {
-    state: string;
-    opt_in_level: string;
-    consent_updated_at: string | null;
-  };
-  sms_marketing_consent: any | null;
-  tags: string;
-  currency: string;
-  accepts_marketing_updated_at?: string;
-  marketing_opt_in_level?: string;
-  tax_exemptions: any[];
-  admin_graphql_api_id: string;
-  default_address?: {
-    id: number;
-    customer_id: number;
-    first_name: string;
-    last_name: string;
-    company: string | null;
-    address1: string;
-    address2: string | null;
-    city: string;
-    province: string;
-    country: string;
-    zip: string;
-    phone: string;
-    name: string;
-    province_code: string;
-    country_code: string;
-    country_name: string;
-    default: boolean;
-  };
-}
-
-interface DiscountApplication {
-  target_type: string;
-  type: string;
-  value: string;
-  value_type: string;
-  allocation_method: string;
-  target_selection: string;
-  title: string;
-  description: string;
-}
-
-// interface LineItem {
-//   id: number;
-//   admin_graphql_api_id: string;
-//   current_quantity?: number;
-//   fulfillable_quantity: number;
-//   fulfillment_service: string;
-//   fulfillment_status: string | null;
-//   gift_card: boolean;
-//   grams: number;
-//   name: string;
-//   price: string;
-//   price_set: PriceSet;
-//   product_exists: boolean;
-//   product_id: number | null;
-//   properties?: LineItemProperty[];
-//   quantity: number;
-//   requires_shipping: boolean;
-//   sku: string | null;
-//   taxable: boolean;
-//   title: string;
-//   total_discount: string;
-//   total_discount_set: PriceSet;
-//   variant_id: number | null;
-//   variant_inventory_management: string | null;
-//   variant_title: string | null;
-//   vendor: string | null;
-//   tax_lines?: TaxLine[];
-//   duties: any[];
-//   discount_allocations?: DiscountAllocation[];
-// }
-
-interface LineItem {
-  id: number;
-  name: string;
-  title: string;
-  price: string;
-  quantity: number;
-  sku: string | null;
-  taxable: boolean;
-  properties?: LineItemProperty[];
-  tax_lines?: TaxLine[];
-}
-
-interface LineItemProperty {
-  name: string;
-  value: string | any;
-}
-
-interface DiscountAllocation {
-  amount: string;
-  amount_set: PriceSet;
-  discount_application_index: number;
-}
-
-// ============================================
-// HELPER FUNCTIONS
-// ============================================
+import { formatDateWithTimezone, generatePricesForMercedes } from ".";
+import {
+  Coupon,
+  CreateReservationParams,
+  CustomRateCharge,
+  LineItem,
+  NetparksQuote,
+  NetparksQuoteResponse,
+  Option,
+  QuotePayload,
+  ReservationPayload,
+  Service,
+  ShopifyOrder,
+} from "./interfaces";
 
 /**
  * Check if order is from Mercedes partner
@@ -477,7 +19,7 @@ interface DiscountAllocation {
 export function isMercedesOrder(order: ShopifyOrder): boolean {
   return (
     order.note_attributes?.some(
-      (attr) => attr.name === "vendor" && attr.value === "mercedes"
+      (attr) => attr.name === "vendor" && attr.value === "mercedes",
     ) ?? false
   );
 }
@@ -493,7 +35,7 @@ function extractBookingDates(lineItems: LineItem[]): {
   const parkingItem = lineItems.find(
     (item) =>
       item.name.toUpperCase().includes("PARKING") ||
-      item.title.toUpperCase().includes("PARKING")
+      item.title.toUpperCase().includes("PARKING"),
   );
 
   if (!parkingItem || !parkingItem.properties) {
@@ -501,10 +43,10 @@ function extractBookingDates(lineItems: LineItem[]): {
   }
 
   const startDateProp = parkingItem.properties.find(
-    (prop) => prop.name === "booking-start"
+    (prop) => prop.name === "booking-start",
   );
   const endDateProp = parkingItem.properties.find(
-    (prop) => prop.name === "booking-finish"
+    (prop) => prop.name === "booking-finish",
   );
 
   return {
@@ -558,12 +100,12 @@ function getCustomerInfo(order: ShopifyOrder) {
  * Creates a reservation payload for the NetParks API
  */
 function createReservationPayload(
-  params: CreateReservationParams
+  params: CreateReservationParams,
 ): ReservationPayload {
   const payload: ReservationPayload = {
     data: {
       // Required fields
-      source_id: params.sourceId,
+      // source_id: params.sourceId, // LEAVE OUT FOR API CALL
       start_date: params.startDate,
       end_date: params.endDate,
       last_name: params.lastName,
@@ -619,6 +161,8 @@ function createReservationPayload(
     payload.data.custom_rate_calendar = params.customRateCalendar;
   }
 
+  payload.data.text_opt_in = "true";
+
   return payload;
 }
 
@@ -638,7 +182,7 @@ function extractFacilityCharge(lineItems: LineItem[]): {
   const facilityChargeItem = lineItems.find(
     (item) =>
       item.name.toLowerCase().includes("facility charge") ||
-      item.title.toLowerCase().includes("facility charge")
+      item.title.toLowerCase().includes("facility charge"),
   );
 
   if (!facilityChargeItem) {
@@ -712,7 +256,7 @@ function calculateParkingSubtotal(lineItems: LineItem[]): number {
     (item) =>
       (item.name.includes("PARKING") || item.title.includes("PARKING")) &&
       !item.name.toLowerCase().includes("facility") &&
-      !item.name.toLowerCase().includes("fee")
+      !item.name.toLowerCase().includes("fee"),
   );
 
   const total = parkingItems.reduce((sum, item) => {
@@ -735,7 +279,7 @@ function extractServices(lineItems: LineItem[]): Service[] {
     (item) =>
       !item.name.includes("PARKING") &&
       !item.title.includes("PARKING") &&
-      !item.name.toLowerCase().includes("facility charge") // We'll handle this as an option
+      !item.name.toLowerCase().includes("facility charge"), // We'll handle this as an option
   );
 
   serviceItems.forEach((item) => {
@@ -923,7 +467,7 @@ function extractDaysFromOrder(order: ShopifyOrder): number {
   const parkingItem = order.line_items.find(
     (item) =>
       item.name.toUpperCase().includes("PARKING") ||
-      item.title.toUpperCase().includes("PARKING")
+      item.title.toUpperCase().includes("PARKING"),
   );
 
   if (!parkingItem || !parkingItem.properties) {
@@ -931,10 +475,10 @@ function extractDaysFromOrder(order: ShopifyOrder): number {
   }
 
   const startDateProp = parkingItem.properties.find(
-    (prop) => prop.name === "booking-start"
+    (prop) => prop.name === "booking-start",
   );
   const endDateProp = parkingItem.properties.find(
-    (prop) => prop.name === "booking-finish"
+    (prop) => prop.name === "booking-finish",
   );
 
   if (!startDateProp?.value || !endDateProp?.value) {
@@ -964,15 +508,15 @@ export function calculateOrderTotals(order: ShopifyOrder): OrderTotals {
   // Calculate subtotals
   const parkingSubtotal = breakdown.parkingItems.reduce(
     (sum, item) => sum + item.total,
-    0
+    0,
   );
   const facilityChargeSubtotal = breakdown.facilityCharges.reduce(
     (sum, item) => sum + item.total,
-    0
+    0,
   );
   const otherFeesSubtotal = breakdown.otherFees.reduce(
     (sum, item) => sum + item.total,
-    0
+    0,
   );
   const subtotalBeforeDiscounts =
     parkingSubtotal + facilityChargeSubtotal + otherFeesSubtotal;
@@ -1053,6 +597,7 @@ export function calculateOrderTotals(order: ShopifyOrder): OrderTotals {
  */
 export function getOrderTotal(order: ShopifyOrder): number {
   const totals = calculateOrderTotals(order);
+  console.log("\n\n\n TOTAL PRICES:", totals, "\n\n");
   return totals.grandTotal;
 }
 
@@ -1062,7 +607,7 @@ export function getOrderTotal(order: ShopifyOrder): number {
  */
 export function transformShopifyOrderToReservation(
   order: ShopifyOrder,
-  sourceId: number
+  sourceId: number,
 ): ReservationPayload | null {
   // Extract booking dates
   const { startDate, endDate } = extractBookingDates(order.line_items);
@@ -1071,6 +616,9 @@ export function transformShopifyOrderToReservation(
     console.error("Missing booking dates in order:", order.id);
     return null;
   }
+
+  const formattedStartDate = formatDateWithTimezone(startDate, -5);
+  const formattedEndDate = formatDateWithTimezone(endDate, -5);
 
   // Get customer information
   const customerInfo = getCustomerInfo(order);
@@ -1091,7 +639,8 @@ export function transformShopifyOrderToReservation(
 
   // For Mercedes orders, the rate is 0 (100% discount applied)
   // For general orders, divide the parking subtotal by number of days
-  const ratePerDay = isMercedes ? 0 : parkingSubtotal / days;
+  const rateRaw = isMercedes ? 0 : parkingSubtotal / days;
+  const ratePerDay = Number.isFinite(rateRaw) ? Number(rateRaw.toFixed(2)) : 0; // fallback if days = 0 or invalid data
 
   // Build custom rate charges
   const customRateCharges: CustomRateCharge[] = [
@@ -1103,11 +652,22 @@ export function transformShopifyOrderToReservation(
   ];
 
   // Extract facility charges and other options
-  const options = extractOptions(order.line_items);
-  const coupons = extractCoupons(order);
+  // const options = extractOptions(order.line_items);
+
+  // Extract coupons
+  // const coupons = extractCoupons(order);
 
   // Extract additional services (if any)
   const services = extractServices(order.line_items);
+
+  const amount = isMercedes
+    ? +generatePricesForMercedes(startDate, endDate)
+    : getOrderTotal(order);
+
+  const reservationId = `${order.number}`;
+  const notes = isMercedes
+    ? "Mercedes partner reservation (through Shopify) - 100% discount applied"
+    : "General reservation (through Shopify)";
 
   // Log extracted information for debugging
   console.log("Order transformation details:", {
@@ -1117,171 +677,139 @@ export function transformShopifyOrderToReservation(
     days,
     parkingSubtotal,
     ratePerDay,
-    optionsCount: options.length,
-    // servicesCount: services.length,
+    amount,
+    reservationId,
+    notes,
+    // optionsCount: options.length,
+    servicesCount: services.length,
+    startDate: formattedStartDate,
+    endDate: formattedEndDate,
   });
 
   // Build the payload using the createReservationPayload function
   const payload = createReservationPayload({
     sourceId,
-    startDate,
-    endDate,
+    reservationId,
+    startDate: formattedStartDate,
+    endDate: formattedEndDate,
     lastName: customerInfo.lastName,
     email: customerInfo.email,
-    reservationId:
-      order.name &&
-      order.name.substring(1) &&
-      !isNaN(parseInt(order.name.substring(1)))
-        ? order.name.substring(1)
-        : order.name, // Using Shopify order name (e.g., "#61437")
     customRateCharges: customRateCharges,
     firstName: customerInfo.firstName || undefined,
     phone: customerInfo.phone || undefined,
-    address: customerInfo.address || undefined,
-    address2: customerInfo.address2 || undefined,
-    city: customerInfo.city || undefined,
-    state: customerInfo.state || undefined,
-    zip: customerInfo.zip || undefined,
-    notes: isMercedes
-      ? "Mercedes partner reservation - 100% discount applied"
-      : undefined,
+    address: customerInfo.address || null,
+    address2: customerInfo.address2 || null,
+    city: customerInfo.city || null,
+    state: customerInfo.state || null,
+    zip: customerInfo.zip || null,
+    notes,
     payments: [
       {
         type: "AR",
-        amount: getOrderTotal(order),
+        amount: amount == null ? 0 : amount,
         notes: "Prepaid payment",
       },
     ],
-    promoCode: order.discount_codes?.[0]?.code || undefined,
-    // Add options (facility charges, etc.)
-    options: options.length > 0 ? options : undefined,
-    // Add services (if any)
-    services: services.length > 0 ? services : undefined,
-    // Add coupons (if any)
-    coupons: coupons.length > 0 ? coupons : undefined,
-    quoteName: "Self Park",
+    services: services.length > 0 ? services : null,
+    quoteName: "Uncovered",
+    // promoCode: order.discount_codes?.[0]?.code || undefined, // need to determine what this should be
+    // coupons: coupons.length > 0 ? coupons : undefined,
+    // quoteName: "Self Park",
+    // quoteName: "Daily Rate",
   });
 
   return payload;
-}
-
-// ============================================
-// CONFIGURABLE TRANSFORMATION FUNCTION
-// ============================================
-
-interface TransformationOptions {
-  includeFacilityChargeAsOption?: boolean; // Default: true
-  includeFacilityChargeInPrice?: boolean; // Default: true
 }
 
 /**
- * Transform Shopify order with configurable options
+ * NOTE BEING USED
+ * Generate a quote from NetParks API
+ * @param reservationPayload - Full reservation payload (will be converted to quote payload)
+ * @param apiUrl - NetParks API URL
+ * @param apiKey - NetParks API Key
+ * @returns Quote response with pricing breakdown
  */
-export function transformShopifyOrderToReservationWithOptions(
-  order: ShopifyOrder,
-  sourceId: number,
-  options: TransformationOptions = {}
-): ReservationPayload | null {
-  const {
-    includeFacilityChargeAsOption = true,
-    includeFacilityChargeInPrice = true,
-  } = options;
+export async function generateNetparksQuote(
+  reservationPayload: ReservationPayload,
+): Promise<NetparksQuoteResponse> {
+  const apiUrl = process.env.NETPARK_API_URL;
+  const apiKey = process.env.NETPARK_API_KEY;
 
-  // Extract booking dates
-  const { startDate, endDate } = extractBookingDates(order.line_items);
-
-  if (!startDate || !endDate) {
-    console.error("Missing booking dates in order:", order.id);
-    return null;
+  if (!apiUrl) {
+    throw new Error("NetParks API URL not configured in environment variables");
   }
 
-  // Get customer information
-  const customerInfo = getCustomerInfo(order);
-
-  if (!customerInfo.lastName || !customerInfo.email) {
-    console.error("Missing required customer information in order:", order.id);
-    return null;
+  if (!apiKey) {
+    throw new Error("NetParks API Key not configured in environment variables");
   }
 
-  // Check if this is a Mercedes order
-  const isMercedes = isMercedesOrder(order);
+  const formattedStartDate = formatDateWithTimezone(
+    reservationPayload.data.start_date,
+    -5,
+  );
+  const formattedEndDate = formatDateWithTimezone(
+    reservationPayload.data.end_date,
+    -5,
+  );
 
-  // Calculate days for the reservation
-  const days = calculateDays(startDate, endDate);
-
-  // Get facility charge info
-  const { hasFacilityCharge, facilityChargeAmount, facilityChargeItem } =
-    extractFacilityCharge(order.line_items);
-
-  // Calculate parking subtotal
-  let parkingSubtotal = calculateParkingSubtotal(order.line_items);
-
-  // If we want to include facility charge in the price, add it to the subtotal
-  if (includeFacilityChargeInPrice && hasFacilityCharge) {
-    parkingSubtotal += facilityChargeAmount;
-  }
-
-  // For Mercedes orders, the rate is 0 (100% discount applied)
-  // For general orders, divide the parking subtotal by number of days
-  const ratePerDay = isMercedes ? 0 : parkingSubtotal / days;
-
-  // Build custom rate charges
-  const customRateCharges: CustomRateCharge[] = [
-    {
-      unit: "day",
-      duration: days,
-      fee: ratePerDay,
+  const endpoint = `${apiUrl}/reservations/quotes`;
+  const body = JSON.stringify({
+    data: {
+      start_date: formattedStartDate,
+      end_date: formattedEndDate,
     },
-  ];
+  });
 
-  // Extract options (facility charges, etc.)
-  let optionsArray: Option[] = [];
+  const myHeaders = new Headers();
+  myHeaders.append("Content-Type", "application/json");
+  myHeaders.append("X-Api-Key", apiKey);
 
-  if (includeFacilityChargeAsOption) {
-    optionsArray = extractOptions(order.line_items);
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: myHeaders,
+    body,
+    redirect: "follow",
+  });
+
+  const responseText = await response.text();
+  console.log("\n\n\n QUOTE QUOTE responseText:", responseText);
+  if (!response.ok) {
+    console.error(
+      `NetParks Quote API error (${response.status}):`,
+      responseText,
+    );
+    throw new Error(
+      `NetParks Quote API request failed with status ${response.status}: ${responseText}`,
+    );
   }
 
-  // Extract services
-  const services = extractServices(order.line_items);
+  // Parse JSON response
+  let data: NetparksQuoteResponse;
+  try {
+    data = JSON.parse(responseText);
+  } catch (e) {
+    console.error("Failed to parse quote response:", responseText);
+    throw new Error("NetParks Quote API returned invalid JSON");
+  }
 
-  // Log extracted information for debugging
-  console.log("Order transformation details:", {
-    orderId: order.id,
-    orderName: order.name,
-    isMercedes,
-    days,
-    parkingSubtotal,
-    facilityChargeAmount,
-    includeFacilityChargeInPrice,
-    includeFacilityChargeAsOption,
-    ratePerDay,
-    optionsCount: optionsArray.length,
-    servicesCount: services.length,
-  });
+  // Check for errors in response
+  if (data.errors && data.errors.length > 0) {
+    const errorMessages = data.errors.map((err) => err.message).join(", ");
+    throw new Error(`NetParks Quote API returned errors: ${errorMessages}`);
+  }
 
-  // Build the payload
-  const payload = createReservationPayload({
-    sourceId: sourceId,
-    startDate: startDate,
-    endDate: endDate,
-    lastName: customerInfo.lastName,
-    email: customerInfo.email,
-    reservationId: order.name,
-    customRateCharges: customRateCharges,
-    firstName: customerInfo.firstName || undefined,
-    phone: customerInfo.phone || undefined,
-    address: customerInfo.address || undefined,
-    address2: customerInfo.address2 || undefined,
-    city: customerInfo.city || undefined,
-    state: customerInfo.state || undefined,
-    zip: customerInfo.zip || undefined,
-    notes: isMercedes
-      ? "Mercedes partner reservation - 100% discount applied"
-      : undefined,
-    promoCode: order.discount_codes?.[0]?.code || undefined,
-    options: optionsArray.length > 0 ? optionsArray : undefined,
-    services: services.length > 0 ? services : undefined,
-  });
+  return data;
+}
 
-  return payload;
+/**
+ * Get the first (primary) quote from the response
+ * @param quoteResponse - Quote response from NetParks
+ * @returns First quote or null if no quotes returned
+ */
+export function getPrimaryQuote(
+  quoteResponse: NetparksQuoteResponse,
+): NetparksQuote | null {
+  return !quoteResponse.data || quoteResponse.data.length === 0
+    ? null
+    : quoteResponse.data[0];
 }
