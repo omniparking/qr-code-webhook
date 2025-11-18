@@ -73,17 +73,19 @@ function getCustomerInfo(order: ShopifyOrder) {
   const billingAddress = order.billing_address;
   const customer = order.customer;
   const defaultAddress = customer?.default_address;
+  const phoneNumberRaw =
+    order.phone ||
+    billingAddress?.phone ||
+    defaultAddress?.phone ||
+    customer?.phone ||
+    null;
+  const phone = phoneNumberRaw ? normalizePhoneNumber(phoneNumberRaw) : null;
 
   return {
+    phone,
     firstName: billingAddress?.first_name || customer?.first_name || "",
     lastName: billingAddress?.last_name || customer?.last_name || "",
     email: order.email || order.contact_email || customer?.email || "",
-    phone:
-      order.phone ||
-      billingAddress?.phone ||
-      defaultAddress?.phone ||
-      customer?.phone ||
-      null,
     address: billingAddress?.address1 || defaultAddress?.address1 || null,
     address2: billingAddress?.address2 || defaultAddress?.address2 || null,
     city: billingAddress?.city || defaultAddress?.city || null,
@@ -602,6 +604,48 @@ export function getOrderTotal(order: ShopifyOrder): number {
 }
 
 /**
+ * Normalizes a phone number to a 10-digit format (area code + local number)
+ * Removes country code, spaces, parentheses, and dashes
+ *
+ * @param phoneNumber - Phone number in any common format
+ * @returns 10-digit phone number string, or null if invalid
+ *
+ * @example
+ * normalizePhoneNumber("+1 (201) 519-8855") // "2015198855"
+ * normalizePhoneNumber("201-519-8855") // "2015198855"
+ */
+export function normalizePhoneNumber(
+  phoneNumber: string | null | undefined,
+): string | null {
+  // Handle null/undefined/empty
+  if (!phoneNumber || typeof phoneNumber !== "string") {
+    return null;
+  }
+
+  // Remove all non-digit characters
+  const digitsOnly = phoneNumber.replace(/\D/g, "");
+
+  // Handle empty result after cleaning
+  if (digitsOnly.length === 0) {
+    return null;
+  }
+
+  // Handle different digit lengths
+  if (digitsOnly.length === 10) {
+    // Already 10 digits (area code + number)
+    return digitsOnly;
+  } else if (digitsOnly.length === 11 && digitsOnly.startsWith("1")) {
+    // 11 digits starting with country code '1'
+    return digitsOnly.slice(1);
+  } else if (digitsOnly.length === 11 && !digitsOnly.startsWith("1")) {
+    // 11 digits but doesn't start with 1 - likely invalid
+    return null;
+  } else {
+    // Too few or too many digits
+    return null;
+  }
+}
+/**
  * Transform Shopify order webhook data into NetParks reservation payload
  * Updated to handle facility charges as separate options
  */
@@ -609,6 +653,11 @@ export function transformShopifyOrderToReservation(
   order: ShopifyOrder,
   sourceId: number,
 ): ReservationPayload | null {
+  console.log(
+    "\n\n transformShopifyOrderToReservation => order:",
+    order,
+    "\n\n",
+  );
   // Extract booking dates
   const { startDate, endDate } = extractBookingDates(order.line_items);
 
@@ -637,16 +686,15 @@ export function transformShopifyOrderToReservation(
   // Calculate the parking rate per day (excluding facility charges and fees)
   const parkingSubtotal = calculateParkingSubtotal(order.line_items);
 
-  // For Mercedes orders, the rate is 0 (100% discount applied)
-  // For general orders, divide the parking subtotal by number of days
-  const rateRaw = isMercedes ? 0 : parkingSubtotal / days;
-  const ratePerDay = Number.isFinite(rateRaw) ? Number(rateRaw.toFixed(2)) : 0; // fallback if days = 0 or invalid data
+  // For Mercedes orders, the rate is 0 (100% discount applied), else $6.99
+  const ratePerDay = isMercedes ? 0 : 6.99;
 
   // Build custom rate charges
+  // Netpark will determine price based on start/end dates
   const customRateCharges: CustomRateCharge[] = [
     {
       unit: "day",
-      duration: days,
+      duration: 1,
       fee: ratePerDay,
     },
   ];
@@ -673,49 +721,50 @@ export function transformShopifyOrderToReservation(
   console.log("Order transformation details:", {
     orderId: order.id,
     orderName: order.name,
-    isMercedes,
+    endDate: formattedEndDate,
+    startDate: formattedStartDate,
+    amount,
     days,
+    isMercedes,
+    notes,
     parkingSubtotal,
     ratePerDay,
-    amount,
     reservationId,
-    notes,
-    // optionsCount: options.length,
     servicesCount: services.length,
-    startDate: formattedStartDate,
-    endDate: formattedEndDate,
+    // optionsCount: options.length,
   });
 
   // Build the payload using the createReservationPayload function
   const payload = createReservationPayload({
-    sourceId,
     reservationId,
-    startDate: formattedStartDate,
-    endDate: formattedEndDate,
-    lastName: customerInfo.lastName,
-    email: customerInfo.email,
-    customRateCharges: customRateCharges,
-    firstName: customerInfo.firstName || undefined,
-    phone: customerInfo.phone || undefined,
+    sourceId,
     address: customerInfo.address || null,
     address2: customerInfo.address2 || null,
     city: customerInfo.city || null,
+    customRateCharges: customRateCharges,
+    email: customerInfo.email,
+    endDate: formattedEndDate,
+    firstName: customerInfo.firstName || undefined,
+    lastName: customerInfo.lastName,
+    phone: customerInfo.phone || undefined,
+    phone3: customerInfo.phone || undefined,
+    startDate: formattedStartDate,
     state: customerInfo.state || null,
     zip: customerInfo.zip || null,
     notes,
     payments: [
       {
         type: "AR",
-        amount: amount == null ? 0 : amount,
+        amount: amount || 0,
         notes: "Prepaid payment",
       },
     ],
     services: services.length > 0 ? services : null,
-    quoteName: "Uncovered",
+    // quoteName: "Uncovered",
     // promoCode: order.discount_codes?.[0]?.code || undefined, // need to determine what this should be
     // coupons: coupons.length > 0 ? coupons : undefined,
     // quoteName: "Self Park",
-    // quoteName: "Daily Rate",
+    quoteName: "Daily Rate",
   });
 
   return payload;

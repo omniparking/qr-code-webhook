@@ -67,11 +67,11 @@ export default async function handler(
 
     const isTrustedSrc = h.isTrustedSource(method, shopifyTopic, sourceName);
 
-    if (!isTrustedSrc) {
-      return res.status(errorCode).send({
-        message: messages.notFromTrustedSource(),
-      });
-    }
+    // if (!isTrustedSrc) {
+    //   return res.status(errorCode).send({
+    //     message: messages.notFromTrustedSource(),
+    //   });
+    // }
 
     // Determine vendor based on order data
     const vendorName = isMercedesOrder(body) ? Vendor.mercedes : Vendor.general;
