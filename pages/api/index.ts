@@ -26,8 +26,7 @@ export const successCode: number = 201;
 // Env variables
 const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 const url = process.env.UPSTASH_REDIS_REST_URL;
-// const netparksApiUrl = process.env.NETPARK_API_URL;
-const netparksSourceId = process.env.NETPARKS_SOURCE_ID;
+const netparksSourceId = process.env.NETPARK_SOURCE_ID;
 
 // Initialize redis (to store webhook ids)
 const redis: Redis = new Redis({
@@ -69,9 +68,9 @@ export default async function handler(
     const isTrustedSrc = h.isTrustedSource(method, shopifyTopic, sourceName);
 
     if (!isTrustedSrc) {
-      // return res.status(errorCode).send({
-      //   message: messages.notFromTrustedSource(),
-      // });
+      return res.status(errorCode).send({
+        message: messages.notFromTrustedSource(),
+      });
     }
 
     // Determine vendor based on order data
@@ -141,7 +140,7 @@ const handleWebhook = async (
     }
 
     // Get source ID from environment variables
-    const sourceId = parseInt(netparksSourceId || "1");
+    const sourceId = parseInt(netparksSourceId || "1"); // not being used for now
 
     // Transform Shopify order to NetParks reservation payload
     console.log("Transforming Shopify order to NetParks reservation format...");
@@ -157,17 +156,17 @@ const handleWebhook = async (
       });
     }
 
-    console.log("Transformation successful");
+    console.log("Transforming Shopify body to Netpark payload successful");
     console.log(
-      `Processing ${vendorName} order #${body.name} - Webhook ID: ${newWebhookId}`,
+      `Processing Vendor: ${vendorName}. Order: ${body.name}. Webhook ID: ${newWebhookId}`,
     );
-    console.log(
-      "Reservation payload:",
-      JSON.stringify(reservationPayload, null, 2),
-    );
+    // console.log(
+    //   "Reservation payload:",
+    //   JSON.stringify(reservationPayload, null, 2),
+    // );
 
-    // Post reservation to NetParks API
     console.log("Posting reservation to NetParks API...");
+
     let apiCallSuccess = false;
     let netparksResponse: any = null;
     let attemptCount = 0;
@@ -175,10 +174,11 @@ const handleWebhook = async (
     try {
       attemptCount = 1;
       console.log(`Attempt ${attemptCount}: Calling NetParks API...`);
+
       netparksResponse = await postReservationToNetparks(reservationPayload);
       apiCallSuccess = true;
+
       console.log("✓ NetParks API call successful");
-      console.log("Response:", JSON.stringify(netparksResponse, null, 2));
     } catch (error) {
       console.error(`✗ Attempt ${attemptCount} failed:`, error);
       apiCallSuccess = false;
@@ -190,10 +190,11 @@ const handleWebhook = async (
       try {
         attemptCount = 2;
         console.log(`Attempt ${attemptCount}: Calling NetParks API...`);
+
         netparksResponse = await postReservationToNetparks(reservationPayload);
         apiCallSuccess = true;
+
         console.log("✓ NetParks API retry successful");
-        console.log("Response:", JSON.stringify(netparksResponse, null, 2));
       } catch (error) {
         console.error(`✗ Attempt ${attemptCount} failed:`, error);
         console.error("All retry attempts exhausted");
@@ -206,38 +207,18 @@ const handleWebhook = async (
 
     // If API call succeeded, store webhook ID in Redis
     if (apiCallSuccess) {
-      console.log("Storing webhook ID in Redis...");
-      let webhookLogged = false;
-      try {
-        webhookLogged = await h.sendWebhookIdToRedis(redis, newWebhookId);
-      } catch (error) {
-        console.error("Error saving webhook to redis =>", error);
-      }
-
-      if (!webhookLogged) {
-        console.warn(
-          `⚠ Reservation created but webhook ID not stored: ${newWebhookId}`,
-        );
-        return res.status(successCode).send({
-          message: messages.reservationCreatedButWebhookNotLogged(vendorName),
-          data: netparksResponse,
-          orderNumber: body.name,
-          webhookId: newWebhookId,
-        });
-      }
-
-      // Complete success
-      console.log("=== Webhook Processing Complete ===\n");
-      return res.status(successCode).send({
-        message: messages.reservationCreatedSuccessfully(vendorName),
-        data: netparksResponse,
-        webhookId: newWebhookId,
-        orderNumber: body.name,
-      });
+      return storeReservationInRedis(
+        res,
+        newWebhookId,
+        vendorName,
+        netparksResponse,
+        body,
+      );
     }
   } catch (error) {
     console.error(`Error processing webhook (${vendorName}):`, error);
     console.error("Stack trace:", error instanceof Error ? error.stack : "N/A");
+
     return res.status(errorCode).send({
       message: messages.errorFromMainTryCatchMessage(vendorName),
       error: error instanceof Error ? error.message : "Unknown error",
@@ -245,6 +226,43 @@ const handleWebhook = async (
     });
   }
 };
+
+async function storeReservationInRedis(
+  res,
+  newWebhookId,
+  vendorName,
+  netparksResponse,
+  body,
+) {
+  console.log("Storing webhook ID in Redis...");
+  let webhookLogged = false;
+  try {
+    webhookLogged = await h.sendWebhookIdToRedis(redis, newWebhookId);
+  } catch (error) {
+    console.error("Error saving webhook to redis =>", error);
+  }
+
+  if (!webhookLogged) {
+    console.warn(
+      `⚠ Reservation created but webhook ID not stored: ${newWebhookId}`,
+    );
+    return res.status(successCode).send({
+      message: messages.reservationCreatedButWebhookNotLogged(vendorName),
+      data: netparksResponse,
+      orderNumber: body.name,
+      webhookId: newWebhookId,
+    });
+  }
+
+  // Complete success
+  console.log("=== Webhook Processing Complete ===\n");
+  return res.status(successCode).send({
+    message: messages.reservationCreatedSuccessfully(vendorName),
+    data: netparksResponse,
+    webhookId: newWebhookId,
+    orderNumber: body.name,
+  });
+}
 
 /**
  * Posts reservation data to NetParks API
@@ -257,15 +275,14 @@ async function postReservationToNetparks(
   payload: ReservationPayload,
 ): Promise<any> {
   const apiUrl = process.env.NETPARK_API_URL;
-  const apiToken = process.env.NETPARKS_API_TOKEN;
+  const apiKey = process.env.NETPARK_API_KEY;
+
   if (!apiUrl) {
-    throw new Error("NetParks API URL not configured in environment variables");
+    throw new Error("NetParks API URL not configured in env variables");
   }
 
-  if (!apiToken) {
-    throw new Error(
-      "NetParks API Token not configured in environment variables",
-    );
+  if (!apiKey) {
+    throw new Error("NetParks API Token not configured in env variables");
   }
 
   const endpoint = `${apiUrl}/reservations`;
@@ -276,30 +293,26 @@ async function postReservationToNetparks(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Api-Key": apiToken,
+      "X-Api-Key": apiKey,
     },
     body: JSON.stringify(payload),
   });
 
-  const responseText = await response.json();
+  const result = await response.json();
 
   if (!response.ok) {
     console.error(
       `NetParks API error response (${response.status}):`,
-      JSON.stringify(responseText),
+      JSON.stringify(result),
     );
     throw new Error(
-      `NetParks API request failed with status ${response.status}:`,
+      `NetParks API request failed with status: ${response.status}`,
     );
   }
 
-  // Try to parse as JSON, fallback to text if not JSON
-  let data;
   try {
-    data = JSON.parse(responseText);
+    return JSON.parse(result);
   } catch (e) {
-    data = { raw: responseText };
+    return { raw: result };
   }
-
-  return data;
 }
