@@ -29,6 +29,67 @@ export async function sendWebhookIdToRedis(
 }
 
 /**
+ * Calculates the total parking fee based on reservation dates and daily rate.
+ *
+ * The calculation includes:
+ * - Base rate (rounded up to nearest full day)
+ * - Florida Sales Tax (6.5%)
+ * - Privilege Fee Recovery Charge (10%)
+ *
+ * @param startDate - Reservation start date/time (ISO string or Date object)
+ * @param endDate - Reservation end date/time (ISO string or Date object)
+ * @param dailyRate - Base daily parking rate in dollars
+ * @returns Total parking fee rounded to 2 decimal places
+ *
+ * @example
+ * ```typescript
+ * const total = calculateParkingFee(
+ *   '2025-11-23T15:00:00',
+ *   '2025-11-25T08:00:00',
+ *   6.99
+ * );
+ * // Returns: 16.29
+ * // Breakdown: 2 days × $6.99 = $13.98
+ * //            + 6.5% tax ($0.91)
+ * //            + 10% privilege fee ($1.40)
+ * ```
+ */
+export function calculateParkingFee(
+  startDate: string | Date,
+  endDate: string | Date,
+  dailyRate: number,
+): number {
+  const SALES_TAX_RATE = 0.065; // 6.5% Florida Sales Tax
+  const PRIVILEGE_FEE_RATE = 0.1; // 10% Privilege Fee Recovery Charge
+
+  // Convert to Date objects if needed
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  // Calculate duration in milliseconds
+  const durationMs = end.getTime() - start.getTime();
+
+  // Convert to hours
+  const hours = durationMs / (1000 * 60 * 60);
+
+  // Round up to nearest full day (any partial day counts as full day)
+  const days = Math.ceil(hours / 24);
+
+  // Calculate base price
+  const basePrice = days * dailyRate;
+
+  // Calculate taxes and fees
+  const salesTax = basePrice * SALES_TAX_RATE;
+  const privilegeFee = basePrice * PRIVILEGE_FEE_RATE;
+
+  // Calculate total
+  const total = basePrice + salesTax + privilegeFee;
+
+  // Round to 2 decimal places
+  return Math.round(total * 100) / 100;
+}
+
+/**
  * @param {string} startTime start time of booking
  * @param {string} endTime end time of booking
  * @returns {PriceInfoForMercedes} price info for mercedes order

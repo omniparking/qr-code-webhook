@@ -1,4 +1,8 @@
-import { formatDateWithTimezone, generatePricesForMercedes } from ".";
+import {
+  calculateParkingFee,
+  formatDateWithTimezone,
+  generatePricesForMercedes,
+} from ".";
 import {
   Coupon,
   CreateReservationParams,
@@ -599,7 +603,6 @@ export function calculateOrderTotals(order: ShopifyOrder): OrderTotals {
  */
 export function getOrderTotal(order: ShopifyOrder): number {
   const totals = calculateOrderTotals(order);
-  console.log("\n\n\n TOTAL PRICES:", totals, "\n\n");
   return totals.grandTotal;
 }
 
@@ -653,11 +656,6 @@ export function transformShopifyOrderToReservation(
   order: ShopifyOrder,
   sourceId: number,
 ): ReservationPayload | null {
-  console.log(
-    "\n\n transformShopifyOrderToReservation => order:",
-    order,
-    "\n\n",
-  );
   // Extract booking dates
   const { startDate, endDate } = extractBookingDates(order.line_items);
 
@@ -687,7 +685,8 @@ export function transformShopifyOrderToReservation(
   const parkingSubtotal = calculateParkingSubtotal(order.line_items);
 
   // For Mercedes orders, the rate is 0 (100% discount applied), else $6.99
-  const ratePerDay = isMercedes ? 0 : 6.99;
+  // const ratePerDay = isMercedes ? 0 : 6.99;
+  const ratePerDay = 6.99;
 
   // Build custom rate charges
   // Netpark will determine price based on start/end dates
@@ -708,9 +707,11 @@ export function transformShopifyOrderToReservation(
   // Extract additional services (if any)
   const services = extractServices(order.line_items);
 
-  const amount = isMercedes
-    ? +generatePricesForMercedes(startDate, endDate)
-    : getOrderTotal(order);
+  // const amount = isMercedes
+  //   ? 0
+  //   : calculateParkingFee(startDate, endDate, ratePerDay);
+
+  const amount = calculateParkingFee(startDate, endDate, ratePerDay);
 
   const reservationId = `${order.number}`;
   const notes = isMercedes
@@ -821,7 +822,7 @@ export async function generateNetparksQuote(
   });
 
   const responseText = await response.text();
-  console.log("\n\n\n QUOTE QUOTE responseText:", responseText);
+
   if (!response.ok) {
     console.error(
       `NetParks Quote API error (${response.status}):`,
