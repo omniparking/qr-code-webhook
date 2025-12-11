@@ -713,7 +713,7 @@ export function transformShopifyOrderToReservation(
 
   const amount = calculateParkingFee(startDate, endDate, ratePerDay);
 
-  const reservationId = `${order.number}`;
+  const reservationId = `${order.order_number}`;
   const notes = isMercedes
     ? "Mercedes partner reservation (through Shopify) - 100% discount applied"
     : "General reservation (through Shopify)";
